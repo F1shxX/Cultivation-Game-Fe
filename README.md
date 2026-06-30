@@ -1,6 +1,14 @@
 # Cultivation Game Frontend
 
-Vite/React frontend for the cultivation game. It talks to the backend API instead of connecting to Supabase with privileged keys.
+Vite/React frontend for the cultivation game demo. It talks to the backend API instead of connecting to Supabase with privileged keys.
+
+Current demo flow:
+
+- Opening story scene
+- Lushi Sect home scene
+- Cultivation, alchemy, planting, forging actions
+- Mouse cave battle stub
+- Supabase-backed demo save sync through the backend
 
 ## Setup
 
