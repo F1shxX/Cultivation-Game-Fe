@@ -13,11 +13,88 @@ type DemoScene =
   | "spirit_garden"
   | "teleport_array";
 
+type DemoEventId = "mouse_cave_treasure" | "wish_eater_bridge";
+
+type DemoEventChoiceAction =
+  | "event_choice:mouse_joke"
+  | "event_choice:mouse_careful"
+  | "event_choice:qingmu_trust"
+  | "event_choice:qingmu_guard"
+  | "event_choice:protect_beggar"
+  | "event_choice:trust_jinling";
+
+type DemoAction =
+  | `change_scene:${DemoScene}`
+  | "cultivate"
+  | "alchemy"
+  | "plant"
+  | "forge"
+  | "rest"
+  | "talk_xiaoxian"
+  | "sweep_plaza"
+  | "inspect_teleport"
+  | "start_mouse_cave"
+  | "battle_victory"
+  | `start_event:${DemoEventId}`
+  | "advance_event"
+  | DemoEventChoiceAction;
+
+type DemoEventChoice = {
+  action: DemoEventChoiceAction;
+  key: string;
+  label: string;
+  logTitle: string;
+  logText: string;
+};
+
+type DemoEventNode = {
+  id: string;
+  title: string;
+  speaker: string;
+  text: string;
+  mode: "dialogue" | "choice" | "battle" | "reward";
+  choices?: DemoEventChoice[];
+};
+
+type DemoEventDefinition = {
+  id: DemoEventId;
+  title: string;
+  triggerYear: number;
+  category: string;
+  location: string;
+  participants: string[];
+  summary: string;
+  rewardText: string;
+  nodes: DemoEventNode[];
+};
+
+type DemoActiveEvent = {
+  id: DemoEventId;
+  nodeIndex: number;
+  selectedChoices: Record<string, string>;
+  replay: boolean;
+  startedAt: {
+    year: number;
+    month: number;
+  };
+};
+
+type DemoCharacterId =
+  | "lu-zhenren"
+  | "xiaoxian"
+  | "xiao-zhang"
+  | "yangqi"
+  | "douran"
+  | "chuchu"
+  | "xiaolu";
+
 type DemoSaveState = {
   year: number;
   month: number;
   location: DemoLocation;
   scene?: DemoScene;
+  activeEvent?: DemoActiveEvent | null;
+  completedEvents?: DemoEventId[];
   cultivation: {
     level: "炼气";
     realmProgress: number;
@@ -31,8 +108,14 @@ type DemoSaveState = {
     ore: number;
     pills: number;
   };
+  inventory?: {
+    mouseDemonCore: number;
+    worryForgetRoot: number;
+    qingmuHealingPills: number;
+    jinlingToken: number;
+  };
   relationships: Array<{
-    characterId: "lu-zhenren" | "xiaoxian" | "xiao-zhang";
+    characterId: DemoCharacterId;
     name: string;
     bond: number;
   }>;
@@ -56,6 +139,11 @@ type SaveResponse = {
   save: DemoSave;
 };
 
+type EventsResponse = {
+  ok: boolean;
+  events: Record<DemoEventId, DemoEventDefinition>;
+};
+
 type ApiHealth = {
   ok: boolean;
   supabase?: {
@@ -67,23 +155,10 @@ type ApiHealth = {
 
 type LoadState =
   | { status: "loading" }
-  | { status: "ready"; save: DemoSave }
+  | { status: "ready"; save: DemoSave; events: Record<DemoEventId, DemoEventDefinition> }
   | { status: "error"; message: string };
 
-type DemoAction =
-  | `change_scene:${DemoScene}`
-  | "cultivate"
-  | "alchemy"
-  | "plant"
-  | "forge"
-  | "rest"
-  | "talk_xiaoxian"
-  | "sweep_plaza"
-  | "inspect_teleport"
-  | "start_mouse_cave"
-  | "battle_victory";
-
-type Panel = "日志" | "帮助" | "关系" | "图鉴" | "设置";
+type Panel = "日志" | "事件" | "关系" | "图鉴" | "设置";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 
@@ -207,6 +282,22 @@ function getScene(state: DemoSaveState): DemoScene {
   return state.scene ?? "hall";
 }
 
+function getEventList(events: Record<DemoEventId, DemoEventDefinition>) {
+  return Object.values(events).sort((left, right) => left.triggerYear - right.triggerYear);
+}
+
+function getActiveEvent(
+  state: DemoSaveState,
+  events: Record<DemoEventId, DemoEventDefinition>,
+) {
+  const active = state.activeEvent;
+  if (!active) return null;
+
+  const definition = events[active.id];
+  const node = definition.nodes[active.nodeIndex];
+  return { active, definition, node };
+}
+
 function CharacterPortrait({ activeCharacter }: { activeCharacter: "xiaozhang" | "xiaoxian" | "lu" }) {
   const name = activeCharacter === "xiaozhang" ? "小张" : activeCharacter === "xiaoxian" ? "小娴" : "鹿真人";
   return (
@@ -261,6 +352,13 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
 }
 
 function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
+  const inventory = state.inventory ?? {
+    mouseDemonCore: 0,
+    worryForgetRoot: 0,
+    qingmuHealingPills: 0,
+    jinlingToken: 0,
+  };
+
   return (
     <header className="top-hud">
       <div className="player-card">
@@ -278,6 +376,7 @@ function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
         <span>草药 {state.resources.herbs}</span>
         <span>矿石 {state.resources.ore}</span>
         <span>丹药 {state.resources.pills}</span>
+        <span>妖丹 {inventory.mouseDemonCore}</span>
         <span className={online ? "online" : "offline"}>{online ? "数据库已连接" : "本地未同步"}</span>
       </div>
     </header>
@@ -312,31 +411,46 @@ function SceneNavigator({
 function UtilityPanel({
   panel,
   state,
+  events,
   onClose,
   onReset,
   onReplayOpening,
 }: {
   panel: Panel;
   state: DemoSaveState;
+  events: Record<DemoEventId, DemoEventDefinition>;
   onClose: () => void;
   onReset: () => void;
   onReplayOpening: () => void;
 }) {
+  const inventory = state.inventory ?? {
+    mouseDemonCore: 0,
+    worryForgetRoot: 0,
+    qingmuHealingPills: 0,
+    jinlingToken: 0,
+  };
   const relationshipText = state.relationships
     .map((item) => `${item.name}：羁绊 ${item.bond}`)
     .join(" / ");
+  const completedText =
+    state.completedEvents && state.completedEvents.length > 0
+      ? state.completedEvents.map((id) => events[id].title).join("、")
+      : "暂无";
 
   const content: Record<Panel, string[]> = {
-    日志: state.eventLog.slice(0, 6).map((event) => `${event.year}年${event.month}月 · ${event.title}：${event.text}`),
-    帮助: [
-      "左侧按钮用于切换鹿石宗布景，每个场景都有独立功能。",
-      "下方行动按钮会推进时间、改变资源，并同步到 Supabase 存档。",
-      "传送阵可检查阵纹并进入山鼠洞战斗演示。",
+    日志: state.eventLog.slice(0, 8).map((event) => `${event.year}年${event.month}月 · ${event.title}：${event.text}`),
+    事件: [
+      `已完成：${completedText}`,
+      ...getEventList(events).map(
+        (event) =>
+          `第${event.triggerYear}年 · ${event.title} · ${event.location}：${event.summary} 奖励：${event.rewardText}`,
+      ),
     ],
     关系: [relationshipText],
     图鉴: [
       `当前功法：${state.cultivation.learnedArts.join("、")}`,
       `灵根体质：${state.cultivation.root}`,
+      `事件物品：山鼠妖丹 ${inventory.mouseDemonCore} / 忘忧根 ${inventory.worryForgetRoot} / 青木疗伤丹 ${inventory.qingmuHealingPills} / 金灵宗信物 ${inventory.jinlingToken}`,
       `已发现地点：${scenes.map((scene) => sceneConfig[scene].label).join("、")}`,
     ],
     设置: ["可重开 Demo，也可重播开场。"],
@@ -420,8 +534,8 @@ function SceneObjects({ scene, inBattle }: { scene: DemoScene; inBattle: boolean
       <div className="battle-lane lane-front" />
       {inBattle && (
         <>
-          <div className="enemy enemy-a">鼠</div>
-          <div className="enemy enemy-b">鼠</div>
+          <div className="enemy enemy-a">妖</div>
+          <div className="enemy enemy-b">祟</div>
           <div className="skill-arc arc-a" />
           <div className="skill-arc arc-b" />
         </>
@@ -430,8 +544,116 @@ function SceneObjects({ scene, inBattle }: { scene: DemoScene; inBattle: boolean
   );
 }
 
+function EventConsole({
+  state,
+  events,
+  busyAction,
+  onAction,
+}: {
+  state: DemoSaveState;
+  events: Record<DemoEventId, DemoEventDefinition>;
+  busyAction: DemoAction | "reset" | null;
+  onAction: (action: DemoAction) => void;
+}) {
+  const activeEvent = getActiveEvent(state, events);
+  const busy = Boolean(busyAction);
+
+  if (activeEvent) {
+    const { active, definition, node } = activeEvent;
+    const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
+    const modeText: Record<DemoEventNode["mode"], string> = {
+      dialogue: "剧情",
+      choice: "抉择",
+      battle: "战斗",
+      reward: "结算",
+    };
+
+    return (
+      <section className="event-console event-active">
+        <header>
+          <div>
+            <span className="event-eyebrow">DEMO事件进行中</span>
+            <h2>{definition.title}</h2>
+            <p>
+              {definition.location} · {definition.participants.join(" / ")}
+            </p>
+          </div>
+          <strong>{progress}%</strong>
+        </header>
+        <div className="event-progress">
+          <i style={{ width: `${progress}%` }} />
+        </div>
+        <div className="event-node">
+          <span>{modeText[node.mode]}</span>
+          <h3>{node.title}</h3>
+          <p>
+            {node.speaker}：{node.text}
+          </p>
+          {active.replay && <small>本次为复盘，完成后不会重复发放奖励。</small>}
+        </div>
+        {node.mode === "choice" && node.choices ? (
+          <div className="event-choice-grid">
+            {node.choices.map((choice) => (
+              <button
+                key={choice.action}
+                disabled={busy}
+                onClick={() => onAction(choice.action)}
+              >
+                {busyAction === choice.action ? "处理中" : choice.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button
+            className="event-primary"
+            disabled={busy}
+            onClick={() => onAction(node.mode === "battle" ? "battle_victory" : "advance_event")}
+          >
+            {node.mode === "battle"
+              ? busyAction === "battle_victory"
+                ? "战斗中"
+                : "打赢当前战斗"
+              : node.mode === "reward"
+                ? "领取结算"
+                : "继续事件"}
+          </button>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section className="event-console">
+      <header>
+        <div>
+          <span className="event-eyebrow">DEMO测试事件</span>
+          <h2>事件流程测试</h2>
+          <p>用于展示时间事件、战斗节点、选择分支、人物登场和奖励入库。</p>
+        </div>
+      </header>
+      <div className="event-start-list">
+        {getEventList(events).map((event) => {
+          const completed = state.completedEvents?.includes(event.id) ?? false;
+          const action = `start_event:${event.id}` as DemoAction;
+          return (
+            <button key={event.id} disabled={busy} onClick={() => onAction(action)}>
+              <strong>
+                {completed ? "复盘" : "开始"} · 第{event.triggerYear}年 · {event.title}
+              </strong>
+              <span>{event.location}</span>
+              <small>{event.rewardText}</small>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function HomeScene({
   save,
+  events,
+  online,
   busyAction,
   panel,
   onAction,
@@ -441,6 +663,8 @@ function HomeScene({
   onReplayOpening,
 }: {
   save: DemoSave;
+  events: Record<DemoEventId, DemoEventDefinition>;
+  online: boolean;
   busyAction: DemoAction | "reset" | null;
   panel: Panel | null;
   onAction: (action: DemoAction) => void;
@@ -452,17 +676,24 @@ function HomeScene({
   const state = save.state;
   const scene = getScene(state);
   const config = sceneConfig[scene];
+  const activeEvent = getActiveEvent(state, events);
   const inBattle = state.location === "battle";
   const xiaoxianBond = state.relationships.find((item) => item.characterId === "xiaoxian")?.bond ?? 0;
   const zhangBond = state.relationships.find((item) => item.characterId === "xiao-zhang")?.bond ?? 0;
   const luBond = state.relationships.find((item) => item.characterId === "lu-zhenren")?.bond ?? 0;
   const actorBond = config.actor === "xiaoxian" ? xiaoxianBond : config.actor === "xiaozhang" ? zhangBond : luBond;
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
+  const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
+  const dialogueText =
+    activeEvent?.node.text ??
+    (inBattle
+      ? "师弟别慌，本真人先替你压阵。要是我撑不住......师姐救我！"
+      : config.description);
   const busy = Boolean(busyAction);
 
   return (
     <main className="game-shell">
-      <TopHud state={state} online />
+      <TopHud state={state} online={online} />
       <section className={`stage scene-${scene} accent-${config.accent} ${inBattle ? "battle-stage" : ""}`}>
         <div className="stage-bg">
           <SceneObjects scene={scene} inBattle={inBattle} />
@@ -472,7 +703,7 @@ function HomeScene({
         <CharacterPortrait activeCharacter={inBattle ? "xiaozhang" : config.actor} />
 
         <aside className="right-menu">
-          {(["日志", "帮助", "关系", "图鉴", "设置"] as Panel[]).map((item) => (
+          {(["日志", "事件", "关系", "图鉴", "设置"] as Panel[]).map((item) => (
             <button key={item} disabled={busy} onClick={() => onOpenPanel(item)}>
               {item}
             </button>
@@ -481,14 +712,10 @@ function HomeScene({
 
         <section className="dialogue">
           <div className="speaker">
-            {inBattle ? "张真人" : actorName}
-            <small>{inBattle ? `羁绊 ${zhangBond}` : `羁绊 ${actorBond}`}</small>
+            {dialogueSpeaker}
+            <small>{activeEvent ? activeEvent.definition.title : `羁绊 ${actorBond}`}</small>
           </div>
-          <p>
-            {inBattle
-              ? "师弟别慌，本真人先替你压阵。要是我撑不住......师姐救我！"
-              : config.description}
-          </p>
+          <p>{dialogueText}</p>
         </section>
       </section>
 
@@ -501,23 +728,26 @@ function HomeScene({
           </div>
         </div>
         <div className="action-grid">
-          <button disabled={busy || inBattle} onClick={() => onAction(config.primaryAction)}>
+          <button disabled={busy} onClick={() => onAction(config.primaryAction)}>
             {busyAction === config.primaryAction ? "进行中" : config.primaryLabel}
           </button>
-          <button disabled={busy || inBattle} onClick={() => onAction("cultivate")}>
+          <button disabled={busy} onClick={() => onAction("cultivate")}>
             闭关修炼
           </button>
-          <button disabled={busy || inBattle} onClick={() => onAction("alchemy")}>
+          <button disabled={busy} onClick={() => onAction("alchemy")}>
             炼丹
           </button>
-          <button disabled={busy || inBattle} onClick={() => onAction("plant")}>
+          <button disabled={busy} onClick={() => onAction("plant")}>
             种植
           </button>
-          <button disabled={busy || inBattle} onClick={() => onAction("forge")}>
+          <button disabled={busy} onClick={() => onAction("forge")}>
             炼器
           </button>
-          <button disabled={busy || inBattle} onClick={() => onAction("start_mouse_cave")}>
-            传送山鼠洞
+          <button disabled={busy} onClick={() => onAction("start_mouse_cave")}>
+            山鼠洞事件
+          </button>
+          <button disabled={busy} onClick={() => onAction("start_event:wish_eater_bridge")}>
+            断桥村事件
           </button>
           {inBattle && (
             <button disabled={busy} onClick={() => onAction("battle_victory")}>
@@ -525,17 +755,18 @@ function HomeScene({
             </button>
           )}
         </div>
+        <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
       </section>
 
       <section className="codex-panel">
         <div>
-          <h2>{config.label}</h2>
-          <p>{config.subtitle}</p>
+          <h2>{activeEvent ? activeEvent.definition.title : config.label}</h2>
+          <p>{activeEvent ? activeEvent.definition.summary : config.subtitle}</p>
         </div>
         <div>
           <h2>最近事件</h2>
           <ul>
-            {state.eventLog.slice(0, 4).map((event, index) => (
+            {state.eventLog.slice(0, 5).map((event, index) => (
               <li key={`${event.title}-${index}`}>
                 <strong>
                   {event.year}年{event.month}月 · {event.title}
@@ -551,6 +782,7 @@ function HomeScene({
         <UtilityPanel
           panel={panel}
           state={state}
+          events={events}
           onClose={onClosePanel}
           onReset={onReset}
           onReplayOpening={onReplayOpening}
@@ -571,12 +803,17 @@ function App() {
     () => async () => {
       setLoadState({ status: "loading" });
       try {
-        const [healthPayload, savePayload] = await Promise.all([
+        const [healthPayload, savePayload, eventsPayload] = await Promise.all([
           fetchJson<ApiHealth>("/health"),
           fetchJson<SaveResponse>("/demo/save"),
+          fetchJson<EventsResponse>("/demo/events"),
         ]);
         setHealth(healthPayload);
-        setLoadState({ status: "ready", save: savePayload.save });
+        setLoadState({
+          status: "ready",
+          save: savePayload.save,
+          events: eventsPayload.events,
+        });
       } catch (error) {
         setLoadState({
           status: "error",
@@ -591,6 +828,10 @@ function App() {
     void loadSave();
   }, [loadSave]);
 
+  function replaceSave(save: DemoSave) {
+    setLoadState((current) => (current.status === "ready" ? { ...current, save } : current));
+  }
+
   async function perform(action: DemoAction) {
     setBusyAction(action);
     try {
@@ -598,7 +839,7 @@ function App() {
         method: "POST",
         body: JSON.stringify({ action }),
       });
-      setLoadState({ status: "ready", save: payload.save });
+      replaceSave(payload.save);
     } catch (error) {
       setLoadState({
         status: "error",
@@ -615,7 +856,7 @@ function App() {
       const payload = await fetchJson<SaveResponse>("/demo/reset", {
         method: "POST",
       });
-      setLoadState({ status: "ready", save: payload.save });
+      replaceSave(payload.save);
       setPanel(null);
     } catch (error) {
       setLoadState({
@@ -658,6 +899,8 @@ function App() {
   return (
     <HomeScene
       save={loadState.save}
+      events={loadState.events}
+      online={health?.supabase?.configured ?? false}
       busyAction={busyAction}
       panel={panel}
       onAction={(action) => void perform(action)}
