@@ -23,6 +23,21 @@ type DemoEventChoiceAction =
   | "event_choice:protect_beggar"
   | "event_choice:trust_jinling";
 
+type DemoEventVisualStage =
+  | "teleport_departure"
+  | "mouse_cave"
+  | "mouse_skirmish"
+  | "mouse_boss_crisis"
+  | "qingmu_rescue"
+  | "mouse_boss_final"
+  | "mouse_reward"
+  | "bridge_village"
+  | "bridge_skirmish"
+  | "bridge_confrontation"
+  | "wish_eater_reveal"
+  | "wish_eater_boss"
+  | "bridge_reward";
+
 type DemoAction =
   | `change_scene:${DemoScene}`
   | "cultivate"
@@ -53,6 +68,7 @@ type DemoEventNode = {
   speaker: string;
   text: string;
   mode: "dialogue" | "choice" | "battle" | "reward";
+  visualStage: DemoEventVisualStage;
   choices?: DemoEventChoice[];
 };
 
@@ -296,6 +312,46 @@ function getActiveEvent(
   const definition = events[active.id];
   const node = definition.nodes[active.nodeIndex];
   return { active, definition, node };
+}
+
+function getVisualStageTitle(visualStage: DemoEventVisualStage) {
+  const titles: Record<DemoEventVisualStage, string> = {
+    teleport_departure: "鹿石宗传送阵",
+    mouse_cave: "后山山鼠洞",
+    mouse_skirmish: "山鼠洞战斗",
+    mouse_boss_crisis: "山鼠王压境",
+    qingmu_rescue: "青木门救场",
+    mouse_boss_final: "山鼠王再战",
+    mouse_reward: "山鼠洞战利品",
+    bridge_village: "断桥村",
+    bridge_skirmish: "断桥村战斗",
+    bridge_confrontation: "断桥争执",
+    wish_eater_reveal: "啖愿妖现形",
+    wish_eater_boss: "啖愿妖战斗",
+    bridge_reward: "金灵宗初识",
+  };
+  return titles[visualStage];
+}
+
+function getEventButtonLabel(node: DemoEventNode, busy: boolean) {
+  if (busy) {
+    if (node.mode === "battle") return "战斗中";
+    if (node.mode === "reward") return "结算中";
+    return "推进中";
+  }
+
+  if (node.mode === "reward") return "领取结算";
+  if (node.mode !== "battle") return "继续剧情";
+
+  const labels: Record<string, string> = {
+    "small-rats": "清掉山鼠仔",
+    "rat-king": "撑到救场",
+    "final-rat-king": "合力击败山鼠王",
+    minions: "击退邪祟爪牙",
+    boss: "合力伏妖",
+  };
+
+  return labels[node.id] ?? "打赢当前战斗";
 }
 
 function CharacterPortrait({ activeCharacter }: { activeCharacter: "xiaozhang" | "xiaoxian" | "lu" }) {
@@ -544,6 +600,100 @@ function SceneObjects({ scene, inBattle }: { scene: DemoScene; inBattle: boolean
   );
 }
 
+function EventStageObjects({ node }: { node: DemoEventNode }) {
+  const stage = node.visualStage;
+  const isMouseStage = stage.startsWith("mouse") || stage === "qingmu_rescue";
+  const isBossStage =
+    stage === "mouse_boss_crisis" ||
+    stage === "mouse_boss_final" ||
+    stage === "wish_eater_boss";
+  const isBridgeStage = stage.startsWith("bridge") || stage.startsWith("wish");
+  const isBattleStage =
+    stage === "mouse_skirmish" ||
+    stage === "mouse_boss_crisis" ||
+    stage === "mouse_boss_final" ||
+    stage === "bridge_skirmish" ||
+    stage === "wish_eater_boss";
+
+  return (
+    <>
+      <div className="event-location-sign">{getVisualStageTitle(stage)}</div>
+      {stage === "teleport_departure" && (
+        <>
+          <div className="event-teleport-disk" />
+          <div className="event-teleport-light light-a" />
+          <div className="event-teleport-light light-b" />
+        </>
+      )}
+      {isMouseStage && (
+        <>
+          <div className="cave-mouth-shape" />
+          <div className="cave-rock rock-a" />
+          <div className="cave-rock rock-b" />
+          <div className="cave-crystal crystal-a" />
+          <div className="cave-crystal crystal-b" />
+        </>
+      )}
+      {isBridgeStage && (
+        <>
+          <div className="broken-bridge" />
+          <div className="village-house house-a" />
+          <div className="village-house house-b" />
+          <div className="bridge-fog fog-a" />
+        </>
+      )}
+      {(stage === "qingmu_rescue" || stage === "mouse_reward") && (
+        <>
+          <div className="qingmu-vine vine-a" />
+          <div className="qingmu-vine vine-b" />
+          <div className="qingmu-figure figure-yang">羊七</div>
+          <div className="qingmu-figure figure-dou">豆髯</div>
+        </>
+      )}
+      {stage === "bridge_confrontation" && (
+        <>
+          <div className="jinling-figure figure-chuchu">雏雏</div>
+          <div className="jinling-figure figure-xiaolu">小鹿</div>
+          <div className="beggar-form">乞</div>
+        </>
+      )}
+      {stage === "wish_eater_reveal" && (
+        <>
+          <div className="wish-eater-shadow" />
+          <div className="wish-fire fire-a" />
+          <div className="wish-fire fire-b" />
+        </>
+      )}
+      {isBattleStage && (
+        <>
+          <div className="battle-arena-line line-back" />
+          <div className="battle-arena-line line-front" />
+          <div className="player-combatant player-a">主角</div>
+          <div className="player-combatant player-b">小张</div>
+          {stage === "mouse_boss_final" && <div className="ally-combatant ally-a">羊七</div>}
+          {stage === "mouse_boss_final" && <div className="ally-combatant ally-b">豆髯</div>}
+          {stage === "wish_eater_boss" && <div className="ally-combatant ally-a">雏雏</div>}
+          {stage === "wish_eater_boss" && <div className="ally-combatant ally-b">小鹿</div>}
+          {isBossStage ? (
+            <div className={`event-boss ${stage.startsWith("wish") ? "boss-wish" : "boss-rat"}`}>
+              {stage.startsWith("wish") ? "啖愿妖" : "山鼠王"}
+            </div>
+          ) : (
+            <>
+              <div className="event-mob mob-a">{stage.startsWith("bridge") ? "祟" : "鼠"}</div>
+              <div className="event-mob mob-b">{stage.startsWith("bridge") ? "影" : "鼠"}</div>
+              <div className="event-mob mob-c">{stage.startsWith("bridge") ? "怨" : "鼠"}</div>
+            </>
+          )}
+          <div className="combat-skill slash-a" />
+          <div className="combat-skill slash-b" />
+        </>
+      )}
+      {stage === "mouse_boss_crisis" && <div className="danger-overlay">濒危</div>}
+    </>
+  );
+}
+
 function EventConsole({
   state,
   events,
@@ -609,13 +759,7 @@ function EventConsole({
             disabled={busy}
             onClick={() => onAction(node.mode === "battle" ? "battle_victory" : "advance_event")}
           >
-            {node.mode === "battle"
-              ? busyAction === "battle_victory"
-                ? "战斗中"
-                : "打赢当前战斗"
-              : node.mode === "reward"
-                ? "领取结算"
-                : "继续事件"}
+            {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
           </button>
         )}
       </section>
@@ -635,10 +779,15 @@ function EventConsole({
         {getEventList(events).map((event) => {
           const completed = state.completedEvents?.includes(event.id) ?? false;
           const action = `start_event:${event.id}` as DemoAction;
+          const isTeleportReady = getScene(state) === "teleport_array";
           return (
-            <button key={event.id} disabled={busy} onClick={() => onAction(action)}>
+            <button
+              key={event.id}
+              disabled={busy}
+              onClick={() => onAction(isTeleportReady ? action : "change_scene:teleport_array")}
+            >
               <strong>
-                {completed ? "复盘" : "开始"} · 第{event.triggerYear}年 · {event.title}
+                {isTeleportReady ? (completed ? "复盘" : "传送") : "前往传送阵"} · 第{event.triggerYear}年 · {event.title}
               </strong>
               <span>{event.location}</span>
               <small>{event.rewardText}</small>
@@ -678,6 +827,7 @@ function HomeScene({
   const config = sceneConfig[scene];
   const activeEvent = getActiveEvent(state, events);
   const inBattle = state.location === "battle";
+  const visualStage = activeEvent?.node.visualStage;
   const xiaoxianBond = state.relationships.find((item) => item.characterId === "xiaoxian")?.bond ?? 0;
   const zhangBond = state.relationships.find((item) => item.characterId === "xiao-zhang")?.bond ?? 0;
   const luBond = state.relationships.find((item) => item.characterId === "lu-zhenren")?.bond ?? 0;
@@ -694,13 +844,21 @@ function HomeScene({
   return (
     <main className="game-shell">
       <TopHud state={state} online={online} />
-      <section className={`stage scene-${scene} accent-${config.accent} ${inBattle ? "battle-stage" : ""}`}>
+      <section
+        className={`stage scene-${scene} accent-${config.accent} ${
+          inBattle ? "battle-stage" : ""
+        } ${visualStage ? `event-stage visual-${visualStage}` : ""}`}
+      >
         <div className="stage-bg">
-          <SceneObjects scene={scene} inBattle={inBattle} />
+          {activeEvent ? (
+            <EventStageObjects node={activeEvent.node} />
+          ) : (
+            <SceneObjects scene={scene} inBattle={inBattle} />
+          )}
         </div>
 
-        <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />
-        <CharacterPortrait activeCharacter={inBattle ? "xiaozhang" : config.actor} />
+        {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
+        {!activeEvent && <CharacterPortrait activeCharacter={inBattle ? "xiaozhang" : config.actor} />}
 
         <aside className="right-menu">
           {(["日志", "事件", "关系", "图鉴", "设置"] as Panel[]).map((item) => (
@@ -743,12 +901,20 @@ function HomeScene({
           <button disabled={busy} onClick={() => onAction("forge")}>
             炼器
           </button>
-          <button disabled={busy} onClick={() => onAction("start_mouse_cave")}>
-            山鼠洞事件
-          </button>
-          <button disabled={busy} onClick={() => onAction("start_event:wish_eater_bridge")}>
-            断桥村事件
-          </button>
+          {scene === "teleport_array" ? (
+            <>
+              <button disabled={busy} onClick={() => onAction("start_mouse_cave")}>
+                传送山鼠洞
+              </button>
+              <button disabled={busy} onClick={() => onAction("start_event:wish_eater_bridge")}>
+                传送断桥村
+              </button>
+            </>
+          ) : (
+            <button disabled={busy} onClick={() => onAction("change_scene:teleport_array")}>
+              前往传送阵
+            </button>
+          )}
           {inBattle && (
             <button disabled={busy} onClick={() => onAction("battle_victory")}>
               释放碎石剑气
