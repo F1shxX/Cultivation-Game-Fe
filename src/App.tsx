@@ -176,7 +176,45 @@ type LoadState =
 
 type Panel = "日志" | "事件" | "关系" | "图鉴" | "设置";
 
+type PortraitKey = "player" | "xiaozhang" | "xiaoxian" | "lu";
+type PortraitExpression = "normal" | "happy" | "serious" | "snark";
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+
+const portraitAssets: Record<PortraitKey, Record<PortraitExpression, string>> = {
+  player: {
+    normal: "/assets/portraits/player-normal.png",
+    happy: "/assets/portraits/player-happy.png",
+    serious: "/assets/portraits/player-serious.png",
+    snark: "/assets/portraits/player-snark.png",
+  },
+  xiaozhang: {
+    normal: "/assets/portraits/xiaozhang-normal.png",
+    happy: "/assets/portraits/xiaozhang-happy.png",
+    serious: "/assets/portraits/xiaozhang-serious.png",
+    snark: "/assets/portraits/xiaozhang-snark.png",
+  },
+  xiaoxian: {
+    normal: "/assets/portraits/xiaoxian-normal.png",
+    happy: "/assets/portraits/xiaoxian-happy.png",
+    serious: "/assets/portraits/xiaoxian-serious.png",
+    snark: "/assets/portraits/xiaoxian-snark.png",
+  },
+  lu: {
+    normal: "/assets/portraits/lu-normal.png",
+    happy: "/assets/portraits/lu-happy.png",
+    serious: "/assets/portraits/lu-serious.png",
+    snark: "/assets/portraits/lu-snark.png",
+  },
+};
+
+const resourceIcons = {
+  spiritStones: "/assets/ui/spirit-stone.png",
+  spiritMarrow: "/assets/ui/spirit-marrow.png",
+  herbs: "/assets/ui/herb.png",
+  ore: "/assets/ui/ore.png",
+  pills: "/assets/ui/pill.png",
+} as const;
 
 const sceneConfig: Record<
   DemoScene,
@@ -354,18 +392,100 @@ function getEventButtonLabel(node: DemoEventNode, busy: boolean) {
   return labels[node.id] ?? "打赢当前战斗";
 }
 
-function CharacterPortrait({ activeCharacter }: { activeCharacter: "xiaozhang" | "xiaoxian" | "lu" }) {
-  const name = activeCharacter === "xiaozhang" ? "小张" : activeCharacter === "xiaoxian" ? "小娴" : "鹿真人";
+function getActorPortrait(actor: "xiaozhang" | "xiaoxian" | "lu") {
+  const names: Record<typeof actor, string> = {
+    xiaozhang: "小张",
+    xiaoxian: "小娴",
+    lu: "鹿真人",
+  };
+  const expression: Record<typeof actor, PortraitExpression> = {
+    xiaozhang: "normal",
+    xiaoxian: "happy",
+    lu: "normal",
+  };
+  return {
+    key: actor,
+    expression: expression[actor],
+    name: names[actor],
+  };
+}
+
+function getSpeakerPortrait(
+  speaker: string,
+  node?: DemoEventNode,
+): { key: PortraitKey; expression: PortraitExpression; name: string } | null {
+  const seriousNode = node?.mode === "battle" || node?.id.includes("boss") || node?.id.includes("rat-king");
+
+  if (speaker === "主角") {
+    return {
+      key: "player",
+      expression: node?.mode === "choice" ? "serious" : "normal",
+      name: "主角",
+    };
+  }
+
+  if (speaker === "小张" || speaker === "张真人") {
+    const expression: PortraitExpression = seriousNode
+      ? "serious"
+      : node?.id === "invite"
+        ? "happy"
+        : node?.id === "rat-king"
+          ? "snark"
+          : "normal";
+    return {
+      key: "xiaozhang",
+      expression,
+      name: speaker,
+    };
+  }
+
+  if (speaker === "小娴") {
+    return {
+      key: "xiaoxian",
+      expression: "happy",
+      name: "小娴",
+    };
+  }
+
+  if (speaker === "鹿真人") {
+    return {
+      key: "lu",
+      expression: node?.text.includes("哈哈") ? "happy" : "normal",
+      name: "鹿真人",
+    };
+  }
+
+  return null;
+}
+
+function CharacterPortrait({
+  portrait,
+}: {
+  portrait: { key: PortraitKey; expression: PortraitExpression; name: string };
+}) {
   return (
-    <div className={`portrait portrait-${activeCharacter}`}>
-      <div className="portrait-glow" />
-      <div className="hair" />
-      <div className="face" />
-      <div className="robe" />
-      <div className="sleeve sleeve-left" />
-      <div className="sleeve sleeve-right" />
-      <div className="nameplate">{name}</div>
+    <div className={`portrait portrait-image portrait-${portrait.key}`}>
+      <img src={portraitAssets[portrait.key][portrait.expression]} alt={portrait.name} draggable={false} />
+      <div className="nameplate">{portrait.name}</div>
     </div>
+  );
+}
+
+function ResourceChip({
+  icon,
+  label,
+  value,
+}: {
+  icon: (typeof resourceIcons)[keyof typeof resourceIcons];
+  label: string;
+  value: number;
+}) {
+  return (
+    <span className="resource-chip">
+      <img src={icon} alt="" aria-hidden="true" />
+      <b>{label}</b>
+      {value}
+    </span>
   );
 }
 
@@ -427,11 +547,11 @@ function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
         </div>
       </div>
       <div className="resource-bar">
-        <span>灵石 {state.resources.spiritStones}</span>
-        <span>灵髓 {state.resources.spiritMarrow}</span>
-        <span>草药 {state.resources.herbs}</span>
-        <span>矿石 {state.resources.ore}</span>
-        <span>丹药 {state.resources.pills}</span>
+        <ResourceChip icon={resourceIcons.spiritStones} label="灵石" value={state.resources.spiritStones} />
+        <ResourceChip icon={resourceIcons.spiritMarrow} label="灵髓" value={state.resources.spiritMarrow} />
+        <ResourceChip icon={resourceIcons.herbs} label="草药" value={state.resources.herbs} />
+        <ResourceChip icon={resourceIcons.ore} label="矿石" value={state.resources.ore} />
+        <ResourceChip icon={resourceIcons.pills} label="丹药" value={state.resources.pills} />
         <span>妖丹 {inventory.mouseDemonCore}</span>
         <span className={online ? "online" : "offline"}>{online ? "数据库已连接" : "本地未同步"}</span>
       </div>
@@ -839,6 +959,12 @@ function HomeScene({
     (inBattle
       ? "师弟别慌，本真人先替你压阵。要是我撑不住......师姐救我！"
       : config.description);
+  const currentPortrait =
+    activeEvent && activeEvent.node.mode !== "battle"
+      ? getSpeakerPortrait(dialogueSpeaker, activeEvent.node)
+      : activeEvent
+        ? null
+        : getActorPortrait(config.actor);
   const busy = Boolean(busyAction);
 
   return (
@@ -858,7 +984,7 @@ function HomeScene({
         </div>
 
         {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
-        {!activeEvent && <CharacterPortrait activeCharacter={inBattle ? "xiaozhang" : config.actor} />}
+        {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
         <aside className="right-menu">
           {(["日志", "事件", "关系", "图鉴", "设置"] as Panel[]).map((item) => (
