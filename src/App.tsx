@@ -174,7 +174,7 @@ type LoadState =
   | { status: "ready"; save: DemoSave; events: Record<DemoEventId, DemoEventDefinition> }
   | { status: "error"; message: string };
 
-type Panel = "日志" | "事件" | "关系" | "图鉴" | "设置";
+type Panel = "日志" | "事件" | "关系" | "人物" | "功法" | "设置";
 
 type PortraitKey = "player" | "xiaozhang" | "xiaoxian" | "lu";
 type PortraitExpression = "normal" | "happy" | "serious" | "snark";
@@ -215,6 +215,105 @@ const resourceIcons = {
   ore: "/assets/ui/ore.png",
   pills: "/assets/ui/pill.png",
 } as const;
+
+const artSamples = [
+  {
+    name: "金芒诀",
+    rank: "黄",
+    element: "金",
+    attack: "金色锋刃贯穿飞行",
+    slots: "1个法术位：黄黄黄黄",
+    note: "剑气锋锐，克制护甲，但缺乏持续续航。",
+    icon: "/assets/arts/gold/huang-jinmang-jue.png",
+  },
+  {
+    name: "破金真诀",
+    rank: "玄",
+    element: "金",
+    attack: "强化金系穿透剑气",
+    slots: "2个法术位：玄黄玄黄",
+    note: "适合演示万化道躯切换金灵根后的基础成长。",
+    icon: "/assets/arts/gold/xuan-pojin-zhenjue.png",
+  },
+  {
+    name: "万剑玄功",
+    rank: "地",
+    element: "金",
+    attack: "多段剑气与破甲压制",
+    slots: "高阶法术位样例",
+    note: "用于展示品阶提升后自动攻击与法术配置上限成长。",
+    icon: "/assets/arts/gold/di-wanjian-xuangong.png",
+  },
+  {
+    name: "鸿蒙庚金斩仙典",
+    rank: "仙",
+    element: "金",
+    attack: "庚金斩仙剑势",
+    slots: "仙阶法术位样例",
+    note: "多周目自创功法融合时可作为高阶对照目标。",
+    icon: "/assets/arts/gold/xian-hongmeng-gengjin-zhanxian.png",
+  },
+];
+
+const characterSamples = [
+  {
+    name: "鹿真人",
+    sect: "鹿石宗",
+    role: "宗主",
+    root: "未知",
+    trait: "随性而为，经常失踪，讲究缘分，不强求。",
+  },
+  {
+    name: "小娴",
+    sect: "鹿石宗",
+    role: "弟子",
+    root: "水灵根 · 玄",
+    trait: "细致随和，照顾管教师弟，擅长炼丹和厨艺。",
+  },
+  {
+    name: "小张",
+    sect: "鹿石宗",
+    role: "弟子",
+    root: "木灵根 · 玄",
+    trait: "装B型人格，贪玩爱探险，有点胆小但关键时刻会挺身而出。",
+  },
+  {
+    name: "楚凌",
+    sect: "金灵宗",
+    role: "亲传弟子",
+    root: "金灵根 · 天",
+    trait: "沉稳克制，做事有原则，是压场喊停的人。",
+  },
+  {
+    name: "鹿宁",
+    sect: "金灵宗",
+    role: "亲传弟子",
+    root: "金灵根 · 天",
+    trait: "冲动嘴快，爱憎分明，口头禅是“师兄，要不要我现在就送他一程”。",
+  },
+  {
+    name: "豆髯道人",
+    sect: "青木门",
+    role: "内门弟子",
+    root: "木灵根 · 地",
+    trait: "热心友善，善于交际，擅长种植、下毒、炼丹。",
+  },
+  {
+    name: "羊七道人",
+    sect: "青木门",
+    role: "亲传弟子",
+    root: "木灵根 · 天",
+    trait: "开朗爱笑，助人为乐，情绪有时有点小激动。",
+  },
+];
+
+function playSceneClick() {
+  const audio = new Audio("/assets/audio/scene-click.wav");
+  audio.volume = 0.35;
+  void audio.play().catch(() => {
+    // Browsers can reject sounds until the first user gesture; button clicks normally allow it.
+  });
+}
 
 const sceneConfig: Record<
   DemoScene,
@@ -511,7 +610,7 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
         <div className="temple temple-b" />
       </div>
       <div className="opening-copy">
-        <p>{current.speaker}</p>
+        <p>万化仙途 · {current.speaker}</p>
         <h1>{current.text}</h1>
       </div>
       <button
@@ -542,7 +641,7 @@ function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
         <div>
           <strong>异世来客 · 鹿石宗</strong>
           <span>
-            {formatTime(state)} · {state.cultivation.level} · {sceneConfig[getScene(state)].label}
+            万化仙途 · {formatTime(state)} · {state.cultivation.level} · {sceneConfig[getScene(state)].label}
           </span>
         </div>
       </div>
@@ -575,7 +674,10 @@ function SceneNavigator({
           key={scene}
           className={scene === currentScene ? "active" : ""}
           disabled={busy}
-          onClick={() => onAction(`change_scene:${scene}`)}
+          onClick={() => {
+            playSceneClick();
+            onAction(`change_scene:${scene}`);
+          }}
         >
           {sceneConfig[scene].label}
         </button>
@@ -623,11 +725,17 @@ function UtilityPanel({
       ),
     ],
     关系: [relationshipText],
-    图鉴: [
-      `当前功法：${state.cultivation.learnedArts.join("、")}`,
-      `灵根体质：${state.cultivation.root}`,
+    人物: characterSamples.map(
+      (character) =>
+        `${character.name} · ${character.sect} · ${character.role} · ${character.root}：${character.trait}`,
+    ),
+    功法: [
+      "机制：主修功法分金木水火土无六类，品阶为仙天地玄黄，每门主修功法有10层进阶。",
+      "战斗：主修功法提供自动攻击形态，类似普攻；法术位置用于配置主动招式。",
+      "配置：每个法术位由术法、技法、秘法1、秘法2组成，并受仙天地玄黄配置上限限制。",
+      `当前功法：${state.cultivation.learnedArts.join("、")}；灵根体质：${state.cultivation.root}`,
+      ...artSamples.map((art) => `${art.rank}阶 · ${art.name} · ${art.attack} · ${art.slots}`),
       `事件物品：山鼠妖丹 ${inventory.mouseDemonCore} / 忘忧根 ${inventory.worryForgetRoot} / 青木疗伤丹 ${inventory.qingmuHealingPills} / 金灵宗信物 ${inventory.jinlingToken}`,
-      `已发现地点：${scenes.map((scene) => sceneConfig[scene].label).join("、")}`,
     ],
     设置: ["可重开 Demo，也可重播开场。"],
   };
@@ -640,9 +748,30 @@ function UtilityPanel({
           <button onClick={onClose}>关闭</button>
         </header>
         <div className="panel-body">
-          {content[panel].map((line, index) => (
-            <p key={`${panel}-${index}`}>{line}</p>
-          ))}
+          {panel === "功法" ? (
+            <>
+              {content[panel].slice(0, 4).map((line, index) => (
+                <p key={`${panel}-${index}`}>{line}</p>
+              ))}
+              <div className="art-sample-grid">
+                {artSamples.map((art) => (
+                  <article key={art.name} className="art-sample-card">
+                    <img src={art.icon} alt="" aria-hidden="true" />
+                    <div>
+                      <strong>
+                        {art.rank} · {art.name}
+                      </strong>
+                      <span>{art.attack}</span>
+                      <small>{art.slots}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <p>{content[panel][content[panel].length - 1]}</p>
+            </>
+          ) : (
+            content[panel].map((line, index) => <p key={`${panel}-${index}`}>{line}</p>)
+          )}
         </div>
         {panel === "设置" && (
           <footer>
@@ -788,7 +917,10 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
         <>
           <div className="battle-arena-line line-back" />
           <div className="battle-arena-line line-front" />
-          <div className="player-combatant player-a">主角</div>
+          <div className="player-combatant player-a">
+            <img src="/assets/combat/player-combat.png" alt="" aria-hidden="true" />
+            <span>主角</span>
+          </div>
           <div className="player-combatant player-b">小张</div>
           {stage === "mouse_boss_final" && <div className="ally-combatant ally-a">羊七</div>}
           {stage === "mouse_boss_final" && <div className="ally-combatant ally-b">豆髯</div>}
@@ -796,13 +928,36 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           {stage === "wish_eater_boss" && <div className="ally-combatant ally-b">小鹿</div>}
           {isBossStage ? (
             <div className={`event-boss ${stage.startsWith("wish") ? "boss-wish" : "boss-rat"}`}>
-              {stage.startsWith("wish") ? "啖愿妖" : "山鼠王"}
+              <img
+                src={stage.startsWith("wish") ? "/assets/monsters/wish-eater.png" : "/assets/monsters/mouse-king.png"}
+                alt=""
+                aria-hidden="true"
+              />
+              <span>{stage.startsWith("wish") ? "啖愿妖" : "山鼠王"}</span>
             </div>
           ) : (
             <>
-              <div className="event-mob mob-a">{stage.startsWith("bridge") ? "祟" : "鼠"}</div>
-              <div className="event-mob mob-b">{stage.startsWith("bridge") ? "影" : "鼠"}</div>
-              <div className="event-mob mob-c">{stage.startsWith("bridge") ? "怨" : "鼠"}</div>
+              <div className="event-mob mob-a">
+                {stage.startsWith("bridge") ? (
+                  "祟"
+                ) : (
+                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                )}
+              </div>
+              <div className="event-mob mob-b">
+                {stage.startsWith("bridge") ? (
+                  "影"
+                ) : (
+                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                )}
+              </div>
+              <div className="event-mob mob-c">
+                {stage.startsWith("bridge") ? (
+                  "怨"
+                ) : (
+                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                )}
+              </div>
             </>
           )}
           <div className="combat-skill slash-a" />
@@ -867,7 +1022,10 @@ function EventConsole({
               <button
                 key={choice.action}
                 disabled={busy}
-                onClick={() => onAction(choice.action)}
+                onClick={() => {
+                  playSceneClick();
+                  onAction(choice.action);
+                }}
               >
                 {busyAction === choice.action ? "处理中" : choice.label}
               </button>
@@ -877,7 +1035,10 @@ function EventConsole({
           <button
             className="event-primary"
             disabled={busy}
-            onClick={() => onAction(node.mode === "battle" ? "battle_victory" : "advance_event")}
+            onClick={() => {
+              playSceneClick();
+              onAction(node.mode === "battle" ? "battle_victory" : "advance_event");
+            }}
           >
             {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
           </button>
@@ -904,7 +1065,10 @@ function EventConsole({
             <button
               key={event.id}
               disabled={busy}
-              onClick={() => onAction(isTeleportReady ? action : "change_scene:teleport_array")}
+              onClick={() => {
+                playSceneClick();
+                onAction(isTeleportReady ? action : "change_scene:teleport_array");
+              }}
             >
               <strong>
                 {isTeleportReady ? (completed ? "复盘" : "传送") : "前往传送阵"} · 第{event.triggerYear}年 · {event.title}
@@ -987,8 +1151,15 @@ function HomeScene({
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
         <aside className="right-menu">
-          {(["日志", "事件", "关系", "图鉴", "设置"] as Panel[]).map((item) => (
-            <button key={item} disabled={busy} onClick={() => onOpenPanel(item)}>
+          {(["日志", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
+            <button
+              key={item}
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onOpenPanel(item);
+              }}
+            >
               {item}
             </button>
           ))}
@@ -1012,37 +1183,91 @@ function HomeScene({
           </div>
         </div>
         <div className="action-grid">
-          <button disabled={busy} onClick={() => onAction(config.primaryAction)}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction(config.primaryAction);
+            }}
+          >
             {busyAction === config.primaryAction ? "进行中" : config.primaryLabel}
           </button>
-          <button disabled={busy} onClick={() => onAction("cultivate")}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction("cultivate");
+            }}
+          >
             闭关修炼
           </button>
-          <button disabled={busy} onClick={() => onAction("alchemy")}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction("alchemy");
+            }}
+          >
             炼丹
           </button>
-          <button disabled={busy} onClick={() => onAction("plant")}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction("plant");
+            }}
+          >
             种植
           </button>
-          <button disabled={busy} onClick={() => onAction("forge")}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction("forge");
+            }}
+          >
             炼器
           </button>
           {scene === "teleport_array" ? (
             <>
-              <button disabled={busy} onClick={() => onAction("start_mouse_cave")}>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  playSceneClick();
+                  onAction("start_mouse_cave");
+                }}
+              >
                 传送山鼠洞
               </button>
-              <button disabled={busy} onClick={() => onAction("start_event:wish_eater_bridge")}>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  playSceneClick();
+                  onAction("start_event:wish_eater_bridge");
+                }}
+              >
                 传送断桥村
               </button>
             </>
           ) : (
-            <button disabled={busy} onClick={() => onAction("change_scene:teleport_array")}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("change_scene:teleport_array");
+              }}
+            >
               前往传送阵
             </button>
           )}
           {inBattle && (
-            <button disabled={busy} onClick={() => onAction("battle_victory")}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("battle_victory");
+              }}
+            >
               释放碎石剑气
             </button>
           )}

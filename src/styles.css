@@ -452,7 +452,43 @@ button:focus-visible {
   background:
     radial-gradient(circle at 48% 42%, rgba(123, 93, 60, 0.22), transparent 34%),
     linear-gradient(180deg, rgba(31, 25, 21, 0.12), rgba(0, 0, 0, 0.78)),
+    url("/assets/events/mouse-cave-entrance.png"),
     linear-gradient(180deg, #5a4938 0%, #2d2823 38%, #151312 100%);
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-mouse_skirmish .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(31, 25, 21, 0.1), rgba(0, 0, 0, 0.76)),
+    url("/assets/combat/mouse-cave-battle.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-mouse_boss_crisis .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(31, 25, 21, 0.05), rgba(0, 0, 0, 0.74)),
+    url("/assets/events/mouse-king-appears.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-qingmu_rescue .stage-bg,
+.visual-mouse_boss_final .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(31, 25, 21, 0.08), rgba(0, 0, 0, 0.76)),
+    url("/assets/events/mouse-cave-depths.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-mouse_reward .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(31, 25, 21, 0.08), rgba(0, 0, 0, 0.76)),
+    url("/assets/events/mouse-king-defeated.png");
+  background-position: center;
+  background-size: cover;
 }
 
 .visual-bridge_village .stage-bg,
@@ -464,7 +500,43 @@ button:focus-visible {
   background:
     radial-gradient(circle at 70% 18%, rgba(199, 181, 132, 0.25), transparent 20%),
     linear-gradient(180deg, rgba(63, 63, 53, 0.1), rgba(0, 0, 0, 0.72)),
+    url("/assets/events/bridge-village-gate.png"),
     linear-gradient(180deg, #6a6756 0%, #373830 42%, #151512 100%);
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-bridge_skirmish .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
+    url("/assets/combat/bridge-battle.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-bridge_confrontation .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
+    url("/assets/events/bridge-broken-side.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-wish_eater_reveal .stage-bg,
+.visual-wish_eater_boss .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(63, 38, 58, 0.02), rgba(0, 0, 0, 0.74)),
+    url("/assets/events/wish-eater-reveal.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.visual-bridge_reward .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
+    url("/assets/events/wish-eater-aftermath.png");
+  background-position: center;
+  background-size: cover;
 }
 
 .visual-mouse_boss_crisis .stage-bg,
@@ -845,12 +917,31 @@ button:focus-visible {
 
 .player-combatant,
 .ally-combatant {
-  width: 80px;
-  height: 134px;
+  width: 96px;
+  height: 150px;
 }
 
 .player-combatant {
-  background: linear-gradient(180deg, #d8e8ee, #284766);
+  background: linear-gradient(180deg, rgba(216, 232, 238, 0.28), rgba(40, 71, 102, 0.5));
+}
+
+.player-combatant img {
+  position: absolute;
+  left: 50%;
+  bottom: -16px;
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
+}
+
+.player-combatant span,
+.event-boss span {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  margin-bottom: 8px;
 }
 
 .player-a {
@@ -878,46 +969,53 @@ button:focus-visible {
 .event-boss {
   z-index: 10;
   right: 18%;
-  bottom: 22%;
+  bottom: 18%;
   display: grid;
   place-items: center;
-  width: 220px;
-  height: 170px;
-  border: 5px solid rgba(255, 209, 115, 0.5);
+  width: 270px;
+  height: 260px;
+  border: 0;
   color: #ffe7a6;
   font-size: 28px;
   font-weight: 900;
   text-shadow: 0 3px 0 #000;
-  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.5);
+  background: transparent;
+  box-shadow: none;
 }
 
-.boss-rat {
-  border-radius: 50% 50% 32% 32%;
-  background:
-    radial-gradient(circle at 34% 32%, #f6d58a 0 6%, transparent 7%),
-    radial-gradient(circle at 66% 32%, #f6d58a 0 6%, transparent 7%),
-    linear-gradient(180deg, #80684f, #2d2118);
+.event-boss img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.62));
 }
 
 .boss-wish {
   height: 230px;
-  border-radius: 42% 42% 18% 18%;
-  background: linear-gradient(180deg, #53213f, #0e0b0f);
-  box-shadow: 0 0 76px rgba(126, 39, 91, 0.72);
 }
 
 .event-mob {
   z-index: 10;
   display: grid;
-  width: 68px;
-  height: 54px;
+  width: 96px;
+  height: 88px;
   place-items: center;
-  border: 3px solid #8e5f34;
+  border: 0;
   border-radius: 50% 50% 38% 38%;
-  background: radial-gradient(circle at 50% 36%, #75604b, #2b211a);
+  background: transparent;
   color: #f6d17d;
   font-weight: 900;
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 2px 0 #000;
+  box-shadow: none;
+}
+
+.event-mob img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
 }
 
 .mob-a {
@@ -1953,6 +2051,52 @@ button:focus-visible {
 .panel-body p {
   margin: 0;
   line-height: 1.65;
+}
+
+.art-sample-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.art-sample-card {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(255, 239, 204, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.art-sample-card img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
+}
+
+.art-sample-card strong,
+.art-sample-card span,
+.art-sample-card small {
+  display: block;
+}
+
+.art-sample-card strong {
+  color: #ffe3a0;
+}
+
+.art-sample-card span {
+  margin-top: 4px;
+  color: #f4ead2;
+  line-height: 1.45;
+}
+
+.art-sample-card small {
+  margin-top: 4px;
+  color: #9bd6ff;
+  font-weight: 800;
 }
 
 @media (max-width: 1080px) {
