@@ -235,7 +235,7 @@ button:focus-visible {
   border-radius: 999px;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.18)),
-    url("/assets/ui/avatar-frame.png");
+    url("/assets/ui/avatar-frame.webp");
   background-position: left center;
   background-size: 100% 100%;
   pointer-events: auto;
@@ -379,55 +379,55 @@ button:focus-visible {
 .scene-hall .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/hall.png");
+    url("/assets/scenes/hall.webp");
 }
 
 .scene-plaza .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.68)),
-    url("/assets/scenes/plaza.png");
+    url("/assets/scenes/plaza.webp");
 }
 
 .scene-dormitory .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/dormitory.png");
+    url("/assets/scenes/dormitory.webp");
 }
 
 .scene-sister_room .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.68)),
-    url("/assets/scenes/sister-room.png");
+    url("/assets/scenes/sister-room.webp");
 }
 
 .scene-meditation_room .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/meditation-room.png");
+    url("/assets/scenes/meditation-room.webp");
 }
 
 .scene-forge .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/forge.png");
+    url("/assets/scenes/forge.webp");
 }
 
 .scene-alchemy_room .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/alchemy-room.png");
+    url("/assets/scenes/alchemy-room.webp");
 }
 
 .scene-spirit_garden .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.68)),
-    url("/assets/scenes/spirit-garden.png");
+    url("/assets/scenes/spirit-garden.webp");
 }
 
 .scene-teleport_array .stage-bg {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.68)),
-    url("/assets/scenes/teleport-array.png");
+    url("/assets/scenes/teleport-array.webp");
 }
 
 .event-stage .stage-bg {
@@ -438,7 +438,7 @@ button:focus-visible {
   background:
     radial-gradient(circle at 50% 58%, rgba(90, 238, 255, 0.36), transparent 26%),
     linear-gradient(180deg, rgba(12, 35, 44, 0.24), rgba(0, 0, 0, 0.7)),
-    url("/assets/scenes/teleport-array.png");
+    url("/assets/scenes/teleport-array.webp");
   background-position: center;
   background-size: cover;
 }
@@ -452,7 +452,7 @@ button:focus-visible {
   background:
     radial-gradient(circle at 48% 42%, rgba(123, 93, 60, 0.22), transparent 34%),
     linear-gradient(180deg, rgba(31, 25, 21, 0.12), rgba(0, 0, 0, 0.78)),
-    url("/assets/events/mouse-cave-entrance.png"),
+    url("/assets/events/mouse-cave-entrance.webp"),
     linear-gradient(180deg, #5a4938 0%, #2d2823 38%, #151312 100%);
   background-position: center;
   background-size: cover;
@@ -461,7 +461,7 @@ button:focus-visible {
 .visual-mouse_skirmish .stage-bg {
   background:
     linear-gradient(180deg, rgba(31, 25, 21, 0.1), rgba(0, 0, 0, 0.76)),
-    url("/assets/combat/mouse-cave-battle.png");
+    url("/assets/combat/mouse-cave-battle.webp");
   background-position: center;
   background-size: cover;
 }
@@ -469,7 +469,7 @@ button:focus-visible {
 .visual-mouse_boss_crisis .stage-bg {
   background:
     linear-gradient(180deg, rgba(31, 25, 21, 0.05), rgba(0, 0, 0, 0.74)),
-    url("/assets/events/mouse-king-appears.png");
+    url("/assets/events/mouse-king-appears.webp");
   background-position: center;
   background-size: cover;
 }
@@ -478,7 +478,7 @@ button:focus-visible {
 .visual-mouse_boss_final .stage-bg {
   background:
     linear-gradient(180deg, rgba(31, 25, 21, 0.08), rgba(0, 0, 0, 0.76)),
-    url("/assets/events/mouse-cave-depths.png");
+    url("/assets/events/mouse-cave-depths.webp");
   background-position: center;
   background-size: cover;
 }
@@ -486,7 +486,7 @@ button:focus-visible {
 .visual-mouse_reward .stage-bg {
   background:
     linear-gradient(180deg, rgba(31, 25, 21, 0.08), rgba(0, 0, 0, 0.76)),
-    url("/assets/events/mouse-king-defeated.png");
+    url("/assets/events/mouse-king-defeated.webp");
   background-position: center;
   background-size: cover;
 }
@@ -500,7 +500,7 @@ button:focus-visible {
   background:
     radial-gradient(circle at 70% 18%, rgba(199, 181, 132, 0.25), transparent 20%),
     linear-gradient(180deg, rgba(63, 63, 53, 0.1), rgba(0, 0, 0, 0.72)),
-    url("/assets/events/bridge-village-gate.png"),
+    url("/assets/events/bridge-village-gate.webp"),
     linear-gradient(180deg, #6a6756 0%, #373830 42%, #151512 100%);
   background-position: center;
   background-size: cover;
@@ -509,7 +509,7 @@ button:focus-visible {
 .visual-bridge_skirmish .stage-bg {
   background:
     linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
-    url("/assets/combat/bridge-battle.png");
+    url("/assets/combat/bridge-battle.webp");
   background-position: center;
   background-size: cover;
 }
@@ -517,7 +517,7 @@ button:focus-visible {
 .visual-bridge_confrontation .stage-bg {
   background:
     linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
-    url("/assets/events/bridge-broken-side.png");
+    url("/assets/events/bridge-broken-side.webp");
   background-position: center;
   background-size: cover;
 }
@@ -526,7 +526,7 @@ button:focus-visible {
 .visual-wish_eater_boss .stage-bg {
   background:
     linear-gradient(180deg, rgba(63, 38, 58, 0.02), rgba(0, 0, 0, 0.74)),
-    url("/assets/events/wish-eater-reveal.png");
+    url("/assets/events/wish-eater-reveal.webp");
   background-position: center;
   background-size: cover;
 }
@@ -534,7 +534,7 @@ button:focus-visible {
 .visual-bridge_reward .stage-bg {
   background:
     linear-gradient(180deg, rgba(63, 63, 53, 0.08), rgba(0, 0, 0, 0.74)),
-    url("/assets/events/wish-eater-aftermath.png");
+    url("/assets/events/wish-eater-aftermath.webp");
   background-position: center;
   background-size: cover;
 }
@@ -1091,7 +1091,7 @@ button:focus-visible {
   color: #f5e6c0;
   background:
     linear-gradient(180deg, rgba(34, 25, 18, 0.55), rgba(34, 25, 18, 0.78)),
-    url("/assets/ui/scene-button.png");
+    url("/assets/ui/scene-button.webp");
   background-position: center;
   background-size: cover;
   cursor: pointer;
@@ -1672,7 +1672,7 @@ button:focus-visible {
   border-top: 0;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.38)),
-    url("/assets/ui/dialogue-box.png");
+    url("/assets/ui/dialogue-box.webp");
   background-position: center bottom;
   background-size: 100% 100%;
   box-shadow: 0 -14px 32px rgba(0, 0, 0, 0.36);
@@ -1686,7 +1686,7 @@ button:focus-visible {
   color: #fff7e0;
   font-size: 28px;
   font-weight: 900;
-  background: url("/assets/ui/nameplate.png");
+  background: url("/assets/ui/nameplate.webp");
   background-position: center;
   background-size: 100% 100%;
   text-shadow: 0 2px 0 #000;
@@ -1776,7 +1776,7 @@ button:focus-visible {
   color: #fff8e7;
   background:
     linear-gradient(180deg, rgba(118, 80, 46, 0.54), rgba(45, 30, 24, 0.82)),
-    url("/assets/ui/scene-button.png");
+    url("/assets/ui/scene-button.webp");
   background-position: center;
   background-size: cover;
   cursor: pointer;

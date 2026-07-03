@@ -183,37 +183,37 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 
 const portraitAssets: Record<PortraitKey, Record<PortraitExpression, string>> = {
   player: {
-    normal: "/assets/portraits/player-normal.png",
-    happy: "/assets/portraits/player-happy.png",
-    serious: "/assets/portraits/player-serious.png",
-    snark: "/assets/portraits/player-snark.png",
+    normal: "/assets/portraits/player-normal.webp",
+    happy: "/assets/portraits/player-happy.webp",
+    serious: "/assets/portraits/player-serious.webp",
+    snark: "/assets/portraits/player-snark.webp",
   },
   xiaozhang: {
-    normal: "/assets/portraits/xiaozhang-normal.png",
-    happy: "/assets/portraits/xiaozhang-happy.png",
-    serious: "/assets/portraits/xiaozhang-serious.png",
-    snark: "/assets/portraits/xiaozhang-snark.png",
+    normal: "/assets/portraits/xiaozhang-normal.webp",
+    happy: "/assets/portraits/xiaozhang-happy.webp",
+    serious: "/assets/portraits/xiaozhang-serious.webp",
+    snark: "/assets/portraits/xiaozhang-snark.webp",
   },
   xiaoxian: {
-    normal: "/assets/portraits/xiaoxian-normal.png",
-    happy: "/assets/portraits/xiaoxian-happy.png",
-    serious: "/assets/portraits/xiaoxian-serious.png",
-    snark: "/assets/portraits/xiaoxian-snark.png",
+    normal: "/assets/portraits/xiaoxian-normal.webp",
+    happy: "/assets/portraits/xiaoxian-happy.webp",
+    serious: "/assets/portraits/xiaoxian-serious.webp",
+    snark: "/assets/portraits/xiaoxian-snark.webp",
   },
   lu: {
-    normal: "/assets/portraits/lu-normal.png",
-    happy: "/assets/portraits/lu-happy.png",
-    serious: "/assets/portraits/lu-serious.png",
-    snark: "/assets/portraits/lu-snark.png",
+    normal: "/assets/portraits/lu-normal.webp",
+    happy: "/assets/portraits/lu-happy.webp",
+    serious: "/assets/portraits/lu-serious.webp",
+    snark: "/assets/portraits/lu-snark.webp",
   },
 };
 
 const resourceIcons = {
-  spiritStones: "/assets/ui/spirit-stone.png",
-  spiritMarrow: "/assets/ui/spirit-marrow.png",
-  herbs: "/assets/ui/herb.png",
-  ore: "/assets/ui/ore.png",
-  pills: "/assets/ui/pill.png",
+  spiritStones: "/assets/ui/spirit-stone.webp",
+  spiritMarrow: "/assets/ui/spirit-marrow.webp",
+  herbs: "/assets/ui/herb.webp",
+  ore: "/assets/ui/ore.webp",
+  pills: "/assets/ui/pill.webp",
 } as const;
 
 const artSamples = [
@@ -224,7 +224,7 @@ const artSamples = [
     attack: "金色锋刃贯穿飞行",
     slots: "1个法术位：黄黄黄黄",
     note: "剑气锋锐，克制护甲，但缺乏持续续航。",
-    icon: "/assets/arts/gold/huang-jinmang-jue.png",
+    icon: "/assets/arts/gold/huang-jinmang-jue.webp",
   },
   {
     name: "破金真诀",
@@ -233,7 +233,7 @@ const artSamples = [
     attack: "强化金系穿透剑气",
     slots: "2个法术位：玄黄玄黄",
     note: "适合演示万化道躯切换金灵根后的基础成长。",
-    icon: "/assets/arts/gold/xuan-pojin-zhenjue.png",
+    icon: "/assets/arts/gold/xuan-pojin-zhenjue.webp",
   },
   {
     name: "万剑玄功",
@@ -242,7 +242,7 @@ const artSamples = [
     attack: "多段剑气与破甲压制",
     slots: "高阶法术位样例",
     note: "用于展示品阶提升后自动攻击与法术配置上限成长。",
-    icon: "/assets/arts/gold/di-wanjian-xuangong.png",
+    icon: "/assets/arts/gold/di-wanjian-xuangong.webp",
   },
   {
     name: "鸿蒙庚金斩仙典",
@@ -251,7 +251,7 @@ const artSamples = [
     attack: "庚金斩仙剑势",
     slots: "仙阶法术位样例",
     note: "多周目自创功法融合时可作为高阶对照目标。",
-    icon: "/assets/arts/gold/xian-hongmeng-gengjin-zhanxian.png",
+    icon: "/assets/arts/gold/xian-hongmeng-gengjin-zhanxian.webp",
   },
 ];
 
@@ -918,7 +918,7 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           <div className="battle-arena-line line-back" />
           <div className="battle-arena-line line-front" />
           <div className="player-combatant player-a">
-            <img src="/assets/combat/player-combat.png" alt="" aria-hidden="true" />
+            <img src="/assets/combat/player-combat.webp" alt="" aria-hidden="true" />
             <span>主角</span>
           </div>
           <div className="player-combatant player-b">小张</div>
@@ -929,7 +929,7 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           {isBossStage ? (
             <div className={`event-boss ${stage.startsWith("wish") ? "boss-wish" : "boss-rat"}`}>
               <img
-                src={stage.startsWith("wish") ? "/assets/monsters/wish-eater.png" : "/assets/monsters/mouse-king.png"}
+                src={stage.startsWith("wish") ? "/assets/monsters/wish-eater.webp" : "/assets/monsters/mouse-king.webp"}
                 alt=""
                 aria-hidden="true"
               />
@@ -941,21 +941,21 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
                 {stage.startsWith("bridge") ? (
                   "祟"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-b">
                 {stage.startsWith("bridge") ? (
                   "影"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-c">
                 {stage.startsWith("bridge") ? (
                   "怨"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.png" alt="" aria-hidden="true" />
+                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
                 )}
               </div>
             </>
