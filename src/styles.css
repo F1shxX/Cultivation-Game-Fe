@@ -12,11 +12,20 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
-  min-width: 320px;
+  min-width: 960px;
   min-height: 100vh;
   margin: 0;
-  overflow-x: hidden;
+  overflow: hidden;
+  background: #14110f;
 }
 
 button {
@@ -31,7 +40,7 @@ button:focus-visible {
 .loading-screen,
 .error-screen {
   display: grid;
-  min-height: 100vh;
+  height: 100vh;
   place-items: center;
   padding: 32px;
   background:
@@ -53,7 +62,7 @@ button:focus-visible {
 
 .opening {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
   overflow: hidden;
   background: #2c2117;
 }
@@ -207,13 +216,17 @@ button:focus-visible {
 }
 
 .game-shell {
-  min-height: 100vh;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
   background: #171310;
 }
 
 .top-hud {
   position: fixed;
-  z-index: 30;
+  z-index: 34;
   top: 0;
   left: 0;
   right: 0;
@@ -313,10 +326,9 @@ button:focus-visible {
 }
 
 .stage {
-  position: relative;
-  min-height: 75vh;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 239, 204, 0.12);
 }
 
 .stage-bg {
@@ -1664,11 +1676,11 @@ button:focus-visible {
   z-index: 18;
   left: 154px;
   right: 0;
-  bottom: 0;
+  bottom: 204px;
   display: grid;
   grid-template-columns: minmax(210px, 24vw) 1fr;
-  min-height: 124px;
-  padding: 22px 42px 24px;
+  min-height: 108px;
+  padding: 18px 34px 20px;
   border-top: 0;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.38)),
@@ -1681,10 +1693,10 @@ button:focus-visible {
 .speaker {
   align-self: end;
   width: fit-content;
-  min-width: 180px;
-  padding: 12px 20px 14px;
+  min-width: 168px;
+  padding: 10px 18px 12px;
   color: #fff7e0;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
   background: url("/assets/ui/nameplate.webp");
   background-position: center;
@@ -1703,7 +1715,7 @@ button:focus-visible {
   align-self: center;
   margin: 0;
   color: #fffdf2;
-  font-size: clamp(17px, 1.8vw, 28px);
+  font-size: clamp(16px, 1.55vw, 24px);
   font-weight: 900;
   line-height: 1.45;
   text-shadow: 0 2px 0 #000;
@@ -1711,14 +1723,21 @@ button:focus-visible {
 
 .control-panel,
 .codex-panel {
-  width: min(1180px, calc(100% - 32px));
-  margin: 18px auto 0;
+  position: absolute;
+  z-index: 28;
+  width: auto;
+  margin: 0;
 }
 
 .control-panel {
+  left: 168px;
+  right: 18px;
+  bottom: 14px;
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(170px, 0.48fr) minmax(520px, 1.52fr) minmax(340px, 0.9fr);
+  gap: 10px;
+  align-items: stretch;
+  max-height: 178px;
 }
 
 .stat-card,
@@ -1730,7 +1749,8 @@ button:focus-visible {
 }
 
 .stat-card {
-  padding: 16px;
+  min-height: 0;
+  padding: 12px;
 }
 
 .stat-card span,
@@ -1744,13 +1764,13 @@ button:focus-visible {
 }
 
 .stat-card strong {
-  margin-top: 8px;
-  font-size: 30px;
+  margin-top: 4px;
+  font-size: 24px;
 }
 
 .progress {
-  height: 12px;
-  margin-top: 12px;
+  height: 10px;
+  margin-top: 8px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
@@ -1765,12 +1785,14 @@ button:focus-visible {
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
 }
 
 .action-grid button {
-  min-height: 72px;
+  min-height: 48px;
+  padding: 8px 10px;
   border: 0;
   border-radius: 8px;
   color: #fff8e7;
@@ -1797,10 +1819,14 @@ button:focus-visible {
 }
 
 .event-console {
-  grid-column: 1 / -1;
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  max-height: 178px;
+  overflow: hidden;
+  padding: 12px;
   border: 1px solid rgba(255, 239, 204, 0.16);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(29, 31, 28, 0.98), rgba(17, 16, 14, 0.98));
@@ -1811,7 +1837,7 @@ button:focus-visible {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
 }
 
 .event-console h2,
@@ -1821,7 +1847,7 @@ button:focus-visible {
 }
 
 .event-console h2 {
-  margin-top: 4px;
+  margin-top: 2px;
   color: #f4d784;
   font-size: 22px;
 }
@@ -1833,7 +1859,7 @@ button:focus-visible {
 
 .event-console p {
   color: #f1e1c2;
-  line-height: 1.6;
+  line-height: 1.45;
 }
 
 .event-console strong {
@@ -1869,8 +1895,10 @@ button:focus-visible {
 
 .event-node {
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
   border: 1px solid rgba(255, 239, 204, 0.14);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.22);
@@ -1894,7 +1922,7 @@ button:focus-visible {
 .event-choice-grid,
 .event-start-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .event-choice-grid {
@@ -1908,7 +1936,7 @@ button:focus-visible {
 .event-start-list button,
 .event-choice-grid button,
 .event-primary {
-  min-height: 58px;
+  min-height: 42px;
   border: 1px solid rgba(255, 239, 204, 0.22);
   border-radius: 8px;
   color: #fff8e7;
@@ -1919,8 +1947,8 @@ button:focus-visible {
 
 .event-start-list button {
   display: grid;
-  gap: 4px;
-  padding: 12px;
+  gap: 2px;
+  padding: 8px 10px;
   text-align: left;
 }
 
@@ -1950,10 +1978,7 @@ button:focus-visible {
 }
 
 .codex-panel {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 16px;
-  padding-bottom: 28px;
+  display: none;
 }
 
 .codex-panel > div {
@@ -2000,11 +2025,14 @@ button:focus-visible {
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow: hidden;
   background: rgba(0, 0, 0, 0.56);
 }
 
 .utility-panel {
   width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
   border: 1px solid rgba(255, 239, 204, 0.22);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(37, 30, 24, 0.98), rgba(17, 15, 13, 0.98));
@@ -2045,6 +2073,8 @@ button:focus-visible {
 .panel-body {
   display: grid;
   gap: 10px;
+  max-height: calc(100vh - 178px);
+  overflow: auto;
   padding: 18px;
 }
 
@@ -2134,24 +2164,29 @@ button:focus-visible {
   .action-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .control-panel {
+    left: 150px;
+    grid-template-columns: minmax(140px, 0.45fr) minmax(360px, 1.35fr) minmax(280px, 0.9fr);
+  }
 }
 
 @media (max-width: 760px) {
   .top-hud {
-    position: relative;
-    padding: 12px;
+    position: fixed;
+    padding: 12px 12px 12px 150px;
   }
 
   .stage {
-    min-height: 760px;
+    inset: 0;
   }
 
   .scene-nav {
-    position: relative;
-    top: 12px;
-    left: 12px;
-    width: calc(100% - 24px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    position: absolute;
+    top: 96px;
+    left: 14px;
+    width: 120px;
+    grid-template-columns: 1fr;
   }
 
   .portrait {
@@ -2161,9 +2196,11 @@ button:focus-visible {
   }
 
   .dialogue {
-    left: 0;
-    grid-template-columns: 1fr;
-    padding: 18px;
+    left: 140px;
+    bottom: 190px;
+    grid-template-columns: 150px 1fr;
+    min-height: 96px;
+    padding: 14px 18px;
   }
 
   .speaker {
@@ -2172,17 +2209,17 @@ button:focus-visible {
 
   .control-panel,
   .codex-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(120px, 0.45fr) minmax(300px, 1.35fr) minmax(240px, 0.9fr);
   }
 
   .action-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 520px) {
   .scene-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .dialogue p {
@@ -2190,6 +2227,6 @@ button:focus-visible {
   }
 
   .action-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
