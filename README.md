@@ -1,6 +1,6 @@
-# Cultivation Game Frontend
+# 万化归途 Frontend
 
-Vite/React frontend for the cultivation game demo. It talks to the backend API instead of connecting to Supabase with privileged keys.
+Vite/React frontend for the 万化归途 demo. It talks to the backend API instead of connecting to Supabase with privileged keys.
 
 Current demo flow:
 

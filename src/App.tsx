@@ -735,7 +735,7 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
         <div className="temple temple-b" />
       </div>
       <div className="opening-copy">
-        <p>万化仙途 · {current.speaker}</p>
+        <p>万化归途 · {current.speaker}</p>
         <h1>{current.text}</h1>
       </div>
       <button
@@ -766,7 +766,7 @@ function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
         <div>
           <strong>异世来客 · 鹿石宗</strong>
           <span>
-            万化仙途 · {formatTime(state)} · {state.cultivation.level} · {sceneConfig[getScene(state)].label}
+            万化归途 · {formatTime(state)} · {state.cultivation.level} · {sceneConfig[getScene(state)].label}
           </span>
         </div>
       </div>
