@@ -2030,7 +2030,7 @@ button:focus-visible {
 }
 
 .utility-panel {
-  width: min(720px, 100%);
+  width: min(920px, 100%);
   max-height: calc(100vh - 48px);
   overflow: hidden;
   border: 1px solid rgba(255, 239, 204, 0.22);
@@ -2083,7 +2083,28 @@ button:focus-visible {
   line-height: 1.65;
 }
 
+.panel-section {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 239, 204, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.panel-section h3 {
+  margin: 0;
+  color: #f4d784;
+  font-size: 18px;
+}
+
 .art-sample-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.character-sample-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -2100,6 +2121,16 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.character-sample-card {
+  display: grid;
+  gap: 6px;
+  min-height: 126px;
+  padding: 12px;
+  border: 1px solid rgba(255, 239, 204, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .art-sample-card img {
   width: 74px;
   height: 74px;
@@ -2109,24 +2140,31 @@ button:focus-visible {
 
 .art-sample-card strong,
 .art-sample-card span,
-.art-sample-card small {
+.art-sample-card small,
+.character-sample-card strong,
+.character-sample-card span,
+.character-sample-card small {
   display: block;
 }
 
-.art-sample-card strong {
+.art-sample-card strong,
+.character-sample-card strong {
   color: #ffe3a0;
 }
 
-.art-sample-card span {
+.art-sample-card span,
+.character-sample-card span {
   margin-top: 4px;
   color: #f4ead2;
   line-height: 1.45;
 }
 
-.art-sample-card small {
+.art-sample-card small,
+.character-sample-card small {
   margin-top: 4px;
   color: #9bd6ff;
   font-weight: 800;
+  line-height: 1.5;
 }
 
 @media (max-width: 1080px) {

@@ -174,46 +174,52 @@ type LoadState =
   | { status: "ready"; save: DemoSave; events: Record<DemoEventId, DemoEventDefinition> }
   | { status: "error"; message: string };
 
-type Panel = "日志" | "事件" | "关系" | "人物" | "功法" | "设置";
+type Panel = "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
 
 type PortraitKey = "player" | "xiaozhang" | "xiaoxian" | "lu";
 type PortraitExpression = "normal" | "happy" | "serious" | "snark";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? `${window.location.origin}/wanhua-api` : "http://localhost:3001");
+
+function assetPath(path: string) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
+}
 
 const portraitAssets: Record<PortraitKey, Record<PortraitExpression, string>> = {
   player: {
-    normal: "/assets/portraits/player-normal.webp",
-    happy: "/assets/portraits/player-happy.webp",
-    serious: "/assets/portraits/player-serious.webp",
-    snark: "/assets/portraits/player-snark.webp",
+    normal: assetPath("assets/portraits/player-normal.webp"),
+    happy: assetPath("assets/portraits/player-happy.webp"),
+    serious: assetPath("assets/portraits/player-serious.webp"),
+    snark: assetPath("assets/portraits/player-snark.webp"),
   },
   xiaozhang: {
-    normal: "/assets/portraits/xiaozhang-normal.webp",
-    happy: "/assets/portraits/xiaozhang-happy.webp",
-    serious: "/assets/portraits/xiaozhang-serious.webp",
-    snark: "/assets/portraits/xiaozhang-snark.webp",
+    normal: assetPath("assets/portraits/xiaozhang-normal.webp"),
+    happy: assetPath("assets/portraits/xiaozhang-happy.webp"),
+    serious: assetPath("assets/portraits/xiaozhang-serious.webp"),
+    snark: assetPath("assets/portraits/xiaozhang-snark.webp"),
   },
   xiaoxian: {
-    normal: "/assets/portraits/xiaoxian-normal.webp",
-    happy: "/assets/portraits/xiaoxian-happy.webp",
-    serious: "/assets/portraits/xiaoxian-serious.webp",
-    snark: "/assets/portraits/xiaoxian-snark.webp",
+    normal: assetPath("assets/portraits/xiaoxian-normal.webp"),
+    happy: assetPath("assets/portraits/xiaoxian-happy.webp"),
+    serious: assetPath("assets/portraits/xiaoxian-serious.webp"),
+    snark: assetPath("assets/portraits/xiaoxian-snark.webp"),
   },
   lu: {
-    normal: "/assets/portraits/lu-normal.webp",
-    happy: "/assets/portraits/lu-happy.webp",
-    serious: "/assets/portraits/lu-serious.webp",
-    snark: "/assets/portraits/lu-snark.webp",
+    normal: assetPath("assets/portraits/lu-normal.webp"),
+    happy: assetPath("assets/portraits/lu-happy.webp"),
+    serious: assetPath("assets/portraits/lu-serious.webp"),
+    snark: assetPath("assets/portraits/lu-snark.webp"),
   },
 };
 
 const resourceIcons = {
-  spiritStones: "/assets/ui/spirit-stone.webp",
-  spiritMarrow: "/assets/ui/spirit-marrow.webp",
-  herbs: "/assets/ui/herb.webp",
-  ore: "/assets/ui/ore.webp",
-  pills: "/assets/ui/pill.webp",
+  spiritStones: assetPath("assets/ui/spirit-stone.webp"),
+  spiritMarrow: assetPath("assets/ui/spirit-marrow.webp"),
+  herbs: assetPath("assets/ui/herb.webp"),
+  ore: assetPath("assets/ui/ore.webp"),
+  pills: assetPath("assets/ui/pill.webp"),
 } as const;
 
 const artSamples = [
@@ -224,7 +230,7 @@ const artSamples = [
     attack: "金色锋刃贯穿飞行",
     slots: "1个法术位：黄黄黄黄",
     note: "剑气锋锐，克制护甲，但缺乏持续续航。",
-    icon: "/assets/arts/gold/huang-jinmang-jue.webp",
+    icon: assetPath("assets/arts/gold/huang-jinmang-jue.webp"),
   },
   {
     name: "破金真诀",
@@ -233,7 +239,7 @@ const artSamples = [
     attack: "强化金系穿透剑气",
     slots: "2个法术位：玄黄玄黄",
     note: "适合演示万化道躯切换金灵根后的基础成长。",
-    icon: "/assets/arts/gold/xuan-pojin-zhenjue.webp",
+    icon: assetPath("assets/arts/gold/xuan-pojin-zhenjue.webp"),
   },
   {
     name: "万剑玄功",
@@ -242,7 +248,7 @@ const artSamples = [
     attack: "多段剑气与破甲压制",
     slots: "高阶法术位样例",
     note: "用于展示品阶提升后自动攻击与法术配置上限成长。",
-    icon: "/assets/arts/gold/di-wanjian-xuangong.webp",
+    icon: assetPath("assets/arts/gold/di-wanjian-xuangong.webp"),
   },
   {
     name: "鸿蒙庚金斩仙典",
@@ -251,7 +257,46 @@ const artSamples = [
     attack: "庚金斩仙剑势",
     slots: "仙阶法术位样例",
     note: "多周目自创功法融合时可作为高阶对照目标。",
-    icon: "/assets/arts/gold/xian-hongmeng-gengjin-zhanxian.webp",
+    icon: assetPath("assets/arts/gold/xian-hongmeng-gengjin-zhanxian.webp"),
+  },
+];
+
+const artFamilies = [
+  {
+    element: "金",
+    style: "锐锋破甲",
+    note: "剑气锋锐，克制护甲，适合作为 Demo 的基础攻击手感。",
+    names: "金芒诀、裂金术、寸金法、锋锐技、破金真诀、惊虹秘术、断岳心法、穿云玄术、万剑玄功、裂空秘法、斩魄真解、伏虎奥义、弑神天诀、九幽神通、惊天秘典、裂苍天术、鸿蒙庚金斩仙典、太一悍刃大道、无极锋芒天书、弑仙真典",
+  },
+  {
+    element: "木",
+    style: "毒愈双修",
+    note: "自带回血叠加和持续侵蚀，适合展示青木门的治疗、种植、毒术气质。",
+    names: "青藤诀、枯荣术、萌芽法、蔓生技、缠魂真诀、腐叶秘术、回春心法、荆棘玄术、万木玄功、朽骨秘法、生死真解、藤蔓奥义、森罗天诀、苍木神通、枯荣秘典、古木天术、世界树仙经、太古大道、不朽天书、归元真典",
+  },
+  {
+    element: "水",
+    style: "护盾控场",
+    note: "护盾更强，可承接寒妙观的寒冰幻术、灵泉疗愈和团队辅助定位。",
+    names: "寒潮诀、冰凌术、水刃法、浮萍技、玄冰真诀、惊涛秘术、寒霜心法、潮涌玄术、沧海玄功、极寒秘法、冰封真解、万流奥义、龙吟天诀、寒渊神通、玄冰秘典、惊澜天术、四海仙经、天河大道、寒极天书、不冻真典",
+  },
+  {
+    element: "火",
+    style: "爆发焚敌",
+    note: "高伤害、高爆发、防御偏低，适合九阳炎天宗的强攻和发明气质。",
+    names: "焰心诀、灼阳术、烈焰法、火种技、焚天真诀、炽炎秘术、赤炎心法、燎原玄术、九阳玄功、烈阳秘法、焚魂真解、炎狱奥义、天火天诀、烬灭神通、朱雀秘典、赤霄天术、涅槃仙经、不灭大道、太阳天书、炎极真典",
+  },
+  {
+    element: "土",
+    style: "厚土镇守",
+    note: "护盾值最高，伤害成长较慢，适合肉盾、结界、重力领域和镇守玩法。",
+    names: "厚土诀、磐石术、拱卫法、山岩技、玄岩真诀、岳镇秘术、坤厚心法、崩山玄术、万岳玄功、不动秘法、厚德真解、镇魂奥义、昆仑天诀、息壤神通、五岳秘典、镇天天术、后土仙经、山河大道、盘古天书、坤仪真典",
+  },
+  {
+    element: "无",
+    style: "均衡万化",
+    note: "数值均衡、法术位更灵活，适合作为万化道躯自创功法融合的底层参照。",
+    names: "归一诀、混元术、太素法、守中技、阴阳真诀、道玄秘术、清静心法、中和玄术、太极玄功、无相秘法、虚空真解、圆融奥义、混沌天诀、无极神通、大衍秘典、周天天术、道德仙经、天地大道、鸿蒙天书、乾坤真典",
   },
 ];
 
@@ -261,31 +306,31 @@ const characterSamples = [
     sect: "鹿石宗",
     role: "宗主",
     root: "未知",
-    trait: "随性而为，经常失踪，讲究缘分，不强求。",
+    trait: "隐居创建鹿石宗，疑似上一任万化道躯宿主陆有道；常年云游，负责主线与特殊事件引导。",
   },
   {
     name: "小娴",
     sect: "鹿石宗",
     role: "弟子",
     root: "水灵根 · 玄",
-    trait: "细致随和，照顾管教师弟，擅长炼丹和厨艺。",
+    trait: "24岁，鹿石宗大师姐，温柔开朗、热心肠，负责炼丹、种植、回血等家园功能引导。",
   },
   {
     name: "小张",
     sect: "鹿石宗",
     role: "弟子",
     root: "木灵根 · 玄",
-    trait: "装B型人格，贪玩爱探险，有点胆小但关键时刻会挺身而出。",
+    trait: "20岁，自称张真人，装B型人格，贪玩爱探险，有点胆小但关键时刻会挺身而出。",
   },
   {
-    name: "楚凌",
+    name: "雏雏（楚凌）",
     sect: "金灵宗",
     role: "亲传弟子",
     root: "金灵根 · 天",
     trait: "沉稳克制，做事有原则，是压场喊停的人。",
   },
   {
-    name: "鹿宁",
+    name: "小鹿（鹿宁）",
     sect: "金灵宗",
     role: "亲传弟子",
     root: "金灵根 · 天",
@@ -305,10 +350,88 @@ const characterSamples = [
     root: "木灵根 · 天",
     trait: "开朗爱笑，助人为乐，情绪有时有点小激动。",
   },
+  {
+    name: "春琼",
+    sect: "寒妙观",
+    role: "亲传弟子",
+    root: "水灵根 · 天",
+    trait: "26岁，寒妙观破例收入的唯一男弟子，宅但天赋异禀。",
+  },
+  {
+    name: "云卷舒",
+    sect: "寒妙观",
+    role: "内门弟子",
+    root: "水灵根 · 地",
+    trait: "22岁，强力辅助回复，适合承接寒妙观治疗与解语功能。",
+  },
+  {
+    name: "墨炎",
+    sect: "九阳炎天宗",
+    role: "亲传弟子",
+    root: "火灵根 · 天",
+    trait: "32岁，筑基初期，争强好胜，与林川表面不对付，实际心心相惜。",
+  },
+  {
+    name: "林川",
+    sect: "九阳炎天宗",
+    role: "亲传弟子",
+    root: "火灵根 · 天",
+    trait: "35岁，筑基初期，与墨炎互相较劲，是火系同辈线的另一半。",
+  },
+  {
+    name: "黄垚苓",
+    sect: "须弥山府",
+    role: "亲传弟子",
+    root: "土灵根 · 天",
+    trait: "20岁，活泼好动的小师妹，是须弥山府山崩急救事件的核心登场人物。",
+  },
+  {
+    name: "石璧",
+    sect: "须弥山府",
+    role: "内门弟子",
+    root: "土灵根 · 地",
+    trait: "28岁，无条件保护黄垚苓，听小师妹安排，承担土系守护感。",
+  },
+  {
+    name: "兔娘会长",
+    sect: "长安城拍卖行",
+    role: "会长",
+    root: "未知",
+    trait: "传说也是穿越而来的高人，思维奇特，创立长安城与类战棋拍卖行。",
+  },
+];
+
+const sectSettings = [
+  "金灵宗：杀伐剑道、锐锋破甲，宗门严整，崇尚斩妖除魔，经营兵刃铁匠铺与矿石生意。",
+  "青木门：草木长生、毒愈双修，人缘最好，经营医疗、草药与成药生意。",
+  "寒妙观：寒冰幻术、灵泉疗愈，只收女弟子是门规偏好，春琼是破例男弟子，经营解语与心理疏导。",
+  "九阳炎天宗：烈阳真火、强攻爆发，重视炼丹炼器和发明评奖，经营法器锻造与流通。",
+  "须弥山府：厚土镇守、坚甲御敌，不问根骨，只问是否走得上山，承担大陆赈济之责。",
+];
+
+const timelineEntries = [
+  "第0年 · 序章：开局CG、穿越、被小张小娴救回鹿石宗，鹿真人看出万化道躯端倪。",
+  "第1-3年 · 鹿石宗启蒙：认识大厅、广场、宿舍、师姐居室、闭关室、炼器坊、炼丹房、灵植园和传送阵。",
+  "第5年 · 万化道躯初显：首次修炼即转换灵根成功，鹿真人远处若有所思。",
+  "第10年 · 山鼠洞寻宝：小张邀约探宝，青木门羊七、豆髯登场，当前 Demo 已做完整流程。",
+  "第12年 · 啖愿妖事件：断桥村委托，金灵宗雏雏、小鹿登场，当前 Demo 按事件脚本暂定第12年。",
+  "第15年 · 长安城初见闻：结识兔娘会长，见识以物置物的拍卖行体系。",
+  "第25-60年 · 筑基期：拜访五宗，五宗论道会与青年才俊比武大会展开世界观。",
+  "第60-100年 · 金丹期前半：长安城拍卖异变、忘川魔渊初现、金丹盛典，首发/Demo建议截止到第100年。",
+  "第150-500年 · 中后期：魔道渗透、鹿真人身世、飞升/轮回抉择与终局大战逐步揭开。",
+];
+
+const worldLore = [
+  "万化道躯：玩家专属体质，本身没有固定灵根，修行何种功法，体内灵气便自动转化成对应属性根基。",
+  "鹿花诀：鹿真人传给玩家的入门功法，表面普通，实则用于让万化道躯与魂魄绑定。",
+  "鹿真人/陆有道：剧情大纲中，鹿真人疑似上一位万化道躯宿主陆有道，曾在三百年前封魔之战后放弃飞升。",
+  "魔王暗线：魔宗残部暗中复活魔王，玩家一周目会被一条条线索引向魔宗腹地，最后意识到自己也在棋局之中。",
+  "飞升与轮回：飞升和轮回不分高下，只影响结局呈现，二者都能开启二周目。",
+  "主题表达：修仙不是单纯追求长生，而是让玩家在小娴、小张、鹿石宗和五宗同辈的羁绊里感受取舍。",
 ];
 
 function playSceneClick() {
-  const audio = new Audio("/assets/audio/scene-click.wav");
+  const audio = new Audio(assetPath("assets/audio/scene-click.wav"));
   audio.volume = 0.35;
   void audio.play().catch(() => {
     // Browsers can reject sounds until the first user gesture; button clicks normally allow it.
@@ -592,9 +715,11 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const lines = [
     { speaker: "旁白", text: "天地有道，五行定仙凡。金木水火土，灵根乃道源。" },
+    { speaker: "旁白", text: "异世来客，魂落此间，身无半点灵根，仙途已然断垣。" },
     { speaker: "小张", text: "这是什么？哇靠，单眼泥精！师姐救我！" },
-    { speaker: "小娴", text: "我来看看。啊，快救人。" },
-    { speaker: "鹿真人", text: "可惜这孩子没有灵根......甚至没用丹田？欸？哈哈哈，有趣。" },
+    { speaker: "小娴", text: "别贫了，快搭把手。他还活着，先带回鹿石宗。" },
+    { speaker: "鹿真人", text: "这孩子没有灵根……甚至没用丹田？哈哈，有趣。鹿花诀留下，后面的路让他自己走。" },
+    { speaker: "旁白", text: "唯得天赐异道，身怀先天万化道躯。习得任一功法，灵根便随心蜕变。" },
   ];
   const current = lines[step];
 
@@ -717,6 +842,7 @@ function UtilityPanel({
 
   const content: Record<Panel, string[]> = {
     日志: state.eventLog.slice(0, 8).map((event) => `${event.year}年${event.month}月 · ${event.title}：${event.text}`),
+    世界: [...worldLore, ...timelineEntries, ...sectSettings],
     事件: [
       `已完成：${completedText}`,
       ...getEventList(events).map(
@@ -735,10 +861,89 @@ function UtilityPanel({
       "配置：每个法术位由术法、技法、秘法1、秘法2组成，并受仙天地玄黄配置上限限制。",
       `当前功法：${state.cultivation.learnedArts.join("、")}；灵根体质：${state.cultivation.root}`,
       ...artSamples.map((art) => `${art.rank}阶 · ${art.name} · ${art.attack} · ${art.slots}`),
+      ...artFamilies.map((family) => `${family.element}系 · ${family.style}：${family.note}`),
       `事件物品：山鼠妖丹 ${inventory.mouseDemonCore} / 忘忧根 ${inventory.worryForgetRoot} / 青木疗伤丹 ${inventory.qingmuHealingPills} / 金灵宗信物 ${inventory.jinlingToken}`,
     ],
     设置: ["可重开 Demo，也可重播开场。"],
   };
+
+  function renderPanelBody() {
+    if (panel === "世界") {
+      return (
+        <>
+          <div className="panel-section">
+            <h3>核心世界观</h3>
+            {worldLore.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+          <div className="panel-section">
+            <h3>1-500年节奏</h3>
+            {timelineEntries.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+          <div className="panel-section">
+            <h3>五宗定位</h3>
+            {sectSettings.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    if (panel === "人物") {
+      return (
+        <div className="character-sample-grid">
+          {characterSamples.map((character) => (
+            <article key={character.name} className="character-sample-card">
+              <strong>{character.name}</strong>
+              <span>
+                {character.sect} · {character.role} · {character.root}
+              </span>
+              <small>{character.trait}</small>
+            </article>
+          ))}
+        </div>
+      );
+    }
+
+    if (panel === "功法") {
+      return (
+        <>
+          {content[panel].slice(0, 4).map((line, index) => (
+            <p key={`${panel}-${index}`}>{line}</p>
+          ))}
+          <div className="art-sample-grid">
+            {artSamples.map((art) => (
+              <article key={art.name} className="art-sample-card">
+                <img src={art.icon} alt="" aria-hidden="true" />
+                <div>
+                  <strong>
+                    {art.rank} · {art.name}
+                  </strong>
+                  <span>{art.attack}</span>
+                  <small>{art.slots}</small>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="panel-section">
+            <h3>六系功法库</h3>
+            {artFamilies.map((family) => (
+              <p key={family.element}>
+                {family.element}系 · {family.style}：{family.note} 代表功法：{family.names}
+              </p>
+            ))}
+          </div>
+          <p>{content[panel][content[panel].length - 1]}</p>
+        </>
+      );
+    }
+
+    return content[panel].map((line, index) => <p key={`${panel}-${index}`}>{line}</p>);
+  }
 
   return (
     <div className="panel-backdrop">
@@ -747,32 +952,7 @@ function UtilityPanel({
           <h2>{panel}</h2>
           <button onClick={onClose}>关闭</button>
         </header>
-        <div className="panel-body">
-          {panel === "功法" ? (
-            <>
-              {content[panel].slice(0, 4).map((line, index) => (
-                <p key={`${panel}-${index}`}>{line}</p>
-              ))}
-              <div className="art-sample-grid">
-                {artSamples.map((art) => (
-                  <article key={art.name} className="art-sample-card">
-                    <img src={art.icon} alt="" aria-hidden="true" />
-                    <div>
-                      <strong>
-                        {art.rank} · {art.name}
-                      </strong>
-                      <span>{art.attack}</span>
-                      <small>{art.slots}</small>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <p>{content[panel][content[panel].length - 1]}</p>
-            </>
-          ) : (
-            content[panel].map((line, index) => <p key={`${panel}-${index}`}>{line}</p>)
-          )}
-        </div>
+        <div className="panel-body">{renderPanelBody()}</div>
         {panel === "设置" && (
           <footer>
             <button onClick={onReplayOpening}>重播开场</button>
@@ -918,7 +1098,7 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           <div className="battle-arena-line line-back" />
           <div className="battle-arena-line line-front" />
           <div className="player-combatant player-a">
-            <img src="/assets/combat/player-combat.webp" alt="" aria-hidden="true" />
+            <img src={assetPath("assets/combat/player-combat.webp")} alt="" aria-hidden="true" />
             <span>主角</span>
           </div>
           <div className="player-combatant player-b">小张</div>
@@ -929,7 +1109,11 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           {isBossStage ? (
             <div className={`event-boss ${stage.startsWith("wish") ? "boss-wish" : "boss-rat"}`}>
               <img
-                src={stage.startsWith("wish") ? "/assets/monsters/wish-eater.webp" : "/assets/monsters/mouse-king.webp"}
+                src={
+                  stage.startsWith("wish")
+                    ? assetPath("assets/monsters/wish-eater.webp")
+                    : assetPath("assets/monsters/mouse-king.webp")
+                }
                 alt=""
                 aria-hidden="true"
               />
@@ -941,21 +1125,21 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
                 {stage.startsWith("bridge") ? (
                   "祟"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-b">
                 {stage.startsWith("bridge") ? (
                   "影"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-c">
                 {stage.startsWith("bridge") ? (
                   "怨"
                 ) : (
-                  <img src="/assets/monsters/mouse-minion.webp" alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
             </>
@@ -1151,7 +1335,7 @@ function HomeScene({
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
         <aside className="right-menu">
-          {(["日志", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
+          {(["日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
             <button
               key={item}
               disabled={busy}
