@@ -1273,6 +1273,7 @@ type CombatRuntime = {
   skillMaxCd: number;
   bossShotCd: number;
   bossSpawned: boolean;
+  objectiveMet: boolean;
   result: DemoBattleResult | null;
 };
 
@@ -1389,6 +1390,7 @@ function createCombatRuntime(config: CombatConfig, width: number, height: number
     skillMaxCd: 5.5,
     bossShotCd: 1.2,
     bossSpawned: false,
+    objectiveMet: false,
     result: null,
   };
 }
@@ -1396,11 +1398,14 @@ function createCombatRuntime(config: CombatConfig, width: number, height: number
 function makeCombatView(runtime: CombatRuntime, config: CombatConfig): CombatView {
   const boss = runtime.enemies.find((enemy) => enemy.kind === "boss");
   const bossHp = boss?.hp ?? (config.boss && runtime.status !== "won" ? config.bossHp : 0);
-  const objectiveProgress = config.surviveSeconds
-    ? `${Math.min(config.surviveSeconds, Math.floor(runtime.elapsed))}/${config.surviveSeconds}秒`
-    : config.boss
-      ? `${Math.max(0, Math.ceil(bossHp))}/${config.bossHp}`
-      : `${runtime.kills}/${config.targetKills}`;
+  const aliveEnemies = runtime.enemies.length;
+  const objectiveProgress = runtime.objectiveMet
+    ? `目标达成 · 清场剩余${aliveEnemies}`
+    : config.surviveSeconds
+      ? `${Math.min(config.surviveSeconds, Math.floor(runtime.elapsed))}/${config.surviveSeconds}秒`
+      : config.boss
+        ? `${Math.max(0, Math.ceil(bossHp))}/${config.bossHp}`
+        : `${runtime.kills}/${config.targetKills}`;
 
   return {
     status: runtime.status,
@@ -1678,7 +1683,9 @@ function BulletHellCombat({
       runtime.player.x = clampNumber(runtime.player.x + (moveX / moveLength) * speed * dt, 24, runtime.width - 24);
       runtime.player.y = clampNumber(runtime.player.y + (moveY / moveLength) * speed * dt, 24, runtime.height - 24);
 
-      if (runtime.enemies.length < config.maxEnemies && runtime.spawnCd <= 0) {
+      const bossAlive = runtime.enemies.some((enemy) => enemy.kind === "boss");
+      const shouldSpawnMinions = !runtime.objectiveMet && (!config.boss || bossAlive);
+      if (shouldSpawnMinions && runtime.enemies.length < config.maxEnemies && runtime.spawnCd <= 0) {
         spawnCombatEnemy(runtime, config, "minion");
         runtime.spawnCd = Math.max(0.38, config.spawnEvery - runtime.elapsed * 0.01);
       }
@@ -1787,16 +1794,18 @@ function BulletHellCombat({
 
       if (config.surviveSeconds > 0 && runtime.elapsed >= config.surviveSeconds) {
         runtime.player.hp = Math.max(runtime.player.hp, runtime.player.maxHp * 0.18);
-        finishCombat(runtime, true);
-        return;
+        runtime.objectiveMet = true;
       }
 
       if (config.boss && !runtime.enemies.some((enemy) => enemy.kind === "boss")) {
-        finishCombat(runtime, true);
-        return;
+        runtime.objectiveMet = true;
       }
 
       if (!config.boss && runtime.kills >= config.targetKills) {
+        runtime.objectiveMet = true;
+      }
+
+      if (runtime.objectiveMet && runtime.enemies.length === 0) {
         finishCombat(runtime, true);
       }
     }
@@ -1941,7 +1950,7 @@ function BulletHellCombat({
         <div className="combat-title">
           <span>战斗 Demo</span>
           <strong>{config.title}</strong>
-          <small>{config.objective} · {view.objectiveProgress}</small>
+          <small>{config.objective} · {view.objectiveProgress} · 清完场上怪物才能继续</small>
         </div>
         <div className="combat-bars">
           <div>
@@ -1973,7 +1982,7 @@ function BulletHellCombat({
           {view.status === "ready" && (
             <>
               <h2>{config.title}</h2>
-              <p>{config.objective}。移动躲避弹幕，飞剑自动锁敌，鼠标控制灵弹方向，空格释放范围技。</p>
+              <p>{config.objective}。目标达成后仍要清完场上怪物，才会进入下一段剧情。</p>
               <button onClick={() => resetRuntime(true)}>开始战斗</button>
             </>
           )}
@@ -2120,6 +2129,91 @@ function EventConsole({
   );
 }
 
+function ActiveEventOverlay({
+  activeEvent,
+  busyAction,
+  onAction,
+}: {
+  activeEvent: NonNullable<ReturnType<typeof getActiveEvent>>;
+  busyAction: DemoAction | "reset" | null;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+}) {
+  const { active, definition, node } = activeEvent;
+  const busy = Boolean(busyAction);
+  const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
+  const modeText: Record<DemoEventNode["mode"], string> = {
+    dialogue: "剧情",
+    choice: "抉择",
+    battle: "战斗",
+    reward: "结算",
+  };
+
+  return (
+    <>
+      <section className="event-brief" aria-label="当前事件">
+        <span>{definition.category}</span>
+        <strong>{definition.title}</strong>
+        <small>
+          {getVisualStageTitle(node.visualStage)} · {progress}%
+        </small>
+      </section>
+
+      <section className="event-story-panel" aria-label="事件剧情">
+        <div className="event-story-main">
+          <div className="event-story-speaker">
+            <strong>{node.speaker}</strong>
+            <small>{node.title}</small>
+          </div>
+          <p>{node.text}</p>
+          {active.replay && <small className="event-story-note">本次为复盘，完成后不会重复发放奖励。</small>}
+        </div>
+
+        <div className="event-story-actions">
+          <div className="event-story-progress">
+            <div>
+              <span>{modeText[node.mode]}</span>
+              <strong>{progress}%</strong>
+            </div>
+            <i>
+              <b style={{ width: `${progress}%` }} />
+            </i>
+          </div>
+
+          {node.mode === "choice" && node.choices ? (
+            <div className="event-story-choices">
+              {node.choices.map((choice) => (
+                <button
+                  key={choice.action}
+                  disabled={busy}
+                  onClick={() => {
+                    playSceneClick();
+                    onAction(choice.action);
+                  }}
+                >
+                  {busyAction === choice.action ? "处理中" : choice.label}
+                </button>
+              ))}
+            </div>
+          ) : node.mode === "battle" ? (
+            <div className="event-story-status">进入全屏战斗后完成目标</div>
+          ) : (
+            <button
+              className="event-story-primary"
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("advance_event");
+              }}
+            >
+              {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
+            </button>
+          )}
+        </div>
+      </section>
+    </>
+  );
+}
+
 function HomeScene({
   save,
   events,
@@ -2188,8 +2282,8 @@ function HomeScene({
   }
 
   return (
-    <main className="game-shell">
-      <TopHud state={state} online={online} />
+    <main className={`game-shell ${activeEvent ? "event-shell" : ""}`}>
+      {!activeEvent && <TopHud state={state} online={online} />}
       <section
         className={`stage scene-${scene} accent-${config.accent} ${
           inBattle ? "battle-stage" : ""
@@ -2206,142 +2300,152 @@ function HomeScene({
         {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
-        <aside className="right-menu">
-          {(["日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
-            <button
-              key={item}
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onOpenPanel(item);
-              }}
-            >
-              {item}
-            </button>
-          ))}
-        </aside>
-
-        <section className="dialogue">
-          <div className="speaker">
-            {dialogueSpeaker}
-            <small>{activeEvent ? activeEvent.definition.title : `羁绊 ${actorBond}`}</small>
-          </div>
-          <p>{dialogueText}</p>
-        </section>
-      </section>
-
-      <section className="control-panel">
-        <div className="stat-card">
-          <span>万化道躯</span>
-          <strong>{state.cultivation.realmProgress}%</strong>
-          <div className="progress">
-            <i style={{ width: `${state.cultivation.realmProgress}%` }} />
-          </div>
-        </div>
-        <div className="action-grid">
-          <button
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction(config.primaryAction);
-            }}
-          >
-            {busyAction === config.primaryAction ? "进行中" : config.primaryLabel}
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("cultivate");
-            }}
-          >
-            闭关修炼
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("alchemy");
-            }}
-          >
-            炼丹
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("plant");
-            }}
-          >
-            种植
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("forge");
-            }}
-          >
-            炼器
-          </button>
-          {scene === "teleport_array" ? (
-            <>
+        {!activeEvent && (
+          <aside className="right-menu">
+            {(["日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
               <button
+                key={item}
                 disabled={busy}
                 onClick={() => {
                   playSceneClick();
-                  onAction("start_mouse_cave");
+                  onOpenPanel(item);
                 }}
               >
-                传送山鼠洞
+                {item}
               </button>
-              <button
-                disabled={busy}
-                onClick={() => {
-                  playSceneClick();
-                  onAction("start_event:wish_eater_bridge");
-                }}
-              >
-                传送断桥村
-              </button>
-            </>
-          ) : (
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("change_scene:teleport_array");
-              }}
-            >
-              前往传送阵
-            </button>
-          )}
-          {inBattle && <button disabled>进入战场操作</button>}
-        </div>
-        <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
-      </section>
-
-      <section className="codex-panel">
-        <div>
-          <h2>{activeEvent ? activeEvent.definition.title : config.label}</h2>
-          <p>{activeEvent ? activeEvent.definition.summary : config.subtitle}</p>
-        </div>
-        <div>
-          <h2>最近事件</h2>
-          <ul>
-            {state.eventLog.slice(0, 5).map((event, index) => (
-              <li key={`${event.title}-${index}`}>
-                <strong>
-                  {event.year}年{event.month}月 · {event.title}
-                </strong>
-                <span>{event.text}</span>
-              </li>
             ))}
-          </ul>
-        </div>
+          </aside>
+        )}
+
+        {activeEvent ? (
+          <ActiveEventOverlay activeEvent={activeEvent} busyAction={busyAction} onAction={onAction} />
+        ) : (
+          <section className="dialogue">
+            <div className="speaker">
+              {dialogueSpeaker}
+              <small>{`羁绊 ${actorBond}`}</small>
+            </div>
+            <p>{dialogueText}</p>
+          </section>
+        )}
       </section>
 
-      {panel && (
+      {!activeEvent && (
+        <section className="control-panel">
+          <div className="stat-card">
+            <span>万化道躯</span>
+            <strong>{state.cultivation.realmProgress}%</strong>
+            <div className="progress">
+              <i style={{ width: `${state.cultivation.realmProgress}%` }} />
+            </div>
+          </div>
+          <div className="action-grid">
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction(config.primaryAction);
+              }}
+            >
+              {busyAction === config.primaryAction ? "进行中" : config.primaryLabel}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("cultivate");
+              }}
+            >
+              闭关修炼
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("alchemy");
+              }}
+            >
+              炼丹
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("plant");
+              }}
+            >
+              种植
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction("forge");
+              }}
+            >
+              炼器
+            </button>
+            {scene === "teleport_array" ? (
+              <>
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    playSceneClick();
+                    onAction("start_mouse_cave");
+                  }}
+                >
+                  传送山鼠洞
+                </button>
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    playSceneClick();
+                    onAction("start_event:wish_eater_bridge");
+                  }}
+                >
+                  传送断桥村
+                </button>
+              </>
+            ) : (
+              <button
+                disabled={busy}
+                onClick={() => {
+                  playSceneClick();
+                  onAction("change_scene:teleport_array");
+                }}
+              >
+                前往传送阵
+              </button>
+            )}
+            {inBattle && <button disabled>进入战场操作</button>}
+          </div>
+          <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
+        </section>
+      )}
+
+      {!activeEvent && (
+        <section className="codex-panel">
+          <div>
+            <h2>{config.label}</h2>
+            <p>{config.subtitle}</p>
+          </div>
+          <div>
+            <h2>最近事件</h2>
+            <ul>
+              {state.eventLog.slice(0, 5).map((event, index) => (
+                <li key={`${event.title}-${index}`}>
+                  <strong>
+                    {event.year}年{event.month}月 · {event.title}
+                  </strong>
+                  <span>{event.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {panel && !activeEvent && (
         <UtilityPanel
           panel={panel}
           state={state}
