@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type DemoLocation = "home" | "event" | "battle";
 
@@ -53,6 +53,30 @@ type DemoAction =
   | `start_event:${DemoEventId}`
   | "advance_event"
   | DemoEventChoiceAction;
+
+type DemoBattleResult = {
+  stageId: string;
+  victory: boolean;
+  kills: number;
+  seconds: number;
+  hpPercent: number;
+  spiritStones: number;
+  damageTaken: number;
+  bossDefeated: boolean;
+};
+
+type DemoBattleStats = {
+  runs: number;
+  victories: number;
+  defeats: number;
+  kills: number;
+  bestSeconds: number | null;
+  lastResult: DemoBattleResult | null;
+};
+
+type DemoActionPayload = {
+  battleResult?: DemoBattleResult;
+};
 
 type DemoEventChoice = {
   action: DemoEventChoiceAction;
@@ -136,6 +160,7 @@ type DemoSaveState = {
     bond: number;
   }>;
   flags: Record<string, boolean>;
+  battleStats?: DemoBattleStats;
   eventLog: Array<{
     year: number;
     month: number;
@@ -790,7 +815,7 @@ function SceneNavigator({
 }: {
   currentScene: DemoScene;
   busy: boolean;
-  onAction: (action: DemoAction) => void;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
 }) {
   return (
     <nav className="scene-nav" aria-label="鹿石宗场景">
@@ -1153,6 +1178,830 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
   );
 }
 
+type CombatConfig = {
+  id: string;
+  title: string;
+  objective: string;
+  targetKills: number;
+  surviveSeconds: number;
+  boss: boolean;
+  bossName: string;
+  bossHp: number;
+  enemyHp: number;
+  enemySpeed: number;
+  spawnEvery: number;
+  maxEnemies: number;
+  rewardBase: number;
+  theme: "mouse" | "wish";
+};
+
+type CombatView = {
+  status: "ready" | "running" | "won" | "lost";
+  hp: number;
+  maxHp: number;
+  kills: number;
+  seconds: number;
+  skillCooldown: number;
+  skillMaxCooldown: number;
+  spiritStones: number;
+  bossHp: number;
+  bossMaxHp: number;
+  objectiveProgress: string;
+  result: DemoBattleResult | null;
+};
+
+type CombatEnemy = {
+  id: number;
+  x: number;
+  y: number;
+  r: number;
+  hp: number;
+  maxHp: number;
+  speed: number;
+  damage: number;
+  attackCd: number;
+  kind: "minion" | "boss";
+};
+
+type CombatProjectile = {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  damage: number;
+  life: number;
+  kind: "auto" | "manual" | "enemy" | "burst";
+};
+
+type CombatParticle = {
+  id: number;
+  x: number;
+  y: number;
+  r: number;
+  life: number;
+  maxLife: number;
+  color: string;
+};
+
+type CombatRuntime = {
+  status: CombatView["status"];
+  width: number;
+  height: number;
+  player: {
+    x: number;
+    y: number;
+    r: number;
+    hp: number;
+    maxHp: number;
+    damageTaken: number;
+  };
+  enemies: CombatEnemy[];
+  projectiles: CombatProjectile[];
+  particles: CombatParticle[];
+  keys: Set<string>;
+  pointer: { x: number; y: number; down: boolean };
+  elapsed: number;
+  kills: number;
+  spiritStones: number;
+  nextId: number;
+  spawnCd: number;
+  autoCd: number;
+  manualCd: number;
+  skillCd: number;
+  skillMaxCd: number;
+  bossShotCd: number;
+  bossSpawned: boolean;
+  result: DemoBattleResult | null;
+};
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function distance(leftX: number, leftY: number, rightX: number, rightY: number) {
+  return Math.hypot(leftX - rightX, leftY - rightY);
+}
+
+function getCombatConfig(node: DemoEventNode): CombatConfig {
+  if (node.id === "rat-king") {
+    return {
+      id: node.id,
+      title: node.title,
+      objective: "撑到青木门救援",
+      targetKills: 0,
+      surviveSeconds: 26,
+      boss: true,
+      bossName: "山鼠王",
+      bossHp: 680,
+      enemyHp: 26,
+      enemySpeed: 92,
+      spawnEvery: 1.35,
+      maxEnemies: 16,
+      rewardBase: 18,
+      theme: "mouse",
+    };
+  }
+
+  if (node.id === "final-rat-king") {
+    return {
+      id: node.id,
+      title: node.title,
+      objective: "合力击破山鼠王",
+      targetKills: 0,
+      surviveSeconds: 0,
+      boss: true,
+      bossName: "山鼠王",
+      bossHp: 560,
+      enemyHp: 24,
+      enemySpeed: 98,
+      spawnEvery: 1.45,
+      maxEnemies: 14,
+      rewardBase: 36,
+      theme: "mouse",
+    };
+  }
+
+  if (node.id === "boss") {
+    return {
+      id: node.id,
+      title: node.title,
+      objective: "击破啖愿妖真身",
+      targetKills: 0,
+      surviveSeconds: 0,
+      boss: true,
+      bossName: "啖愿妖",
+      bossHp: 620,
+      enemyHp: 28,
+      enemySpeed: 108,
+      spawnEvery: 1.55,
+      maxEnemies: 14,
+      rewardBase: 40,
+      theme: "wish",
+    };
+  }
+
+  return {
+    id: node.id,
+    title: node.title,
+    objective: node.id === "minions" ? "清除邪祟爪牙" : "清掉山鼠仔",
+    targetKills: node.id === "minions" ? 22 : 24,
+    surviveSeconds: 0,
+    boss: false,
+    bossName: "",
+    bossHp: 0,
+    enemyHp: node.id === "minions" ? 28 : 22,
+    enemySpeed: node.id === "minions" ? 112 : 104,
+    spawnEvery: 0.7,
+    maxEnemies: node.id === "minions" ? 20 : 22,
+    rewardBase: node.id === "minions" ? 28 : 24,
+    theme: node.id === "minions" ? "wish" : "mouse",
+  };
+}
+
+function createCombatRuntime(config: CombatConfig, width: number, height: number): CombatRuntime {
+  return {
+    status: "ready",
+    width,
+    height,
+    player: {
+      x: width * 0.44,
+      y: height * 0.58,
+      r: 18,
+      hp: 120,
+      maxHp: 120,
+      damageTaken: 0,
+    },
+    enemies: [],
+    projectiles: [],
+    particles: [],
+    keys: new Set(),
+    pointer: { x: width * 0.65, y: height * 0.5, down: false },
+    elapsed: 0,
+    kills: 0,
+    spiritStones: 0,
+    nextId: 1,
+    spawnCd: 0,
+    autoCd: 0.25,
+    manualCd: 0,
+    skillCd: 0,
+    skillMaxCd: 5.5,
+    bossShotCd: 1.2,
+    bossSpawned: false,
+    result: null,
+  };
+}
+
+function makeCombatView(runtime: CombatRuntime, config: CombatConfig): CombatView {
+  const boss = runtime.enemies.find((enemy) => enemy.kind === "boss");
+  const bossHp = boss?.hp ?? (config.boss && runtime.status !== "won" ? config.bossHp : 0);
+  const objectiveProgress = config.surviveSeconds
+    ? `${Math.min(config.surviveSeconds, Math.floor(runtime.elapsed))}/${config.surviveSeconds}秒`
+    : config.boss
+      ? `${Math.max(0, Math.ceil(bossHp))}/${config.bossHp}`
+      : `${runtime.kills}/${config.targetKills}`;
+
+  return {
+    status: runtime.status,
+    hp: Math.max(0, Math.round(runtime.player.hp)),
+    maxHp: runtime.player.maxHp,
+    kills: runtime.kills,
+    seconds: Math.floor(runtime.elapsed),
+    skillCooldown: Math.max(0, runtime.skillCd),
+    skillMaxCooldown: runtime.skillMaxCd,
+    spiritStones: runtime.spiritStones,
+    bossHp: Math.max(0, Math.round(bossHp)),
+    bossMaxHp: config.bossHp,
+    objectiveProgress,
+    result: runtime.result,
+  };
+}
+
+function spawnCombatEnemy(runtime: CombatRuntime, config: CombatConfig, kind: "minion" | "boss") {
+  const side = Math.floor(Math.random() * 4);
+  const margin = kind === "boss" ? 74 : 42;
+  const x = side === 0 ? margin : side === 1 ? runtime.width - margin : Math.random() * runtime.width;
+  const y = side === 2 ? margin : side === 3 ? runtime.height - margin : Math.random() * runtime.height;
+  const hp = kind === "boss" ? config.bossHp : config.enemyHp + Math.min(18, runtime.elapsed * 0.5);
+
+  runtime.enemies.push({
+    id: runtime.nextId++,
+    x,
+    y,
+    r: kind === "boss" ? 46 : 18,
+    hp,
+    maxHp: hp,
+    speed: kind === "boss" ? 58 : config.enemySpeed + Math.min(22, runtime.elapsed * 0.4),
+    damage: kind === "boss" ? 18 : 8,
+    attackCd: 0,
+    kind,
+  });
+}
+
+function pushCombatProjectile(
+  runtime: CombatRuntime,
+  x: number,
+  y: number,
+  vx: number,
+  vy: number,
+  kind: CombatProjectile["kind"],
+  damageValue: number,
+  radius: number,
+  life: number,
+) {
+  runtime.projectiles.push({
+    id: runtime.nextId++,
+    x,
+    y,
+    vx,
+    vy,
+    r: radius,
+    damage: damageValue,
+    life,
+    kind,
+  });
+}
+
+function pushCombatParticle(runtime: CombatRuntime, x: number, y: number, r: number, color: string, life = 0.45) {
+  runtime.particles.push({
+    id: runtime.nextId++,
+    x,
+    y,
+    r,
+    life,
+    maxLife: life,
+    color,
+  });
+}
+
+function nearestEnemy(runtime: CombatRuntime) {
+  let target: CombatEnemy | null = null;
+  let best = Number.POSITIVE_INFINITY;
+  for (const enemy of runtime.enemies) {
+    const score = distance(runtime.player.x, runtime.player.y, enemy.x, enemy.y);
+    if (score < best) {
+      best = score;
+      target = enemy;
+    }
+  }
+  return target;
+}
+
+function firePlayerShot(
+  runtime: CombatRuntime,
+  targetX: number,
+  targetY: number,
+  kind: CombatProjectile["kind"],
+) {
+  const dx = targetX - runtime.player.x;
+  const dy = targetY - runtime.player.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const speed = kind === "manual" ? 760 : 640;
+  pushCombatProjectile(
+    runtime,
+    runtime.player.x,
+    runtime.player.y,
+    (dx / length) * speed,
+    (dy / length) * speed,
+    kind,
+    kind === "manual" ? 18 : 14,
+    kind === "manual" ? 6 : 5,
+    1.15,
+  );
+}
+
+function useCombatImages(config: CombatConfig) {
+  const imagesRef = useRef<Record<string, HTMLImageElement>>({});
+
+  useEffect(() => {
+    const sources = {
+      player: assetPath("assets/combat/player-combat.webp"),
+      minion:
+        config.theme === "mouse"
+          ? assetPath("assets/monsters/mouse-minion.webp")
+          : assetPath("assets/monsters/wish-eater.webp"),
+      boss:
+        config.theme === "mouse"
+          ? assetPath("assets/monsters/mouse-king.webp")
+          : assetPath("assets/monsters/wish-eater.webp"),
+    };
+
+    for (const [key, src] of Object.entries(sources)) {
+      const image = new Image();
+      image.src = src;
+      imagesRef.current[key] = image;
+    }
+  }, [config.theme]);
+
+  return imagesRef;
+}
+
+function BulletHellCombat({
+  node,
+  busyAction,
+  onComplete,
+}: {
+  node: DemoEventNode;
+  busyAction: DemoAction | "reset" | null;
+  onComplete: (result: DemoBattleResult) => void;
+}) {
+  const config = useMemo(() => getCombatConfig(node), [node]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const runtimeRef = useRef<CombatRuntime | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastFrameRef = useRef<number | null>(null);
+  const lastViewSyncRef = useRef(0);
+  const imagesRef = useCombatImages(config);
+  const [view, setView] = useState<CombatView>(() => {
+    const runtime = createCombatRuntime(config, 960, 540);
+    return makeCombatView(runtime, config);
+  });
+
+  function resetRuntime(started: boolean) {
+    const canvas = canvasRef.current;
+    const rect = canvas?.getBoundingClientRect();
+    const width = Math.max(640, Math.round(rect?.width ?? 960));
+    const height = Math.max(360, Math.round(rect?.height ?? 540));
+    const runtime = createCombatRuntime(config, width, height);
+    runtime.status = started ? "running" : "ready";
+    if (config.boss) spawnCombatEnemy(runtime, config, "boss");
+    runtimeRef.current = runtime;
+    setView(makeCombatView(runtime, config));
+  }
+
+  function finishCombat(runtime: CombatRuntime, victory: boolean) {
+    runtime.status = victory ? "won" : "lost";
+    const hpPercent = Math.round((runtime.player.hp / runtime.player.maxHp) * 100);
+    runtime.result = {
+      stageId: config.id,
+      victory,
+      kills: runtime.kills,
+      seconds: Math.max(1, Math.floor(runtime.elapsed)),
+      hpPercent: clampNumber(hpPercent, 0, 100),
+      spiritStones: victory ? runtime.spiritStones + config.rewardBase : Math.floor(runtime.spiritStones * 0.35),
+      damageTaken: Math.round(runtime.player.damageTaken),
+      bossDefeated: config.boss && !runtime.enemies.some((enemy) => enemy.kind === "boss"),
+    };
+    setView(makeCombatView(runtime, config));
+  }
+
+  useEffect(() => {
+    resetRuntime(false);
+  }, [config.id]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const runtime = runtimeRef.current;
+      if (!runtime) return;
+      const key = event.key.toLowerCase();
+      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright", " "].includes(key)) {
+        event.preventDefault();
+      }
+      runtime.keys.add(key);
+      if (key === " " && runtime.status === "running" && runtime.skillCd <= 0) {
+        runtime.skillCd = runtime.skillMaxCd;
+        pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 156, "rgba(128, 226, 255, 0.52)", 0.34);
+        for (const enemy of runtime.enemies) {
+          const hitRange = enemy.kind === "boss" ? 188 : 164;
+          if (distance(runtime.player.x, runtime.player.y, enemy.x, enemy.y) <= hitRange) {
+            enemy.hp -= enemy.kind === "boss" ? 82 : 96;
+            pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 16, "rgba(255, 230, 139, 0.62)", 0.28);
+          }
+        }
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      runtimeRef.current?.keys.delete(event.key.toLowerCase());
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [config.id]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
+    const setPointer = (event: PointerEvent, down?: boolean) => {
+      const runtime = runtimeRef.current;
+      if (!runtime) return;
+      const rect = canvas.getBoundingClientRect();
+      runtime.pointer.x = event.clientX - rect.left;
+      runtime.pointer.y = event.clientY - rect.top;
+      if (typeof down === "boolean") runtime.pointer.down = down;
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      canvas.setPointerCapture(event.pointerId);
+      setPointer(event, true);
+    };
+    const handlePointerMove = (event: PointerEvent) => setPointer(event);
+    const handlePointerUp = (event: PointerEvent) => setPointer(event, false);
+
+    canvas.addEventListener("pointerdown", handlePointerDown);
+    canvas.addEventListener("pointermove", handlePointerMove);
+    canvas.addEventListener("pointerup", handlePointerUp);
+    canvas.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      canvas.removeEventListener("pointerdown", handlePointerDown);
+      canvas.removeEventListener("pointermove", handlePointerMove);
+      canvas.removeEventListener("pointerup", handlePointerUp);
+      canvas.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [config.id]);
+
+  useEffect(() => {
+    function update(runtime: CombatRuntime, dt: number) {
+      if (runtime.status !== "running") return;
+
+      runtime.elapsed += dt;
+      runtime.spawnCd -= dt;
+      runtime.autoCd -= dt;
+      runtime.manualCd -= dt;
+      runtime.skillCd = Math.max(0, runtime.skillCd - dt);
+      runtime.bossShotCd -= dt;
+
+      const left = runtime.keys.has("a") || runtime.keys.has("arrowleft") ? -1 : 0;
+      const right = runtime.keys.has("d") || runtime.keys.has("arrowright") ? 1 : 0;
+      const up = runtime.keys.has("w") || runtime.keys.has("arrowup") ? -1 : 0;
+      const down = runtime.keys.has("s") || runtime.keys.has("arrowdown") ? 1 : 0;
+      const moveX = left + right;
+      const moveY = up + down;
+      const moveLength = Math.hypot(moveX, moveY) || 1;
+      const speed = 245;
+      runtime.player.x = clampNumber(runtime.player.x + (moveX / moveLength) * speed * dt, 24, runtime.width - 24);
+      runtime.player.y = clampNumber(runtime.player.y + (moveY / moveLength) * speed * dt, 24, runtime.height - 24);
+
+      if (runtime.enemies.length < config.maxEnemies && runtime.spawnCd <= 0) {
+        spawnCombatEnemy(runtime, config, "minion");
+        runtime.spawnCd = Math.max(0.38, config.spawnEvery - runtime.elapsed * 0.01);
+      }
+
+      const target = nearestEnemy(runtime);
+      if (target && runtime.autoCd <= 0) {
+        firePlayerShot(runtime, target.x, target.y, "auto");
+        runtime.autoCd = 0.42;
+      }
+
+      if (runtime.pointer.down && runtime.manualCd <= 0) {
+        firePlayerShot(runtime, runtime.pointer.x, runtime.pointer.y, "manual");
+        runtime.manualCd = 0.16;
+      }
+
+      const boss = runtime.enemies.find((enemy) => enemy.kind === "boss");
+      if (boss && runtime.bossShotCd <= 0) {
+        const angle = Math.atan2(runtime.player.y - boss.y, runtime.player.x - boss.x);
+        for (const offset of [-0.28, 0, 0.28]) {
+          const speedValue = config.id === "rat-king" ? 240 : 275;
+          pushCombatProjectile(
+            runtime,
+            boss.x,
+            boss.y,
+            Math.cos(angle + offset) * speedValue,
+            Math.sin(angle + offset) * speedValue,
+            "enemy",
+            12,
+            7,
+            4,
+          );
+        }
+        runtime.bossShotCd = config.id === "rat-king" ? 1.05 : 1.22;
+      }
+
+      for (const enemy of runtime.enemies) {
+        enemy.attackCd = Math.max(0, enemy.attackCd - dt);
+        const dx = runtime.player.x - enemy.x;
+        const dy = runtime.player.y - enemy.y;
+        const length = Math.hypot(dx, dy) || 1;
+        enemy.x += (dx / length) * enemy.speed * dt;
+        enemy.y += (dy / length) * enemy.speed * dt;
+        if (length <= enemy.r + runtime.player.r && enemy.attackCd <= 0) {
+          runtime.player.hp -= enemy.damage;
+          runtime.player.damageTaken += enemy.damage;
+          enemy.attackCd = enemy.kind === "boss" ? 0.8 : 0.55;
+          pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 34, "rgba(255, 88, 80, 0.55)", 0.25);
+        }
+      }
+
+      for (const projectile of runtime.projectiles) {
+        projectile.x += projectile.vx * dt;
+        projectile.y += projectile.vy * dt;
+        projectile.life -= dt;
+      }
+
+      for (const projectile of runtime.projectiles) {
+        if (projectile.kind === "enemy") {
+          if (distance(projectile.x, projectile.y, runtime.player.x, runtime.player.y) <= projectile.r + runtime.player.r) {
+            runtime.player.hp -= projectile.damage;
+            runtime.player.damageTaken += projectile.damage;
+            projectile.life = 0;
+            pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 30, "rgba(255, 88, 80, 0.5)", 0.25);
+          }
+          continue;
+        }
+
+        for (const enemy of runtime.enemies) {
+          if (distance(projectile.x, projectile.y, enemy.x, enemy.y) <= projectile.r + enemy.r) {
+            enemy.hp -= projectile.damage;
+            projectile.life = 0;
+            pushCombatParticle(runtime, enemy.x, enemy.y, 18, "rgba(255, 231, 143, 0.48)", 0.18);
+            break;
+          }
+        }
+      }
+
+      const defeated = runtime.enemies.filter((enemy) => enemy.hp <= 0);
+      if (defeated.length) {
+        runtime.enemies = runtime.enemies.filter((enemy) => enemy.hp > 0);
+        for (const enemy of defeated) {
+          runtime.kills += enemy.kind === "boss" ? 1 : 1;
+          runtime.spiritStones += enemy.kind === "boss" ? 18 : 2;
+          pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 24, "rgba(132, 230, 190, 0.62)", 0.42);
+        }
+      }
+
+      runtime.projectiles = runtime.projectiles.filter(
+        (projectile) =>
+          projectile.life > 0 &&
+          projectile.x > -60 &&
+          projectile.y > -60 &&
+          projectile.x < runtime.width + 60 &&
+          projectile.y < runtime.height + 60,
+      );
+
+      for (const particle of runtime.particles) {
+        particle.life -= dt;
+      }
+      runtime.particles = runtime.particles.filter((particle) => particle.life > 0);
+
+      if (runtime.player.hp <= 0) {
+        finishCombat(runtime, false);
+        return;
+      }
+
+      if (config.surviveSeconds > 0 && runtime.elapsed >= config.surviveSeconds) {
+        runtime.player.hp = Math.max(runtime.player.hp, runtime.player.maxHp * 0.18);
+        finishCombat(runtime, true);
+        return;
+      }
+
+      if (config.boss && !runtime.enemies.some((enemy) => enemy.kind === "boss")) {
+        finishCombat(runtime, true);
+        return;
+      }
+
+      if (!config.boss && runtime.kills >= config.targetKills) {
+        finishCombat(runtime, true);
+      }
+    }
+
+    function draw(ctx: CanvasRenderingContext2D, runtime: CombatRuntime) {
+      ctx.clearRect(0, 0, runtime.width, runtime.height);
+      ctx.save();
+      ctx.globalAlpha = 0.68;
+      ctx.fillStyle = config.theme === "mouse" ? "rgba(33, 27, 22, 0.46)" : "rgba(38, 25, 42, 0.42)";
+      ctx.fillRect(0, 0, runtime.width, runtime.height);
+      ctx.strokeStyle = "rgba(255, 236, 182, 0.08)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < runtime.width; x += 72) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + runtime.height * 0.34, runtime.height);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      for (const projectile of runtime.projectiles) {
+        ctx.beginPath();
+        ctx.fillStyle =
+          projectile.kind === "enemy"
+            ? "rgba(255, 86, 83, 0.9)"
+            : projectile.kind === "manual"
+              ? "rgba(137, 225, 255, 0.96)"
+              : "rgba(255, 226, 125, 0.94)";
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = projectile.kind === "enemy" ? 10 : 14;
+        ctx.arc(projectile.x, projectile.y, projectile.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      const images = imagesRef.current;
+      for (const enemy of runtime.enemies) {
+        const image = enemy.kind === "boss" ? images.boss : images.minion;
+        if (image?.complete && image.naturalWidth > 0) {
+          ctx.drawImage(image, enemy.x - enemy.r * 1.35, enemy.y - enemy.r * 1.35, enemy.r * 2.7, enemy.r * 2.7);
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = enemy.kind === "boss" ? "#5a2f25" : "#6b5a44";
+          ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.68)";
+        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 14, enemy.r * 2, 5);
+        ctx.fillStyle = enemy.kind === "boss" ? "#ff6f5f" : "#d9f28a";
+        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 14, enemy.r * 2 * Math.max(0, enemy.hp / enemy.maxHp), 5);
+      }
+
+      const playerImage = images.player;
+      if (playerImage?.complete && playerImage.naturalWidth > 0) {
+        ctx.drawImage(
+          playerImage,
+          runtime.player.x - runtime.player.r * 1.85,
+          runtime.player.y - runtime.player.r * 2.25,
+          runtime.player.r * 3.7,
+          runtime.player.r * 4.1,
+        );
+      } else {
+        ctx.beginPath();
+        ctx.fillStyle = "#dbeeff";
+        ctx.arc(runtime.player.x, runtime.player.y, runtime.player.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(129, 227, 255, 0.72)";
+      ctx.lineWidth = 2;
+      ctx.arc(runtime.player.x, runtime.player.y, runtime.player.r + 7, 0, Math.PI * 2);
+      ctx.stroke();
+
+      for (const particle of runtime.particles) {
+        const alpha = Math.max(0, particle.life / particle.maxLife);
+        ctx.beginPath();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = particle.color;
+        ctx.lineWidth = 4;
+        ctx.arc(particle.x, particle.y, particle.r * (1.15 - alpha * 0.15), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function frame(now: number) {
+      const canvas = canvasRef.current;
+      const runtime = runtimeRef.current;
+      if (!canvas || !runtime) {
+        rafRef.current = requestAnimationFrame(frame);
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(640, Math.round(rect.width));
+      const height = Math.max(360, Math.round(rect.height));
+      if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        runtime.width = width;
+        runtime.height = height;
+      }
+
+      const last = lastFrameRef.current ?? now;
+      const dt = Math.min(0.033, (now - last) / 1000);
+      lastFrameRef.current = now;
+      update(runtime, dt);
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        draw(ctx, runtime);
+      }
+
+      if (now - lastViewSyncRef.current > 110 || runtime.status !== view.status) {
+        lastViewSyncRef.current = now;
+        setView(makeCombatView(runtime, config));
+      }
+
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      lastFrameRef.current = null;
+    };
+  }, [config, imagesRef, view.status]);
+
+  const hpWidth = `${Math.max(0, (view.hp / view.maxHp) * 100)}%`;
+  const skillReady = view.skillCooldown <= 0;
+  const skillWidth = `${100 - Math.min(100, (view.skillCooldown / view.skillMaxCooldown) * 100)}%`;
+  const isSaving = busyAction === "battle_victory";
+
+  return (
+    <section className="combat-overlay" aria-label="俯视弹幕战斗Demo">
+      <canvas ref={canvasRef} className="combat-canvas" />
+      <div className="combat-hud">
+        <div className="combat-title">
+          <span>战斗 Demo</span>
+          <strong>{config.title}</strong>
+          <small>{config.objective} · {view.objectiveProgress}</small>
+        </div>
+        <div className="combat-bars">
+          <div>
+            <span>气血 {view.hp}/{view.maxHp}</span>
+            <i className="hp-bar"><b style={{ width: hpWidth }} /></i>
+          </div>
+          {config.boss && (
+            <div>
+              <span>{config.bossName} {view.bossHp}/{view.bossMaxHp}</span>
+              <i className="boss-bar"><b style={{ width: `${Math.max(0, (view.bossHp / view.bossMaxHp) * 100)}%` }} /></i>
+            </div>
+          )}
+        </div>
+        <div className="combat-readout">
+          <span>击杀 {view.kills}</span>
+          <span>用时 {view.seconds}s</span>
+          <span>灵石 +{view.spiritStones}</span>
+        </div>
+      </div>
+      <div className="combat-skillbar">
+        <span>WASD/方向键移动</span>
+        <span>自动飞剑</span>
+        <span>鼠标按住连射</span>
+        <span className={skillReady ? "ready" : ""}>空格范围技 {skillReady ? "可用" : `${view.skillCooldown.toFixed(1)}s`}</span>
+        <i><b style={{ width: skillWidth }} /></i>
+      </div>
+      {view.status !== "running" && (
+        <div className="combat-modal">
+          {view.status === "ready" && (
+            <>
+              <h2>{config.title}</h2>
+              <p>{config.objective}。移动躲避弹幕，飞剑自动锁敌，鼠标控制灵弹方向，空格释放范围技。</p>
+              <button onClick={() => resetRuntime(true)}>开始战斗</button>
+            </>
+          )}
+          {view.status === "lost" && (
+            <>
+              <h2>战斗失利</h2>
+              <p>气血归零，本次不推进剧情。调整走位后重试。</p>
+              <button onClick={() => resetRuntime(true)}>重新挑战</button>
+            </>
+          )}
+          {view.status === "won" && view.result && (
+            <>
+              <h2>战斗胜利</h2>
+              <p>
+                击杀 {view.result.kills} · 用时 {view.result.seconds}s · 剩余气血 {view.result.hpPercent}% ·
+                灵石 +{view.result.spiritStones}
+              </p>
+              <button disabled={isSaving} onClick={() => onComplete(view.result as DemoBattleResult)}>
+                {isSaving ? "写入存档中" : "结算并继续剧情"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function EventConsole({
   state,
   events,
@@ -1162,7 +2011,7 @@ function EventConsole({
   state: DemoSaveState;
   events: Record<DemoEventId, DemoEventDefinition>;
   busyAction: DemoAction | "reset" | null;
-  onAction: (action: DemoAction) => void;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
 }) {
   const activeEvent = getActiveEvent(state, events);
   const busy = Boolean(busyAction);
@@ -1215,13 +2064,17 @@ function EventConsole({
               </button>
             ))}
           </div>
+        ) : node.mode === "battle" ? (
+          <div className="event-primary event-battle-hint">
+            在上方战场完成目标后继续剧情
+          </div>
         ) : (
           <button
             className="event-primary"
             disabled={busy}
             onClick={() => {
               playSceneClick();
-              onAction(node.mode === "battle" ? "battle_victory" : "advance_event");
+              onAction("advance_event");
             }}
           >
             {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
@@ -1284,7 +2137,7 @@ function HomeScene({
   online: boolean;
   busyAction: DemoAction | "reset" | null;
   panel: Panel | null;
-  onAction: (action: DemoAction) => void;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onReset: () => void;
   onOpenPanel: (panel: Panel) => void;
   onClosePanel: () => void;
@@ -1330,6 +2183,13 @@ function HomeScene({
             <SceneObjects scene={scene} inBattle={inBattle} />
           )}
         </div>
+        {activeEvent?.node.mode === "battle" && (
+          <BulletHellCombat
+            node={activeEvent.node}
+            busyAction={busyAction}
+            onComplete={(battleResult) => onAction("battle_victory", { battleResult })}
+          />
+        )}
 
         {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
@@ -1444,17 +2304,7 @@ function HomeScene({
               前往传送阵
             </button>
           )}
-          {inBattle && (
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("battle_victory");
-              }}
-            >
-              释放碎石剑气
-            </button>
-          )}
+          {inBattle && <button disabled>进入战场操作</button>}
         </div>
         <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
       </section>
@@ -1533,14 +2383,14 @@ function App() {
     setLoadState((current) => (current.status === "ready" ? { ...current, save } : current));
   }
 
-  async function perform(action: DemoAction) {
+  async function perform(action: DemoAction, requestPayload?: DemoActionPayload) {
     setBusyAction(action);
     try {
-      const payload = await fetchJson<SaveResponse>("/demo/action", {
+      const responsePayload = await fetchJson<SaveResponse>("/demo/action", {
         method: "POST",
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...requestPayload }),
       });
-      replaceSave(payload.save);
+      replaceSave(responsePayload.save);
     } catch (error) {
       setLoadState({
         status: "error",
@@ -1604,7 +2454,7 @@ function App() {
       online={health?.supabase?.configured ?? false}
       busyAction={busyAction}
       panel={panel}
-      onAction={(action) => void perform(action)}
+      onAction={(action, payload) => void perform(action, payload)}
       onReset={() => void reset()}
       onOpenPanel={setPanel}
       onClosePanel={() => setPanel(null)}
