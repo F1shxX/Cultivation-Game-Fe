@@ -2168,6 +2168,25 @@ function HomeScene({
         : getActorPortrait(config.actor);
   const busy = Boolean(busyAction);
 
+  if (activeEvent?.node.mode === "battle") {
+    return (
+      <main className="game-shell combat-shell">
+        <section
+          className={`stage scene-${scene} accent-${config.accent} battle-stage event-stage visual-${activeEvent.node.visualStage}`}
+        >
+          <div className="stage-bg">
+            <EventStageObjects node={activeEvent.node} />
+          </div>
+          <BulletHellCombat
+            node={activeEvent.node}
+            busyAction={busyAction}
+            onComplete={(battleResult) => onAction("battle_victory", { battleResult })}
+          />
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="game-shell">
       <TopHud state={state} online={online} />
@@ -2183,13 +2202,6 @@ function HomeScene({
             <SceneObjects scene={scene} inBattle={inBattle} />
           )}
         </div>
-        {activeEvent?.node.mode === "battle" && (
-          <BulletHellCombat
-            node={activeEvent.node}
-            busyAction={busyAction}
-            onComplete={(battleResult) => onAction("battle_victory", { battleResult })}
-          />
-        )}
 
         {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}

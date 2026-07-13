@@ -1435,6 +1435,33 @@ button:focus-visible {
     0 24px 70px rgba(0, 0, 0, 0.42);
 }
 
+.combat-shell .combat-overlay {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(95, 159, 154, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(12, 11, 10, 0.1), rgba(0, 0, 0, 0.42));
+}
+
+.combat-shell .event-location-sign {
+  top: 18px;
+  left: 18px;
+  transform: none;
+}
+
+.combat-shell .event-boss,
+.combat-shell .event-mob,
+.combat-shell .player-combatant,
+.combat-shell .ally-combatant,
+.combat-shell .combat-skill,
+.combat-shell .battle-arena-line {
+  display: none;
+}
+
 .combat-canvas {
   position: absolute;
   inset: 0;
@@ -1455,6 +1482,12 @@ button:focus-visible {
   gap: 10px;
   align-items: start;
   pointer-events: none;
+}
+
+.combat-shell .combat-hud {
+  top: 18px;
+  left: 172px;
+  right: 18px;
 }
 
 .combat-title,
@@ -1556,6 +1589,12 @@ button:focus-visible {
   align-items: center;
   padding: 10px 12px;
   pointer-events: none;
+}
+
+.combat-shell .combat-skillbar {
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
 }
 
 .combat-skillbar span {
@@ -1953,7 +1992,7 @@ button:focus-visible {
   right: 18px;
   bottom: 14px;
   display: grid;
-  grid-template-columns: minmax(170px, 0.48fr) minmax(520px, 1.52fr) minmax(340px, 0.9fr);
+  grid-template-columns: minmax(128px, 0.36fr) minmax(410px, 1.28fr) minmax(330px, 1fr);
   gap: 10px;
   align-items: stretch;
   max-height: 178px;
@@ -1969,7 +2008,7 @@ button:focus-visible {
 
 .stat-card {
   min-height: 0;
-  padding: 12px;
+  padding: 10px;
 }
 
 .stat-card span,
@@ -1984,7 +2023,7 @@ button:focus-visible {
 
 .stat-card strong {
   margin-top: 4px;
-  font-size: 24px;
+  font-size: 21px;
 }
 
 .progress {
@@ -2010,8 +2049,8 @@ button:focus-visible {
 }
 
 .action-grid button {
-  min-height: 48px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 7px 8px;
   border: 0;
   border-radius: 8px;
   color: #fff8e7;
@@ -2021,6 +2060,7 @@ button:focus-visible {
   background-position: center;
   background-size: cover;
   cursor: pointer;
+  font-size: 14px;
   font-weight: 900;
   text-shadow: 0 2px 0 #000;
 }
@@ -2045,7 +2085,7 @@ button:focus-visible {
   min-height: 0;
   max-height: 178px;
   overflow: hidden;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgba(255, 239, 204, 0.16);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(29, 31, 28, 0.98), rgba(17, 16, 14, 0.98));
@@ -2068,17 +2108,18 @@ button:focus-visible {
 .event-console h2 {
   margin-top: 2px;
   color: #f4d784;
-  font-size: 22px;
+  font-size: 18px;
 }
 
 .event-console h3 {
   color: #fff1bf;
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .event-console p {
   color: #f1e1c2;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .event-console strong {
@@ -2173,14 +2214,15 @@ button:focus-visible {
 .event-start-list button {
   display: grid;
   gap: 2px;
-  padding: 8px 10px;
+  padding: 7px 8px;
   text-align: left;
 }
 
 .event-start-list button span,
 .event-start-list button small {
   color: #e8d4ae;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .event-start-list button small {
