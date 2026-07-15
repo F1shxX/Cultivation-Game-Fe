@@ -463,6 +463,52 @@ function playSceneClick() {
   });
 }
 
+const ambientMusicUrl = assetPath("assets/audio/lushi-origin.mp3");
+
+function useAmbientMusic(enabled: boolean) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const enabledRef = useRef(enabled);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (enabled) {
+      void audio.play().catch(() => {
+        // Background music starts after the first user gesture because browsers block autoplay.
+      });
+    } else {
+      audio.pause();
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    const audio = new Audio(ambientMusicUrl);
+    audio.loop = true;
+    audio.preload = "none";
+    audio.volume = 0.24;
+    audioRef.current = audio;
+
+    const tryPlay = () => {
+      if (!enabledRef.current) return;
+      void audio.play().catch(() => {
+        // A later click or key press will retry.
+      });
+    };
+
+    document.addEventListener("pointerdown", tryPlay, true);
+    document.addEventListener("keydown", tryPlay, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", tryPlay, true);
+      document.removeEventListener("keydown", tryPlay, true);
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+}
+
 const sceneConfig: Record<
   DemoScene,
   {
@@ -840,15 +886,19 @@ function UtilityPanel({
   panel,
   state,
   events,
+  musicEnabled,
   onClose,
   onReset,
+  onToggleMusic,
   onReplayOpening,
 }: {
   panel: Panel;
   state: DemoSaveState;
   events: Record<DemoEventId, DemoEventDefinition>;
+  musicEnabled: boolean;
   onClose: () => void;
   onReset: () => void;
+  onToggleMusic: () => void;
   onReplayOpening: () => void;
 }) {
   const inventory = state.inventory ?? {
@@ -980,6 +1030,7 @@ function UtilityPanel({
         <div className="panel-body">{renderPanelBody()}</div>
         {panel === "设置" && (
           <footer>
+            <button onClick={onToggleMusic}>背景音乐：{musicEnabled ? "开启" : "关闭"}</button>
             <button onClick={onReplayOpening}>重播开场</button>
             <button onClick={onReset}>重置存档</button>
           </footer>
@@ -2220,10 +2271,12 @@ function HomeScene({
   online,
   busyAction,
   panel,
+  musicEnabled,
   onAction,
   onReset,
   onOpenPanel,
   onClosePanel,
+  onToggleMusic,
   onReplayOpening,
 }: {
   save: DemoSave;
@@ -2231,10 +2284,12 @@ function HomeScene({
   online: boolean;
   busyAction: DemoAction | "reset" | null;
   panel: Panel | null;
+  musicEnabled: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onReset: () => void;
   onOpenPanel: (panel: Panel) => void;
   onClosePanel: () => void;
+  onToggleMusic: () => void;
   onReplayOpening: () => void;
 }) {
   const state = save.state;
@@ -2450,8 +2505,10 @@ function HomeScene({
           panel={panel}
           state={state}
           events={events}
+          musicEnabled={musicEnabled}
           onClose={onClosePanel}
           onReset={onReset}
+          onToggleMusic={onToggleMusic}
           onReplayOpening={onReplayOpening}
         />
       )}
@@ -2465,6 +2522,18 @@ function App() {
   const [busyAction, setBusyAction] = useState<DemoAction | "reset" | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [showOpening, setShowOpening] = useState(() => !localStorage.getItem("cultivation-opening-seen"));
+  const [musicEnabled, setMusicEnabled] = useState(
+    () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
+  );
+
+  const ambientMusicEnabled = useMemo(() => {
+    if (!musicEnabled) return false;
+    if (showOpening) return true;
+    if (loadState.status !== "ready") return false;
+    return loadState.save.state.location === "home" && !loadState.save.state.activeEvent;
+  }, [loadState, musicEnabled, showOpening]);
+
+  useAmbientMusic(ambientMusicEnabled);
 
   const loadSave = useMemo(
     () => async () => {
@@ -2535,6 +2604,14 @@ function App() {
     }
   }
 
+  function toggleAmbientMusic() {
+    setMusicEnabled((current) => {
+      const next = !current;
+      localStorage.setItem("wanhua-ambient-music-muted", next ? "0" : "1");
+      return next;
+    });
+  }
+
   if (showOpening) {
     return (
       <OpeningScene
@@ -2570,10 +2647,12 @@ function App() {
       online={health?.supabase?.configured ?? false}
       busyAction={busyAction}
       panel={panel}
+      musicEnabled={musicEnabled}
       onAction={(action, payload) => void perform(action, payload)}
       onReset={() => void reset()}
       onOpenPanel={setPanel}
       onClosePanel={() => setPanel(null)}
+      onToggleMusic={toggleAmbientMusic}
       onReplayOpening={() => {
         localStorage.removeItem("cultivation-opening-seen");
         setPanel(null);
