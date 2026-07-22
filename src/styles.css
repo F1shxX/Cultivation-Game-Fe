@@ -2743,6 +2743,25 @@ button:focus-visible {
   padding: 18px;
 }
 
+.profile-utility {
+  width: min(1280px, calc(100vw - 48px));
+  height: min(760px, calc(100vh - 48px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.profile-utility header {
+  padding: 14px 16px;
+}
+
+.profile-body {
+  display: block;
+  height: 100%;
+  max-height: none;
+  overflow: hidden;
+  padding: 14px;
+}
+
 .panel-body p {
   margin: 0;
   line-height: 1.65;
@@ -2770,6 +2789,61 @@ button:focus-visible {
   min-width: 0;
 }
 
+.profile-panel.profile-panel-fixed {
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr) 148px;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.profile-content-shell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.profile-content-shell > .profile-identity,
+.profile-content-shell > .profile-section {
+  height: 100%;
+  overflow: hidden;
+}
+
+.profile-tabs {
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.profile-tabs button {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  border-color: rgba(255, 239, 204, 0.18);
+  background: rgba(24, 21, 17, 0.78);
+  text-align: left;
+}
+
+.profile-tabs button.active {
+  border-color: rgba(245, 215, 126, 0.86);
+  background: linear-gradient(180deg, rgba(103, 72, 38, 0.88), rgba(39, 29, 20, 0.88));
+  box-shadow: inset 0 0 0 1px rgba(245, 215, 126, 0.22);
+}
+
+.profile-tabs strong {
+  color: #fff1bf;
+  font-size: 20px;
+}
+
+.profile-tabs span {
+  color: #9bd6ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .profile-identity,
 .profile-section {
   min-width: 0;
@@ -2784,6 +2858,26 @@ button:focus-visible {
   gap: 14px;
   align-items: center;
   padding: 14px;
+}
+
+.profile-identity.profile-identity-fixed {
+  grid-template-columns: minmax(170px, 260px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+}
+
+.profile-identity-fixed .profile-portrait {
+  height: 100%;
+  max-height: 420px;
+  min-height: 0;
+}
+
+.profile-identity-fixed > div:not(.profile-portrait) {
+  align-self: center;
+}
+
+.profile-identity-fixed .profile-stats {
+  align-self: end;
 }
 
 .profile-portrait {
@@ -2872,6 +2966,41 @@ button:focus-visible {
   display: grid;
   gap: 10px;
   padding: 12px;
+}
+
+.profile-content-shell > .profile-section {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.profile-content-shell .inventory-grid {
+  grid-auto-rows: minmax(82px, 1fr);
+}
+
+.profile-content-shell .equipment-grid,
+.profile-content-shell .method-grid {
+  align-self: start;
+}
+
+.profile-content-shell .loadout-card {
+  min-height: 124px;
+}
+
+.profile-content-shell .spell-builder {
+  grid-template-rows: auto auto auto auto auto auto;
+  align-content: start;
+  gap: 9px;
+}
+
+.profile-content-shell .spell-builder .slot-option {
+  min-height: 74px;
+  padding: 8px 9px;
+}
+
+.profile-content-shell .spell-builder .slot-option small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .profile-section-title {
@@ -3322,6 +3451,41 @@ button:focus-visible {
   .slot-options,
   .secret-options {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-utility {
+    width: min(900px, calc(100vw - 24px));
+    height: min(720px, calc(100vh - 24px));
+  }
+
+  .profile-panel.profile-panel-fixed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 72px;
+  }
+
+  .profile-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+  }
+
+  .profile-tabs button {
+    justify-items: center;
+    padding: 8px 6px;
+    text-align: center;
+  }
+
+  .profile-tabs strong {
+    font-size: 16px;
+  }
+
+  .profile-tabs span {
+    display: none;
+  }
+
+  .profile-identity.profile-identity-fixed {
+    grid-template-columns: 136px minmax(0, 1fr);
   }
 }
 

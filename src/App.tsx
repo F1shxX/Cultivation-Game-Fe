@@ -230,6 +230,15 @@ type LoadState =
   | { status: "error"; message: string };
 
 type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
+type ProfileTab = "属性" | "物品" | "装备" | "功法" | "术法";
+
+const profileTabItems: { id: ProfileTab; note: string }[] = [
+  { id: "属性", note: "主角状态" },
+  { id: "物品", note: "资源道具" },
+  { id: "装备", note: "武器护具" },
+  { id: "功法", note: "主修切换" },
+  { id: "术法", note: "技能配置" },
+];
 
 type PortraitKey =
   | "player"
@@ -1388,6 +1397,7 @@ function UtilityPanel({
   const combatProfile = getCombatProfile(loadout);
   const lockLoadout = state.location === "battle" || Boolean(state.activeEvent);
   const equipBusy = Boolean(busyAction);
+  const [profileTab, setProfileTab] = useState<ProfileTab>("属性");
 
   const content: Record<Panel, string[]> = {
     我的: [],
@@ -1445,10 +1455,13 @@ function UtilityPanel({
         ["护具", equipment.armor, "炼气期布袍，暂未开放替换"],
         ["饰品", equipment.accessory, "鹿石宗身份凭证"],
       ];
+      const resourceTotal = inventoryRows.reduce((total, item) => total + Number(item.value || 0), 0);
 
       return (
-        <div className="profile-panel">
-          <section className="profile-identity">
+        <div className="profile-panel profile-panel-fixed">
+          <div className="profile-content-shell">
+          {profileTab === "属性" && (
+          <section className="profile-identity profile-identity-fixed">
             <div className="profile-portrait">
               <img src={portraitAssets.player.normal} alt="主角半身像" />
             </div>
@@ -1466,11 +1479,13 @@ function UtilityPanel({
               ))}
             </dl>
           </section>
+          )}
 
+          {profileTab === "物品" && (
           <section className="profile-section">
             <div className="profile-section-title">
               <h3>物品栏</h3>
-              <span>{inventoryRows.reduce((total, item) => total + Number(item.value || 0), 0)} 件资源</span>
+              <span>{resourceTotal} 件资源</span>
             </div>
             <div className="inventory-grid">
               {inventoryRows.map((item) => (
@@ -1482,7 +1497,9 @@ function UtilityPanel({
               ))}
             </div>
           </section>
+          )}
 
+          {profileTab === "装备" && (
           <section className="profile-section">
             <div className="profile-section-title">
               <h3>装备栏</h3>
@@ -1498,7 +1515,9 @@ function UtilityPanel({
               ))}
             </div>
           </section>
+          )}
 
+          {profileTab === "功法" && (
           <section className="profile-section loadout-section">
             <div className="profile-section-title">
               <h3>功法栏</h3>
@@ -1535,7 +1554,9 @@ function UtilityPanel({
               })}
             </div>
           </section>
+          )}
 
+          {profileTab === "术法" && (
           <section className="profile-section loadout-section spell-builder">
             <div className="profile-section-title">
               <h3>术法栏</h3>
@@ -1652,6 +1673,26 @@ function UtilityPanel({
               </div>
             ))}
           </section>
+          )}
+          </div>
+
+          <nav className="profile-tabs" aria-label="我的栏目">
+            {profileTabItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={profileTab === item.id ? "active" : ""}
+                aria-pressed={profileTab === item.id}
+                onClick={() => {
+                  playSceneClick();
+                  setProfileTab(item.id);
+                }}
+              >
+                <strong>{item.id}</strong>
+                <span>{item.note}</span>
+              </button>
+            ))}
+          </nav>
         </div>
       );
     }
@@ -1735,12 +1776,12 @@ function UtilityPanel({
 
   return (
     <div className="panel-backdrop">
-      <section className="utility-panel">
+      <section className={panel === "我的" ? "utility-panel profile-utility" : "utility-panel"}>
         <header>
           <h2>{panel}</h2>
           <button onClick={onClose}>关闭</button>
         </header>
-        <div className="panel-body">{renderPanelBody()}</div>
+        <div className={panel === "我的" ? "panel-body profile-body" : "panel-body"}>{renderPanelBody()}</div>
         {panel === "设置" && (
           <footer>
             <button onClick={onToggleMusic}>背景音乐：{musicEnabled ? "开启" : "关闭"}</button>
