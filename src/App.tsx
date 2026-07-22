@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 type DemoLocation = "home" | "event" | "battle";
 
@@ -38,6 +38,33 @@ type DemoEventVisualStage =
   | "wish_eater_boss"
   | "bridge_reward";
 
+type DemoMethodId = "luhua_jue" | "jinmang_jue" | "yanxin_jue";
+type DemoSpellId = "jinmang" | "shuiren" | "huodan";
+type DemoTechniqueId = "straight" | "ring" | "drop";
+type DemoSecretId = "cuti" | "mingmu" | "pojia" | "yufeng";
+
+type DemoLoadout = {
+  methodId: DemoMethodId;
+  spellSlot: {
+    spellId: DemoSpellId;
+    techniqueId: DemoTechniqueId;
+    secretIds: [DemoSecretId, DemoSecretId];
+  };
+};
+
+type DemoEquipment = {
+  weapon: string;
+  armor: string;
+  accessory: string;
+};
+
+type DemoEquipAction =
+  | `equip_method:${DemoMethodId}`
+  | `equip_spell:${DemoSpellId}`
+  | `equip_technique:${DemoTechniqueId}`
+  | `equip_secret_1:${DemoSecretId}`
+  | `equip_secret_2:${DemoSecretId}`;
+
 type DemoAction =
   | `change_scene:${DemoScene}`
   | "cultivate"
@@ -52,6 +79,7 @@ type DemoAction =
   | "battle_victory"
   | `start_event:${DemoEventId}`
   | "advance_event"
+  | DemoEquipAction
   | DemoEventChoiceAction;
 
 type DemoBattleResult = {
@@ -154,6 +182,8 @@ type DemoSaveState = {
     qingmuHealingPills: number;
     jinlingToken: number;
   };
+  equipment?: DemoEquipment;
+  loadout?: DemoLoadout;
   relationships: Array<{
     characterId: DemoCharacterId;
     name: string;
@@ -199,9 +229,19 @@ type LoadState =
   | { status: "ready"; save: DemoSave; events: Record<DemoEventId, DemoEventDefinition> }
   | { status: "error"; message: string };
 
-type Panel = "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
+type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
 
-type PortraitKey = "player" | "xiaozhang" | "xiaoxian" | "lu";
+type PortraitKey =
+  | "player"
+  | "xiaozhang"
+  | "xiaoxian"
+  | "lu"
+  | "yangqi"
+  | "douran"
+  | "chuchu"
+  | "xiaolu"
+  | "chunqiong"
+  | "wanhuaBody";
 type PortraitExpression = "normal" | "happy" | "serious" | "snark";
 
 const apiBaseUrl =
@@ -214,38 +254,300 @@ function assetPath(path: string) {
 
 const portraitAssets: Record<PortraitKey, Record<PortraitExpression, string>> = {
   player: {
-    normal: assetPath("assets/portraits/player-normal.webp"),
-    happy: assetPath("assets/portraits/player-happy.webp"),
-    serious: assetPath("assets/portraits/player-serious.webp"),
-    snark: assetPath("assets/portraits/player-snark.webp"),
+    normal: assetPath("assets/tapflow/portraits/player-normal.webp"),
+    happy: assetPath("assets/tapflow/portraits/player-happy.webp"),
+    serious: assetPath("assets/tapflow/portraits/player-serious.webp"),
+    snark: assetPath("assets/tapflow/portraits/player-snark.webp"),
   },
   xiaozhang: {
-    normal: assetPath("assets/portraits/xiaozhang-normal.webp"),
-    happy: assetPath("assets/portraits/xiaozhang-happy.webp"),
-    serious: assetPath("assets/portraits/xiaozhang-serious.webp"),
-    snark: assetPath("assets/portraits/xiaozhang-snark.webp"),
+    normal: assetPath("assets/tapflow/portraits/xiaozhang-normal.webp"),
+    happy: assetPath("assets/tapflow/portraits/xiaozhang-happy.webp"),
+    serious: assetPath("assets/tapflow/portraits/xiaozhang-serious.webp"),
+    snark: assetPath("assets/tapflow/portraits/xiaozhang-snark.webp"),
   },
   xiaoxian: {
-    normal: assetPath("assets/portraits/xiaoxian-normal.webp"),
-    happy: assetPath("assets/portraits/xiaoxian-happy.webp"),
-    serious: assetPath("assets/portraits/xiaoxian-serious.webp"),
-    snark: assetPath("assets/portraits/xiaoxian-snark.webp"),
+    normal: assetPath("assets/tapflow/portraits/xiaoxian-normal.webp"),
+    happy: assetPath("assets/tapflow/portraits/xiaoxian-happy.webp"),
+    serious: assetPath("assets/tapflow/portraits/xiaoxian-serious.webp"),
+    snark: assetPath("assets/tapflow/portraits/xiaoxian-snark.webp"),
   },
   lu: {
-    normal: assetPath("assets/portraits/lu-normal.webp"),
-    happy: assetPath("assets/portraits/lu-happy.webp"),
-    serious: assetPath("assets/portraits/lu-serious.webp"),
-    snark: assetPath("assets/portraits/lu-snark.webp"),
+    normal: assetPath("assets/tapflow/portraits/lu-normal.webp"),
+    happy: assetPath("assets/tapflow/portraits/lu-happy.webp"),
+    serious: assetPath("assets/tapflow/portraits/lu-serious.webp"),
+    snark: assetPath("assets/tapflow/portraits/lu-snark.webp"),
+  },
+  yangqi: {
+    normal: assetPath("assets/tapflow/portraits/yangqi.webp"),
+    happy: assetPath("assets/tapflow/portraits/yangqi.webp"),
+    serious: assetPath("assets/tapflow/portraits/yangqi.webp"),
+    snark: assetPath("assets/tapflow/portraits/yangqi.webp"),
+  },
+  douran: {
+    normal: assetPath("assets/tapflow/portraits/douran.webp"),
+    happy: assetPath("assets/tapflow/portraits/douran.webp"),
+    serious: assetPath("assets/tapflow/portraits/douran.webp"),
+    snark: assetPath("assets/tapflow/portraits/douran.webp"),
+  },
+  chuchu: {
+    normal: assetPath("assets/tapflow/portraits/chuchu.webp"),
+    happy: assetPath("assets/tapflow/portraits/chuchu.webp"),
+    serious: assetPath("assets/tapflow/portraits/chuchu.webp"),
+    snark: assetPath("assets/tapflow/portraits/chuchu.webp"),
+  },
+  xiaolu: {
+    normal: assetPath("assets/tapflow/portraits/xiaolu.webp"),
+    happy: assetPath("assets/tapflow/portraits/xiaolu.webp"),
+    serious: assetPath("assets/tapflow/portraits/xiaolu.webp"),
+    snark: assetPath("assets/tapflow/portraits/xiaolu.webp"),
+  },
+  chunqiong: {
+    normal: assetPath("assets/tapflow/portraits/chunqiong.webp"),
+    happy: assetPath("assets/tapflow/portraits/chunqiong.webp"),
+    serious: assetPath("assets/tapflow/portraits/chunqiong.webp"),
+    snark: assetPath("assets/tapflow/portraits/chunqiong.webp"),
+  },
+  wanhuaBody: {
+    normal: assetPath("assets/tapflow/portraits/wanhua-body.webp"),
+    happy: assetPath("assets/tapflow/portraits/wanhua-body.webp"),
+    serious: assetPath("assets/tapflow/portraits/wanhua-body.webp"),
+    snark: assetPath("assets/tapflow/portraits/wanhua-body.webp"),
   },
 };
 
 const resourceIcons = {
-  spiritStones: assetPath("assets/ui/spirit-stone.webp"),
-  spiritMarrow: assetPath("assets/ui/spirit-marrow.webp"),
-  herbs: assetPath("assets/ui/herb.webp"),
-  ore: assetPath("assets/ui/ore.webp"),
-  pills: assetPath("assets/ui/pill.webp"),
+  spiritStones: assetPath("assets/tapflow/ui/spirit-stone.webp"),
+  spiritMarrow: assetPath("assets/tapflow/ui/spirit-marrow.webp"),
+  herbs: assetPath("assets/tapflow/ui/herb.webp"),
+  ore: assetPath("assets/tapflow/ui/ore.webp"),
+  pills: assetPath("assets/tapflow/ui/pill.webp"),
 } as const;
+
+const methodIds: DemoMethodId[] = ["luhua_jue", "jinmang_jue", "yanxin_jue"];
+const spellIds: DemoSpellId[] = ["jinmang", "shuiren", "huodan"];
+const techniqueIds: DemoTechniqueId[] = ["straight", "ring", "drop"];
+const secretIds: DemoSecretId[] = ["cuti", "mingmu", "pojia", "yufeng"];
+
+const defaultEquipment: DemoEquipment = {
+  weapon: "青锋剑",
+  armor: "旧布法袍",
+  accessory: "鹿石令",
+};
+
+const defaultLoadout: DemoLoadout = {
+  methodId: "luhua_jue",
+  spellSlot: {
+    spellId: "jinmang",
+    techniqueId: "straight",
+    secretIds: ["cuti", "mingmu"],
+  },
+};
+
+const methodCatalog: Record<
+  DemoMethodId,
+  {
+    name: string;
+    element: "无" | "金" | "火";
+    rank: "黄";
+    role: string;
+    cultivateSpeed: number;
+    attackName: string;
+    attackDamage: number;
+    projectileSpeed: number;
+    attackInterval: number;
+    defense: number;
+    regen: number;
+    shield: number;
+    description: string;
+    color: string;
+    icon?: string;
+  }
+> = {
+  luhua_jue: {
+    name: "鹿花诀",
+    element: "无",
+    rank: "黄",
+    role: "均衡续航",
+    cultivateSpeed: 10,
+    attackName: "灵光飞行",
+    attackDamage: 12,
+    projectileSpeed: 350,
+    attackInterval: 0.8,
+    defense: 5,
+    regen: 2,
+    shield: 0,
+    description: "剧情必学，回血续航强，与所有术法兼容，适合新手测试。",
+    color: "#dceeff",
+    icon: assetPath("assets/tapflow/loadout/wanhua-body.webp"),
+  },
+  jinmang_jue: {
+    name: "金芒诀",
+    element: "金",
+    rank: "黄",
+    role: "穿透快攻",
+    cultivateSpeed: 12,
+    attackName: "金色锋刃飞行",
+    attackDamage: 15,
+    projectileSpeed: 400,
+    attackInterval: 0.9,
+    defense: 3,
+    regen: 0,
+    shield: 0,
+    description: "普攻弹道快，配金系术法无损伤害，适合激进打法。",
+    color: "#f7d36a",
+    icon: assetPath("assets/tapflow/arts/gold/huang-jinmang-jue.webp"),
+  },
+  yanxin_jue: {
+    name: "焰心诀",
+    element: "火",
+    rank: "黄",
+    role: "爆发焚敌",
+    cultivateSpeed: 14,
+    attackName: "烈焰爆裂",
+    attackDamage: 18,
+    projectileSpeed: 300,
+    attackInterval: 1.1,
+    defense: 0,
+    regen: 0,
+    shield: 0,
+    description: "普攻伤害最高但没有防御和回血，适合操作熟练时试爆发。",
+    color: "#ff8a4f",
+  },
+};
+
+const spellCatalog: Record<
+  DemoSpellId,
+  {
+    name: string;
+    element: "金" | "水" | "火";
+    rank: "黄";
+    baseDamage: number;
+    manaCost: number;
+    cooldown: number;
+    effect: string;
+    visual: string;
+    color: string;
+  }
+> = {
+  jinmang: {
+    name: "金芒",
+    element: "金",
+    rank: "黄",
+    baseDamage: 20,
+    manaCost: 15,
+    cooldown: 3,
+    effect: "穿透，对护甲目标伤害更高",
+    visual: "金色细长锋刃，命中后贯穿继续飞行",
+    color: "#f5d566",
+  },
+  shuiren: {
+    name: "水刃",
+    element: "水",
+    rank: "黄",
+    baseDamage: 14,
+    manaCost: 12,
+    cooldown: 2.5,
+    effect: "命中目标减速30%，持续2秒",
+    visual: "淡蓝色水波刃，命中时溅开水花",
+    color: "#80d8ff",
+  },
+  huodan: {
+    name: "火弹",
+    element: "火",
+    rank: "黄",
+    baseDamage: 24,
+    manaCost: 18,
+    cooldown: 3.5,
+    effect: "命中后灼烧，追加3跳伤害",
+    visual: "橙红色火球，命中时爆开火花",
+    color: "#ff7a3d",
+  },
+};
+
+const techniqueCatalog: Record<
+  DemoTechniqueId,
+  {
+    name: string;
+    rank: "黄";
+    projectileType: string;
+    damageMultiplier: number;
+    range: number;
+    description: string;
+  }
+> = {
+  straight: {
+    name: "直线飞行",
+    rank: "黄",
+    projectileType: "直线弹道",
+    damageMultiplier: 1,
+    range: 600,
+    description: "沿直线飞出，可穿透1个敌人，适合点杀。",
+  },
+  ring: {
+    name: "环形扩散",
+    rank: "黄",
+    projectileType: "自身中心扩散",
+    damageMultiplier: 0.7,
+    range: 150,
+    description: "以角色为中心爆开冲击波，适合被包围时清场。",
+  },
+  drop: {
+    name: "天降坠击",
+    rank: "黄",
+    projectileType: "目标落点",
+    damageMultiplier: 1.3,
+    range: 500,
+    description: "锁定最近敌人落下光柱，落地后溅射。",
+  },
+};
+
+const secretCatalog: Record<
+  DemoSecretId,
+  {
+    name: string;
+    rank: "黄";
+    effectType: string;
+    effectValue: string;
+    flatDamage?: number;
+    critChance?: number;
+    armorPierce?: number;
+    rangeBonus?: number;
+    description: string;
+  }
+> = {
+  cuti: {
+    name: "淬体",
+    rank: "黄",
+    effectType: "攻击加成",
+    effectValue: "+5",
+    flatDamage: 5,
+    description: "最终伤害固定+5。",
+  },
+  mingmu: {
+    name: "明目",
+    rank: "黄",
+    effectType: "暴击几率",
+    effectValue: "+5%",
+    critChance: 0.05,
+    description: "暴击率+5%，暴击时伤害×1.5。",
+  },
+  pojia: {
+    name: "破甲",
+    rank: "黄",
+    effectType: "穿透加成",
+    effectValue: "+10%",
+    armorPierce: 0.1,
+    description: "忽视目标10%防御，对BOSS更明显。",
+  },
+  yufeng: {
+    name: "御风",
+    rank: "黄",
+    effectType: "射程加成",
+    effectValue: "+30%",
+    rangeBonus: 0.3,
+    description: "直线与环形射程+30%，天降坠击不受影响。",
+  },
+};
 
 const artSamples = [
   {
@@ -629,6 +931,96 @@ function getScene(state: DemoSaveState): DemoScene {
   return state.scene ?? "hall";
 }
 
+function isKnownId<T extends string>(value: unknown, ids: T[]): value is T {
+  return typeof value === "string" && ids.includes(value as T);
+}
+
+function getEquipment(state: DemoSaveState): DemoEquipment {
+  return {
+    ...defaultEquipment,
+    ...(state.equipment ?? {}),
+  };
+}
+
+function getLoadout(state: DemoSaveState): DemoLoadout {
+  const slot = state.loadout?.spellSlot;
+  const firstSecret = Array.isArray(slot?.secretIds) ? slot.secretIds[0] : undefined;
+  const secondSecret = Array.isArray(slot?.secretIds) ? slot.secretIds[1] : undefined;
+
+  return {
+    methodId: isKnownId(state.loadout?.methodId, methodIds) ? state.loadout.methodId : defaultLoadout.methodId,
+    spellSlot: {
+      spellId: isKnownId(slot?.spellId, spellIds) ? slot.spellId : defaultLoadout.spellSlot.spellId,
+      techniqueId: isKnownId(slot?.techniqueId, techniqueIds)
+        ? slot.techniqueId
+        : defaultLoadout.spellSlot.techniqueId,
+      secretIds: [
+        isKnownId(firstSecret, secretIds) ? firstSecret : defaultLoadout.spellSlot.secretIds[0],
+        isKnownId(secondSecret, secretIds) ? secondSecret : defaultLoadout.spellSlot.secretIds[1],
+      ],
+    },
+  };
+}
+
+type CombatProfile = {
+  loadout: DemoLoadout;
+  method: (typeof methodCatalog)[DemoMethodId];
+  spell: (typeof spellCatalog)[DemoSpellId];
+  technique: (typeof techniqueCatalog)[DemoTechniqueId];
+  secrets: [(typeof secretCatalog)[DemoSecretId], (typeof secretCatalog)[DemoSecretId]];
+  activeSkillName: string;
+  elementMatch: boolean;
+  elementFactor: number;
+  flatDamage: number;
+  critChance: number;
+  armorPierce: number;
+  rangeBonus: number;
+  activeDamage: number;
+  bossDamage: number;
+  critDamage: number;
+  range: number;
+};
+
+function getCombatProfile(loadout: DemoLoadout): CombatProfile {
+  const method = methodCatalog[loadout.methodId];
+  const spell = spellCatalog[loadout.spellSlot.spellId];
+  const technique = techniqueCatalog[loadout.spellSlot.techniqueId];
+  const secrets = loadout.spellSlot.secretIds.map((id) => secretCatalog[id]) as CombatProfile["secrets"];
+  const flatDamage = secrets.reduce((total, secret) => total + (secret.flatDamage ?? 0), 0);
+  const critChance = secrets.reduce((total, secret) => total + (secret.critChance ?? 0), 0);
+  const armorPierce = secrets.reduce((total, secret) => total + (secret.armorPierce ?? 0), 0);
+  const rangeBonus = secrets.reduce((total, secret) => total + (secret.rangeBonus ?? 0), 0);
+  const elementMatch = method.element === "无" || method.element === spell.element;
+  const elementFactor = elementMatch ? 1 : 0.7;
+  const rawDamage = (spell.baseDamage * technique.damageMultiplier + flatDamage) * elementFactor;
+  const activeDamage = Math.max(1, Math.round(rawDamage));
+  const bossReduction = Math.max(0, 0.15 - armorPierce);
+  const bossDamage = Math.max(1, Math.round(activeDamage * (1 - bossReduction)));
+  const critDamage = Math.round(activeDamage * 1.5);
+  const range = Math.round(
+    technique.range * (loadout.spellSlot.techniqueId === "drop" ? 1 : 1 + rangeBonus),
+  );
+
+  return {
+    loadout,
+    method,
+    spell,
+    technique,
+    secrets,
+    activeSkillName: `${spell.name} · ${technique.name}`,
+    elementMatch,
+    elementFactor,
+    flatDamage,
+    critChance,
+    armorPierce,
+    rangeBonus,
+    activeDamage,
+    bossDamage,
+    critDamage,
+    range,
+  };
+}
+
 function getEventList(events: Record<DemoEventId, DemoEventDefinition>) {
   return Object.values(events).sort((left, right) => left.triggerYear - right.triggerYear);
 }
@@ -662,6 +1054,26 @@ function getVisualStageTitle(visualStage: DemoEventVisualStage) {
     bridge_reward: "金灵宗初识",
   };
   return titles[visualStage];
+}
+
+function getVisualBackground(visualStage: DemoEventVisualStage) {
+  const backgrounds: Record<DemoEventVisualStage, string> = {
+    teleport_departure: "assets/tapflow/scenes/teleport-array.webp",
+    mouse_cave: "assets/tapflow/events/mouse-cave-mouth.webp",
+    mouse_skirmish: "assets/tapflow/events/mouse-cave-battle.webp",
+    mouse_boss_crisis: "assets/tapflow/events/mouse-king-appears.webp",
+    qingmu_rescue: "assets/tapflow/events/mouse-cave-depths.webp",
+    mouse_boss_final: "assets/tapflow/events/mouse-cave-depths.webp",
+    mouse_reward: "assets/tapflow/events/mouse-king-defeated.webp",
+    bridge_village: "assets/tapflow/events/bridge-village-gate.webp",
+    bridge_skirmish: "assets/tapflow/events/bridge-battle.webp",
+    bridge_confrontation: "assets/tapflow/events/bridge-broken-side.webp",
+    wish_eater_reveal: "assets/tapflow/events/wish-eater-reveal.webp",
+    wish_eater_boss: "assets/tapflow/events/wish-eater-reveal.webp",
+    bridge_reward: "assets/tapflow/events/battle-end.webp",
+  };
+
+  return `url("${assetPath(backgrounds[visualStage])}")`;
 }
 
 function getEventButtonLabel(node: DemoEventNode, busy: boolean) {
@@ -748,6 +1160,42 @@ function getSpeakerPortrait(
     };
   }
 
+  if (speaker === "羊七道人") {
+    return {
+      key: "yangqi",
+      expression: seriousNode ? "serious" : "happy",
+      name: "羊七道人",
+    };
+  }
+
+  if (speaker === "豆髯道人") {
+    return {
+      key: "douran",
+      expression: node?.text.includes("哈哈") ? "happy" : "normal",
+      name: "豆髯道人",
+    };
+  }
+
+  if (speaker === "雏雏") {
+    return {
+      key: "chuchu",
+      expression: seriousNode ? "serious" : "normal",
+      name: "雏雏",
+    };
+  }
+
+  if (speaker === "小鹿") {
+    return {
+      key: "xiaolu",
+      expression: node?.text.includes("送他一程") ? "snark" : "serious",
+      name: "小鹿",
+    };
+  }
+
+  if (speaker === "啖愿妖") {
+    return null;
+  }
+
   return null;
 }
 
@@ -822,25 +1270,42 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
   );
 }
 
-function TopHud({ state, online }: { state: DemoSaveState; online: boolean }) {
+function TopHud({
+  state,
+  online,
+  onOpenProfile,
+}: {
+  state: DemoSaveState;
+  online: boolean;
+  onOpenProfile: () => void;
+}) {
   const inventory = state.inventory ?? {
     mouseDemonCore: 0,
     worryForgetRoot: 0,
     qingmuHealingPills: 0,
     jinlingToken: 0,
   };
+  const loadout = getLoadout(state);
+  const method = methodCatalog[loadout.methodId];
 
   return (
     <header className="top-hud">
-      <div className="player-card">
-        <div className="avatar">无</div>
+      <button
+        type="button"
+        className="player-card profile-button"
+        onClick={() => {
+          playSceneClick();
+          onOpenProfile();
+        }}
+      >
+        <div className="avatar">{method.element}</div>
         <div>
           <strong>异世来客 · 鹿石宗</strong>
           <span>
-            万化归途 · {formatTime(state)} · {state.cultivation.level} · {sceneConfig[getScene(state)].label}
+            万化归途 · {formatTime(state)} · {state.cultivation.level} · {method.name}
           </span>
         </div>
-      </div>
+      </button>
       <div className="resource-bar">
         <ResourceChip icon={resourceIcons.spiritStones} label="灵石" value={state.resources.spiritStones} />
         <ResourceChip icon={resourceIcons.spiritMarrow} label="灵髓" value={state.resources.spiritMarrow} />
@@ -886,7 +1351,9 @@ function UtilityPanel({
   panel,
   state,
   events,
+  busyAction,
   musicEnabled,
+  onAction,
   onClose,
   onReset,
   onToggleMusic,
@@ -895,7 +1362,9 @@ function UtilityPanel({
   panel: Panel;
   state: DemoSaveState;
   events: Record<DemoEventId, DemoEventDefinition>;
+  busyAction: DemoAction | "reset" | null;
   musicEnabled: boolean;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onClose: () => void;
   onReset: () => void;
   onToggleMusic: () => void;
@@ -914,8 +1383,14 @@ function UtilityPanel({
     state.completedEvents && state.completedEvents.length > 0
       ? state.completedEvents.map((id) => events[id].title).join("、")
       : "暂无";
+  const equipment = getEquipment(state);
+  const loadout = getLoadout(state);
+  const combatProfile = getCombatProfile(loadout);
+  const lockLoadout = state.location === "battle" || Boolean(state.activeEvent);
+  const equipBusy = Boolean(busyAction);
 
   const content: Record<Panel, string[]> = {
+    我的: [],
     日志: state.eventLog.slice(0, 8).map((event) => `${event.year}年${event.month}月 · ${event.title}：${event.text}`),
     世界: [...worldLore, ...timelineEntries, ...sectSettings],
     事件: [
@@ -943,6 +1418,244 @@ function UtilityPanel({
   };
 
   function renderPanelBody() {
+    if (panel === "我的") {
+      const statRows = [
+        ["境界", state.cultivation.level],
+        ["体质", state.cultivation.root],
+        ["主修", combatProfile.method.name],
+        ["气血", `${100 + combatProfile.method.defense * 4}`],
+        ["灵力", "60"],
+        ["防御", `${combatProfile.method.defense}`],
+        ["回血", combatProfile.method.regen > 0 ? `${combatProfile.method.regen}/秒` : "无"],
+        ["修炼速度", `${combatProfile.method.cultivateSpeed}/月`],
+      ];
+      const inventoryRows = [
+        { icon: resourceIcons.spiritStones, name: "灵石", value: state.resources.spiritStones },
+        { icon: resourceIcons.spiritMarrow, name: "灵髓", value: state.resources.spiritMarrow },
+        { icon: resourceIcons.herbs, name: "草药", value: state.resources.herbs },
+        { icon: resourceIcons.ore, name: "矿石", value: state.resources.ore },
+        { icon: resourceIcons.pills, name: "丹药", value: state.resources.pills },
+        { name: "山鼠妖丹", value: inventory.mouseDemonCore },
+        { name: "忘忧根", value: inventory.worryForgetRoot },
+        { name: "青木疗伤丹", value: inventory.qingmuHealingPills },
+        { name: "金灵宗信物", value: inventory.jinlingToken },
+      ];
+      const equipmentRows = [
+        ["武器", equipment.weapon, "基础飞剑，承担普攻演示"],
+        ["护具", equipment.armor, "炼气期布袍，暂未开放替换"],
+        ["饰品", equipment.accessory, "鹿石宗身份凭证"],
+      ];
+
+      return (
+        <div className="profile-panel">
+          <section className="profile-identity">
+            <div className="profile-portrait">
+              <img src={portraitAssets.player.normal} alt="主角半身像" />
+            </div>
+            <div>
+              <span>主角</span>
+              <h3>异世来客</h3>
+              <p>身无灵根，身怀先天万化道躯。当前功法会决定战斗普攻形态，法术位决定空格主动技能。</p>
+            </div>
+            <dl className="profile-stats">
+              {statRows.map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section className="profile-section">
+            <div className="profile-section-title">
+              <h3>物品栏</h3>
+              <span>{inventoryRows.reduce((total, item) => total + Number(item.value || 0), 0)} 件资源</span>
+            </div>
+            <div className="inventory-grid">
+              {inventoryRows.map((item) => (
+                <div key={item.name} className="inventory-cell">
+                  {item.icon ? <img src={item.icon} alt="" aria-hidden="true" /> : <b>{item.name.slice(0, 1)}</b>}
+                  <span>{item.name}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="profile-section">
+            <div className="profile-section-title">
+              <h3>装备栏</h3>
+              <span>炼气期基础装备</span>
+            </div>
+            <div className="equipment-grid">
+              {equipmentRows.map(([slot, name, note]) => (
+                <div key={slot} className="equipment-slot">
+                  <small>{slot}</small>
+                  <strong>{name}</strong>
+                  <span>{note}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="profile-section loadout-section">
+            <div className="profile-section-title">
+              <h3>功法栏</h3>
+              <span>{lockLoadout ? "战斗/事件中锁定" : "点击切换主修"}</span>
+            </div>
+            <div className="method-grid">
+              {methodIds.map((id) => {
+                const method = methodCatalog[id];
+                const active = loadout.methodId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`loadout-card method-card ${active ? "active" : ""}`}
+                    aria-pressed={active}
+                    disabled={equipBusy || lockLoadout}
+                    onClick={() => {
+                      playSceneClick();
+                      onAction(`equip_method:${id}`);
+                    }}
+                  >
+                    {method.icon ? (
+                      <img src={method.icon} alt="" aria-hidden="true" />
+                    ) : (
+                      <i style={{ background: method.color }}>{method.element}</i>
+                    )}
+                    <strong>{method.name}</strong>
+                    <span>
+                      {method.element} · {method.rank} · {method.role}
+                    </span>
+                    <small>{method.attackName} · 伤害{method.attackDamage} · 攻速{method.attackInterval}s</small>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="profile-section loadout-section spell-builder">
+            <div className="profile-section-title">
+              <h3>术法栏</h3>
+              <span>炼气期丹海 · 1 个黄阶法术位</span>
+            </div>
+
+            <div className="spell-preview">
+              <div>
+                <span>当前主动技能</span>
+                <strong>{combatProfile.activeSkillName}</strong>
+                <small>
+                  伤害 {combatProfile.activeDamage} / BOSS {combatProfile.bossDamage} · 暴击
+                  {Math.round(combatProfile.critChance * 100)}% · 灵力 {combatProfile.spell.manaCost} · 冷却
+                  {combatProfile.spell.cooldown}s
+                </small>
+              </div>
+              <div>
+                <span>五行匹配</span>
+                <strong>{combatProfile.elementMatch ? "完全匹配" : "伤害70%"}</strong>
+                <small>
+                  {combatProfile.method.element}功法 + {combatProfile.spell.element}术法 · 射程 {combatProfile.range}
+                </small>
+              </div>
+            </div>
+
+            {lockLoadout && <p className="loadout-lock">当前已进入事件或战斗，功法和术法不能切换。</p>}
+
+            <div className="slot-group">
+              <h4>术法槽</h4>
+              <div className="slot-options">
+                {spellIds.map((id) => {
+                  const spell = spellCatalog[id];
+                  const active = loadout.spellSlot.spellId === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`slot-option element-${spell.element} ${active ? "active" : ""}`}
+                      aria-pressed={active}
+                      disabled={equipBusy || lockLoadout}
+                      onClick={() => {
+                        playSceneClick();
+                        onAction(`equip_spell:${id}`);
+                      }}
+                    >
+                      <strong>{spell.name}</strong>
+                      <span>
+                        {spell.element} · 伤害{spell.baseDamage} · 灵力{spell.manaCost}
+                      </span>
+                      <small>{spell.effect}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="slot-group">
+              <h4>技法槽</h4>
+              <div className="slot-options">
+                {techniqueIds.map((id) => {
+                  const technique = techniqueCatalog[id];
+                  const active = loadout.spellSlot.techniqueId === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`slot-option ${active ? "active" : ""}`}
+                      aria-pressed={active}
+                      disabled={equipBusy || lockLoadout}
+                      onClick={() => {
+                        playSceneClick();
+                        onAction(`equip_technique:${id}`);
+                      }}
+                    >
+                      <strong>{technique.name}</strong>
+                      <span>
+                        {technique.projectileType} · ×{technique.damageMultiplier}
+                      </span>
+                      <small>{technique.description}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {[0, 1].map((slotIndex) => (
+              <div key={slotIndex} className="slot-group">
+                <h4>秘法槽 {slotIndex + 1}</h4>
+                <div className="slot-options secret-options">
+                  {secretIds.map((id) => {
+                    const secret = secretCatalog[id];
+                    const active = loadout.spellSlot.secretIds[slotIndex] === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`slot-option ${active ? "active" : ""}`}
+                        aria-pressed={active}
+                        disabled={equipBusy || lockLoadout}
+                        onClick={() => {
+                          playSceneClick();
+                          onAction(`equip_secret_${slotIndex + 1}:${id}` as DemoAction);
+                        }}
+                      >
+                        <strong>{secret.name}</strong>
+                        <span>
+                          {secret.effectType} {secret.effectValue}
+                        </span>
+                        <small>{secret.description}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </section>
+        </div>
+      );
+    }
+
     if (panel === "世界") {
       return (
         <>
@@ -1151,20 +1864,34 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
         <>
           <div className="qingmu-vine vine-a" />
           <div className="qingmu-vine vine-b" />
-          <div className="qingmu-figure figure-yang">羊七</div>
-          <div className="qingmu-figure figure-dou">豆髯</div>
+          <div className="qingmu-figure figure-yang">
+            <img src={assetPath("assets/tapflow/portraits/yangqi.webp")} alt="" aria-hidden="true" />
+            <span>羊七</span>
+          </div>
+          <div className="qingmu-figure figure-dou">
+            <img src={assetPath("assets/tapflow/portraits/douran.webp")} alt="" aria-hidden="true" />
+            <span>豆髯</span>
+          </div>
         </>
       )}
       {stage === "bridge_confrontation" && (
         <>
-          <div className="jinling-figure figure-chuchu">雏雏</div>
-          <div className="jinling-figure figure-xiaolu">小鹿</div>
+          <div className="jinling-figure figure-chuchu">
+            <img src={assetPath("assets/tapflow/portraits/chuchu.webp")} alt="" aria-hidden="true" />
+            <span>雏雏</span>
+          </div>
+          <div className="jinling-figure figure-xiaolu">
+            <img src={assetPath("assets/tapflow/portraits/xiaolu.webp")} alt="" aria-hidden="true" />
+            <span>小鹿</span>
+          </div>
           <div className="beggar-form">乞</div>
         </>
       )}
       {stage === "wish_eater_reveal" && (
         <>
-          <div className="wish-eater-shadow" />
+          <div className="wish-eater-shadow">
+            <img src={assetPath("assets/tapflow/events/wish-eater-reveal.webp")} alt="" aria-hidden="true" />
+          </div>
           <div className="wish-fire fire-a" />
           <div className="wish-fire fire-b" />
         </>
@@ -1174,21 +1901,44 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
           <div className="battle-arena-line line-back" />
           <div className="battle-arena-line line-front" />
           <div className="player-combatant player-a">
-            <img src={assetPath("assets/combat/player-combat.webp")} alt="" aria-hidden="true" />
+            <img src={assetPath("assets/tapflow/portraits/player-combat.webp")} alt="" aria-hidden="true" />
             <span>主角</span>
           </div>
-          <div className="player-combatant player-b">小张</div>
-          {stage === "mouse_boss_final" && <div className="ally-combatant ally-a">羊七</div>}
-          {stage === "mouse_boss_final" && <div className="ally-combatant ally-b">豆髯</div>}
-          {stage === "wish_eater_boss" && <div className="ally-combatant ally-a">雏雏</div>}
-          {stage === "wish_eater_boss" && <div className="ally-combatant ally-b">小鹿</div>}
+          <div className="player-combatant player-b">
+            <img src={assetPath("assets/tapflow/portraits/xiaozhang-serious.webp")} alt="" aria-hidden="true" />
+            <span>小张</span>
+          </div>
+          {stage === "mouse_boss_final" && (
+            <div className="ally-combatant ally-a">
+              <img src={assetPath("assets/tapflow/portraits/yangqi.webp")} alt="" aria-hidden="true" />
+              <span>羊七</span>
+            </div>
+          )}
+          {stage === "mouse_boss_final" && (
+            <div className="ally-combatant ally-b">
+              <img src={assetPath("assets/tapflow/portraits/douran.webp")} alt="" aria-hidden="true" />
+              <span>豆髯</span>
+            </div>
+          )}
+          {stage === "wish_eater_boss" && (
+            <div className="ally-combatant ally-a">
+              <img src={assetPath("assets/tapflow/portraits/chuchu.webp")} alt="" aria-hidden="true" />
+              <span>雏雏</span>
+            </div>
+          )}
+          {stage === "wish_eater_boss" && (
+            <div className="ally-combatant ally-b">
+              <img src={assetPath("assets/tapflow/portraits/xiaolu.webp")} alt="" aria-hidden="true" />
+              <span>小鹿</span>
+            </div>
+          )}
           {isBossStage ? (
             <div className={`event-boss ${stage.startsWith("wish") ? "boss-wish" : "boss-rat"}`}>
               <img
                 src={
                   stage.startsWith("wish")
-                    ? assetPath("assets/monsters/wish-eater.webp")
-                    : assetPath("assets/monsters/mouse-king.webp")
+                    ? assetPath("assets/tapflow/monsters/wish-eater.webp")
+                    : assetPath("assets/tapflow/monsters/mouse-king.webp")
                 }
                 alt=""
                 aria-hidden="true"
@@ -1201,21 +1951,21 @@ function EventStageObjects({ node }: { node: DemoEventNode }) {
                 {stage.startsWith("bridge") ? (
                   "祟"
                 ) : (
-                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/tapflow/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-b">
                 {stage.startsWith("bridge") ? (
                   "影"
                 ) : (
-                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/tapflow/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
               <div className="event-mob mob-c">
                 {stage.startsWith("bridge") ? (
                   "怨"
                 ) : (
-                  <img src={assetPath("assets/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
+                  <img src={assetPath("assets/tapflow/monsters/mouse-minion.webp")} alt="" aria-hidden="true" />
                 )}
               </div>
             </>
@@ -1250,6 +2000,8 @@ type CombatView = {
   status: "ready" | "running" | "won" | "lost";
   hp: number;
   maxHp: number;
+  mana: number;
+  maxMana: number;
   kills: number;
   seconds: number;
   skillCooldown: number;
@@ -1258,6 +2010,7 @@ type CombatView = {
   bossHp: number;
   bossMaxHp: number;
   objectiveProgress: string;
+  notice: string;
   result: DemoBattleResult | null;
 };
 
@@ -1271,6 +2024,9 @@ type CombatEnemy = {
   speed: number;
   damage: number;
   attackCd: number;
+  slowTimer: number;
+  burnTimer: number;
+  burnDps: number;
   kind: "minion" | "boss";
 };
 
@@ -1283,7 +2039,15 @@ type CombatProjectile = {
   r: number;
   damage: number;
   life: number;
-  kind: "auto" | "manual" | "enemy" | "burst";
+  range: number;
+  traveled: number;
+  pierce: number;
+  hitIds: number[];
+  color: string;
+  spellId?: DemoSpellId;
+  critChance?: number;
+  armorPierce?: number;
+  kind: "auto" | "manual" | "enemy" | "skill";
 };
 
 type CombatParticle = {
@@ -1306,6 +2070,10 @@ type CombatRuntime = {
     r: number;
     hp: number;
     maxHp: number;
+    mana: number;
+    maxMana: number;
+    defense: number;
+    hpRegen: number;
     damageTaken: number;
   };
   enemies: CombatEnemy[];
@@ -1325,6 +2093,8 @@ type CombatRuntime = {
   bossShotCd: number;
   bossSpawned: boolean;
   objectiveMet: boolean;
+  notice: string;
+  noticeTimer: number;
   result: DemoBattleResult | null;
 };
 
@@ -1412,7 +2182,8 @@ function getCombatConfig(node: DemoEventNode): CombatConfig {
   };
 }
 
-function createCombatRuntime(config: CombatConfig, width: number, height: number): CombatRuntime {
+function createCombatRuntime(config: CombatConfig, width: number, height: number, profile: CombatProfile): CombatRuntime {
+  const maxHp = 100 + profile.method.defense * 4 + profile.method.shield;
   return {
     status: "ready",
     width,
@@ -1421,8 +2192,12 @@ function createCombatRuntime(config: CombatConfig, width: number, height: number
       x: width * 0.44,
       y: height * 0.58,
       r: 18,
-      hp: 120,
-      maxHp: 120,
+      hp: maxHp,
+      maxHp,
+      mana: 60,
+      maxMana: 60,
+      defense: profile.method.defense,
+      hpRegen: profile.method.regen,
       damageTaken: 0,
     },
     enemies: [],
@@ -1435,13 +2210,15 @@ function createCombatRuntime(config: CombatConfig, width: number, height: number
     spiritStones: 0,
     nextId: 1,
     spawnCd: 0,
-    autoCd: 0.25,
+    autoCd: Math.min(0.4, profile.method.attackInterval * 0.45),
     manualCd: 0,
     skillCd: 0,
-    skillMaxCd: 5.5,
+    skillMaxCd: profile.spell.cooldown,
     bossShotCd: 1.2,
     bossSpawned: false,
     objectiveMet: false,
+    notice: "",
+    noticeTimer: 0,
     result: null,
   };
 }
@@ -1462,6 +2239,8 @@ function makeCombatView(runtime: CombatRuntime, config: CombatConfig): CombatVie
     status: runtime.status,
     hp: Math.max(0, Math.round(runtime.player.hp)),
     maxHp: runtime.player.maxHp,
+    mana: Math.max(0, Math.round(runtime.player.mana)),
+    maxMana: runtime.player.maxMana,
     kills: runtime.kills,
     seconds: Math.floor(runtime.elapsed),
     skillCooldown: Math.max(0, runtime.skillCd),
@@ -1470,6 +2249,7 @@ function makeCombatView(runtime: CombatRuntime, config: CombatConfig): CombatVie
     bossHp: Math.max(0, Math.round(bossHp)),
     bossMaxHp: config.bossHp,
     objectiveProgress,
+    notice: runtime.noticeTimer > 0 ? runtime.notice : "",
     result: runtime.result,
   };
 }
@@ -1491,6 +2271,9 @@ function spawnCombatEnemy(runtime: CombatRuntime, config: CombatConfig, kind: "m
     speed: kind === "boss" ? 58 : config.enemySpeed + Math.min(22, runtime.elapsed * 0.4),
     damage: kind === "boss" ? 18 : 8,
     attackCd: 0,
+    slowTimer: 0,
+    burnTimer: 0,
+    burnDps: 0,
     kind,
   });
 }
@@ -1505,6 +2288,7 @@ function pushCombatProjectile(
   damageValue: number,
   radius: number,
   life: number,
+  options: Partial<Pick<CombatProjectile, "range" | "pierce" | "color" | "spellId" | "critChance" | "armorPierce">> = {},
 ) {
   runtime.projectiles.push({
     id: runtime.nextId++,
@@ -1515,6 +2299,14 @@ function pushCombatProjectile(
     r: radius,
     damage: damageValue,
     life,
+    range: options.range ?? 1200,
+    traveled: 0,
+    pierce: options.pierce ?? 0,
+    hitIds: [],
+    color: options.color ?? "rgba(255, 226, 125, 0.94)",
+    spellId: options.spellId,
+    critChance: options.critChance,
+    armorPierce: options.armorPierce,
     kind,
   });
 }
@@ -1549,11 +2341,18 @@ function firePlayerShot(
   targetX: number,
   targetY: number,
   kind: CombatProjectile["kind"],
+  profile: CombatProfile,
 ) {
   const dx = targetX - runtime.player.x;
   const dy = targetY - runtime.player.y;
   const length = Math.hypot(dx, dy) || 1;
-  const speed = kind === "manual" ? 760 : 640;
+  const speed = profile.method.projectileSpeed * (kind === "manual" ? 1.9 : 1.55);
+  const isFireMethod = profile.loadout.methodId === "yanxin_jue";
+  const isGoldMethod = profile.loadout.methodId === "jinmang_jue";
+  const damageValue =
+    kind === "manual"
+      ? Math.max(6, Math.round(profile.method.attackDamage * 0.72))
+      : profile.method.attackDamage;
   pushCombatProjectile(
     runtime,
     runtime.player.x,
@@ -1561,9 +2360,140 @@ function firePlayerShot(
     (dx / length) * speed,
     (dy / length) * speed,
     kind,
-    kind === "manual" ? 18 : 14,
-    kind === "manual" ? 6 : 5,
-    1.15,
+    damageValue,
+    isFireMethod ? 8 : isGoldMethod ? 6 : 7,
+    1.4,
+    {
+      color: isFireMethod ? "rgba(255, 119, 55, 0.96)" : isGoldMethod ? "rgba(245, 213, 102, 0.96)" : "rgba(220, 238, 255, 0.94)",
+      pierce: isGoldMethod && kind !== "manual" ? 1 : 0,
+      range: kind === "manual" ? 680 : 740,
+    },
+  );
+}
+
+function applyPlayerDamage(runtime: CombatRuntime, amount: number) {
+  const finalDamage = Math.max(1, Math.round(amount - runtime.player.defense * 0.45));
+  runtime.player.hp -= finalDamage;
+  runtime.player.damageTaken += finalDamage;
+}
+
+function rollSkillDamage(baseDamage: number, critChance = 0) {
+  return Math.random() < critChance ? Math.round(baseDamage * 1.5) : baseDamage;
+}
+
+function applyEnemySkillHit(
+  runtime: CombatRuntime,
+  enemy: CombatEnemy,
+  damageValue: number,
+  spellId: DemoSpellId | undefined,
+  critChance = 0,
+  armorPierce = 0,
+) {
+  const reduction = enemy.kind === "boss" ? Math.max(0, 0.15 - armorPierce) : 0;
+  const finalDamage = Math.max(1, Math.round(rollSkillDamage(damageValue, critChance) * (1 - reduction)));
+  enemy.hp -= finalDamage;
+
+  if (spellId === "shuiren") {
+    enemy.slowTimer = Math.max(enemy.slowTimer, 2);
+  }
+
+  if (spellId === "huodan") {
+    enemy.burnTimer = Math.max(enemy.burnTimer, 1.8);
+    enemy.burnDps = Math.max(enemy.burnDps, 8);
+  }
+
+  pushCombatParticle(
+    runtime,
+    enemy.x,
+    enemy.y,
+    enemy.r + 16,
+    spellId === "huodan"
+      ? "rgba(255, 119, 55, 0.62)"
+      : spellId === "shuiren"
+        ? "rgba(128, 216, 255, 0.56)"
+        : "rgba(255, 231, 143, 0.52)",
+    0.3,
+  );
+}
+
+function setCombatNotice(runtime: CombatRuntime, notice: string) {
+  runtime.notice = notice;
+  runtime.noticeTimer = 1.35;
+}
+
+function castActiveSkill(runtime: CombatRuntime, profile: CombatProfile) {
+  if (runtime.player.mana < profile.spell.manaCost) {
+    setCombatNotice(runtime, "灵力不足");
+    return;
+  }
+
+  runtime.player.mana -= profile.spell.manaCost;
+  runtime.skillCd = profile.spell.cooldown;
+  runtime.skillMaxCd = profile.spell.cooldown;
+
+  if (profile.loadout.spellSlot.techniqueId === "ring") {
+    const radius = profile.range;
+    pushCombatParticle(runtime, runtime.player.x, runtime.player.y, radius, `${profile.spell.color}88`, 0.42);
+    for (const enemy of runtime.enemies) {
+      const hitDistance = distance(runtime.player.x, runtime.player.y, enemy.x, enemy.y);
+      if (hitDistance <= radius + enemy.r) {
+        const edgeFactor = hitDistance > radius * 0.65 ? 0.6 : 1;
+        applyEnemySkillHit(
+          runtime,
+          enemy,
+          Math.max(1, Math.round(profile.activeDamage * edgeFactor)),
+          profile.loadout.spellSlot.spellId,
+          profile.critChance,
+          profile.armorPierce,
+        );
+      }
+    }
+    return;
+  }
+
+  const target = nearestEnemy(runtime);
+  const targetX = target?.x ?? runtime.pointer.x;
+  const targetY = target?.y ?? runtime.pointer.y;
+
+  if (profile.loadout.spellSlot.techniqueId === "drop") {
+    pushCombatParticle(runtime, targetX, targetY, 112, `${profile.spell.color}aa`, 0.42);
+    for (const enemy of runtime.enemies) {
+      if (distance(targetX, targetY, enemy.x, enemy.y) <= 112 + enemy.r) {
+        applyEnemySkillHit(
+          runtime,
+          enemy,
+          profile.activeDamage,
+          profile.loadout.spellSlot.spellId,
+          profile.critChance,
+          profile.armorPierce,
+        );
+      }
+    }
+    return;
+  }
+
+  const dx = targetX - runtime.player.x;
+  const dy = targetY - runtime.player.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const speed = 680;
+  pushCombatProjectile(
+    runtime,
+    runtime.player.x,
+    runtime.player.y,
+    (dx / length) * speed,
+    (dy / length) * speed,
+    "skill",
+    profile.activeDamage,
+    profile.loadout.spellSlot.spellId === "huodan" ? 10 : 7,
+    1.6,
+    {
+      range: profile.range,
+      pierce: profile.loadout.spellSlot.spellId === "jinmang" ? 1 : 0,
+      color: `${profile.spell.color}ee`,
+      spellId: profile.loadout.spellSlot.spellId,
+      critChance: profile.critChance,
+      armorPierce: profile.armorPierce,
+    },
   );
 }
 
@@ -1572,15 +2502,15 @@ function useCombatImages(config: CombatConfig) {
 
   useEffect(() => {
     const sources = {
-      player: assetPath("assets/combat/player-combat.webp"),
+      player: assetPath("assets/tapflow/portraits/player-combat.webp"),
       minion:
         config.theme === "mouse"
-          ? assetPath("assets/monsters/mouse-minion.webp")
-          : assetPath("assets/monsters/wish-eater.webp"),
+          ? assetPath("assets/tapflow/monsters/mouse-minion.webp")
+          : assetPath("assets/tapflow/monsters/wish-eater.webp"),
       boss:
         config.theme === "mouse"
-          ? assetPath("assets/monsters/mouse-king.webp")
-          : assetPath("assets/monsters/wish-eater.webp"),
+          ? assetPath("assets/tapflow/monsters/mouse-king.webp")
+          : assetPath("assets/tapflow/monsters/wish-eater.webp"),
     };
 
     for (const [key, src] of Object.entries(sources)) {
@@ -1595,14 +2525,26 @@ function useCombatImages(config: CombatConfig) {
 
 function BulletHellCombat({
   node,
+  loadout,
   busyAction,
   onComplete,
 }: {
   node: DemoEventNode;
+  loadout: DemoLoadout;
   busyAction: DemoAction | "reset" | null;
   onComplete: (result: DemoBattleResult) => void;
 }) {
   const config = useMemo(() => getCombatConfig(node), [node]);
+  const profile = useMemo(
+    () => getCombatProfile(loadout),
+    [
+      loadout.methodId,
+      loadout.spellSlot.spellId,
+      loadout.spellSlot.techniqueId,
+      loadout.spellSlot.secretIds[0],
+      loadout.spellSlot.secretIds[1],
+    ],
+  );
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const runtimeRef = useRef<CombatRuntime | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -1610,7 +2552,7 @@ function BulletHellCombat({
   const lastViewSyncRef = useRef(0);
   const imagesRef = useCombatImages(config);
   const [view, setView] = useState<CombatView>(() => {
-    const runtime = createCombatRuntime(config, 960, 540);
+    const runtime = createCombatRuntime(config, 960, 540, profile);
     return makeCombatView(runtime, config);
   });
 
@@ -1619,7 +2561,7 @@ function BulletHellCombat({
     const rect = canvas?.getBoundingClientRect();
     const width = Math.max(640, Math.round(rect?.width ?? 960));
     const height = Math.max(360, Math.round(rect?.height ?? 540));
-    const runtime = createCombatRuntime(config, width, height);
+    const runtime = createCombatRuntime(config, width, height, profile);
     runtime.status = started ? "running" : "ready";
     if (config.boss) spawnCombatEnemy(runtime, config, "boss");
     runtimeRef.current = runtime;
@@ -1644,7 +2586,7 @@ function BulletHellCombat({
 
   useEffect(() => {
     resetRuntime(false);
-  }, [config.id]);
+  }, [config.id, profile.activeSkillName]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1656,15 +2598,7 @@ function BulletHellCombat({
       }
       runtime.keys.add(key);
       if (key === " " && runtime.status === "running" && runtime.skillCd <= 0) {
-        runtime.skillCd = runtime.skillMaxCd;
-        pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 156, "rgba(128, 226, 255, 0.52)", 0.34);
-        for (const enemy of runtime.enemies) {
-          const hitRange = enemy.kind === "boss" ? 188 : 164;
-          if (distance(runtime.player.x, runtime.player.y, enemy.x, enemy.y) <= hitRange) {
-            enemy.hp -= enemy.kind === "boss" ? 82 : 96;
-            pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 16, "rgba(255, 230, 139, 0.62)", 0.28);
-          }
-        }
+        castActiveSkill(runtime, profile);
       }
     };
 
@@ -1678,7 +2612,7 @@ function BulletHellCombat({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [config.id]);
+  }, [config.id, profile]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1722,6 +2656,11 @@ function BulletHellCombat({
       runtime.manualCd -= dt;
       runtime.skillCd = Math.max(0, runtime.skillCd - dt);
       runtime.bossShotCd -= dt;
+      runtime.noticeTimer = Math.max(0, runtime.noticeTimer - dt);
+      runtime.player.mana = Math.min(runtime.player.maxMana, runtime.player.mana + 3 * dt);
+      if (runtime.player.hpRegen > 0) {
+        runtime.player.hp = Math.min(runtime.player.maxHp, runtime.player.hp + runtime.player.hpRegen * dt);
+      }
 
       const left = runtime.keys.has("a") || runtime.keys.has("arrowleft") ? -1 : 0;
       const right = runtime.keys.has("d") || runtime.keys.has("arrowright") ? 1 : 0;
@@ -1743,12 +2682,12 @@ function BulletHellCombat({
 
       const target = nearestEnemy(runtime);
       if (target && runtime.autoCd <= 0) {
-        firePlayerShot(runtime, target.x, target.y, "auto");
-        runtime.autoCd = 0.42;
+        firePlayerShot(runtime, target.x, target.y, "auto", profile);
+        runtime.autoCd = Math.max(0.34, profile.method.attackInterval * 0.55);
       }
 
       if (runtime.pointer.down && runtime.manualCd <= 0) {
-        firePlayerShot(runtime, runtime.pointer.x, runtime.pointer.y, "manual");
+        firePlayerShot(runtime, runtime.pointer.x, runtime.pointer.y, "manual", profile);
         runtime.manualCd = 0.16;
       }
 
@@ -1774,30 +2713,38 @@ function BulletHellCombat({
 
       for (const enemy of runtime.enemies) {
         enemy.attackCd = Math.max(0, enemy.attackCd - dt);
+        enemy.slowTimer = Math.max(0, enemy.slowTimer - dt);
+        if (enemy.burnTimer > 0) {
+          const burnTick = enemy.burnDps * dt;
+          enemy.hp -= burnTick;
+          enemy.burnTimer = Math.max(0, enemy.burnTimer - dt);
+        }
         const dx = runtime.player.x - enemy.x;
         const dy = runtime.player.y - enemy.y;
         const length = Math.hypot(dx, dy) || 1;
-        enemy.x += (dx / length) * enemy.speed * dt;
-        enemy.y += (dy / length) * enemy.speed * dt;
+        const slowFactor = enemy.slowTimer > 0 ? 0.7 : 1;
+        enemy.x += (dx / length) * enemy.speed * slowFactor * dt;
+        enemy.y += (dy / length) * enemy.speed * slowFactor * dt;
         if (length <= enemy.r + runtime.player.r && enemy.attackCd <= 0) {
-          runtime.player.hp -= enemy.damage;
-          runtime.player.damageTaken += enemy.damage;
+          applyPlayerDamage(runtime, enemy.damage);
           enemy.attackCd = enemy.kind === "boss" ? 0.8 : 0.55;
           pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 34, "rgba(255, 88, 80, 0.55)", 0.25);
         }
       }
 
       for (const projectile of runtime.projectiles) {
-        projectile.x += projectile.vx * dt;
-        projectile.y += projectile.vy * dt;
+        const stepX = projectile.vx * dt;
+        const stepY = projectile.vy * dt;
+        projectile.x += stepX;
+        projectile.y += stepY;
+        projectile.traveled += Math.hypot(stepX, stepY);
         projectile.life -= dt;
       }
 
       for (const projectile of runtime.projectiles) {
         if (projectile.kind === "enemy") {
           if (distance(projectile.x, projectile.y, runtime.player.x, runtime.player.y) <= projectile.r + runtime.player.r) {
-            runtime.player.hp -= projectile.damage;
-            runtime.player.damageTaken += projectile.damage;
+            applyPlayerDamage(runtime, projectile.damage);
             projectile.life = 0;
             pushCombatParticle(runtime, runtime.player.x, runtime.player.y, 30, "rgba(255, 88, 80, 0.5)", 0.25);
           }
@@ -1805,10 +2752,24 @@ function BulletHellCombat({
         }
 
         for (const enemy of runtime.enemies) {
-          if (distance(projectile.x, projectile.y, enemy.x, enemy.y) <= projectile.r + enemy.r) {
-            enemy.hp -= projectile.damage;
+          if (
+            !projectile.hitIds.includes(enemy.id) &&
+            distance(projectile.x, projectile.y, enemy.x, enemy.y) <= projectile.r + enemy.r
+          ) {
+            applyEnemySkillHit(
+              runtime,
+              enemy,
+              projectile.damage,
+              projectile.spellId,
+              projectile.critChance,
+              projectile.armorPierce,
+            );
+            projectile.hitIds.push(enemy.id);
+            if (projectile.pierce > 0) {
+              projectile.pierce -= 1;
+              continue;
+            }
             projectile.life = 0;
-            pushCombatParticle(runtime, enemy.x, enemy.y, 18, "rgba(255, 231, 143, 0.48)", 0.18);
             break;
           }
         }
@@ -1827,6 +2788,7 @@ function BulletHellCombat({
       runtime.projectiles = runtime.projectiles.filter(
         (projectile) =>
           projectile.life > 0 &&
+          projectile.traveled <= projectile.range &&
           projectile.x > -60 &&
           projectile.y > -60 &&
           projectile.x < runtime.width + 60 &&
@@ -1879,14 +2841,9 @@ function BulletHellCombat({
 
       for (const projectile of runtime.projectiles) {
         ctx.beginPath();
-        ctx.fillStyle =
-          projectile.kind === "enemy"
-            ? "rgba(255, 86, 83, 0.9)"
-            : projectile.kind === "manual"
-              ? "rgba(137, 225, 255, 0.96)"
-              : "rgba(255, 226, 125, 0.94)";
+        ctx.fillStyle = projectile.kind === "enemy" ? "rgba(255, 86, 83, 0.9)" : projectile.color;
         ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = projectile.kind === "enemy" ? 10 : 14;
+        ctx.shadowBlur = projectile.kind === "enemy" ? 10 : projectile.kind === "skill" ? 18 : 14;
         ctx.arc(projectile.x, projectile.y, projectile.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
@@ -1987,10 +2944,11 @@ function BulletHellCombat({
       rafRef.current = null;
       lastFrameRef.current = null;
     };
-  }, [config, imagesRef, view.status]);
+  }, [config, imagesRef, profile, view.status]);
 
   const hpWidth = `${Math.max(0, (view.hp / view.maxHp) * 100)}%`;
-  const skillReady = view.skillCooldown <= 0;
+  const manaWidth = `${Math.max(0, (view.mana / view.maxMana) * 100)}%`;
+  const skillReady = view.skillCooldown <= 0 && view.mana >= profile.spell.manaCost;
   const skillWidth = `${100 - Math.min(100, (view.skillCooldown / view.skillMaxCooldown) * 100)}%`;
   const isSaving = busyAction === "battle_victory";
 
@@ -2001,12 +2959,18 @@ function BulletHellCombat({
         <div className="combat-title">
           <span>战斗 Demo</span>
           <strong>{config.title}</strong>
-          <small>{config.objective} · {view.objectiveProgress} · 清完场上怪物才能继续</small>
+          <small>
+            {config.objective} · {view.objectiveProgress} · {profile.method.name} / {profile.activeSkillName}
+          </small>
         </div>
         <div className="combat-bars">
           <div>
             <span>气血 {view.hp}/{view.maxHp}</span>
             <i className="hp-bar"><b style={{ width: hpWidth }} /></i>
+          </div>
+          <div>
+            <span>灵力 {view.mana}/{view.maxMana}</span>
+            <i className="mana-bar"><b style={{ width: manaWidth }} /></i>
           </div>
           {config.boss && (
             <div>
@@ -2019,13 +2983,17 @@ function BulletHellCombat({
           <span>击杀 {view.kills}</span>
           <span>用时 {view.seconds}s</span>
           <span>灵石 +{view.spiritStones}</span>
+          <span>{profile.elementMatch ? "五行匹配" : "五行不匹配"}</span>
         </div>
       </div>
+      {view.notice && <div className="combat-notice">{view.notice}</div>}
       <div className="combat-skillbar">
         <span>WASD/方向键移动</span>
-        <span>自动飞剑</span>
+        <span>{profile.method.attackName}</span>
         <span>鼠标按住连射</span>
-        <span className={skillReady ? "ready" : ""}>空格范围技 {skillReady ? "可用" : `${view.skillCooldown.toFixed(1)}s`}</span>
+        <span className={skillReady ? "ready" : ""}>
+          空格 {profile.activeSkillName} {skillReady ? "可用" : view.skillCooldown > 0 ? `${view.skillCooldown.toFixed(1)}s` : "灵力不足"}
+        </span>
         <i><b style={{ width: skillWidth }} /></i>
       </div>
       {view.status !== "running" && (
@@ -2033,7 +3001,9 @@ function BulletHellCombat({
           {view.status === "ready" && (
             <>
               <h2>{config.title}</h2>
-              <p>{config.objective}。目标达成后仍要清完场上怪物，才会进入下一段剧情。</p>
+              <p>
+                {config.objective}。当前配置：{profile.method.name} + {profile.activeSkillName}。目标达成后仍要清完场上怪物，才会进入下一段剧情。
+              </p>
               <button onClick={() => resetRuntime(true)}>开始战斗</button>
             </>
           )}
@@ -2316,18 +3286,33 @@ function HomeScene({
         ? null
         : getActorPortrait(config.actor);
   const busy = Boolean(busyAction);
+  const stageStyle = {
+    "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
+    "--avatar-frame": `url("${assetPath("assets/tapflow/ui/avatar-frame.webp")}")`,
+    "--scene-button": `url("${assetPath("assets/tapflow/ui/scene-button.webp")}")`,
+    "--dialogue-box": `url("${assetPath("assets/tapflow/ui/dialogue-box.webp")}")`,
+    "--nameplate": `url("${assetPath("assets/tapflow/ui/nameplate.webp")}")`,
+    "--loadout-window": `url("${assetPath("assets/tapflow/loadout/wanhua-window.webp")}")`,
+  } as CSSProperties;
 
   if (activeEvent?.node.mode === "battle") {
+    const battleStyle = {
+      ...stageStyle,
+      "--visual-bg": getVisualBackground(activeEvent.node.visualStage),
+    } as CSSProperties;
+
     return (
       <main className="game-shell combat-shell">
         <section
           className={`stage scene-${scene} accent-${config.accent} battle-stage event-stage visual-${activeEvent.node.visualStage}`}
+          style={battleStyle}
         >
           <div className="stage-bg">
             <EventStageObjects node={activeEvent.node} />
           </div>
           <BulletHellCombat
             node={activeEvent.node}
+            loadout={getLoadout(state)}
             busyAction={busyAction}
             onComplete={(battleResult) => onAction("battle_victory", { battleResult })}
           />
@@ -2337,12 +3322,13 @@ function HomeScene({
   }
 
   return (
-    <main className={`game-shell ${activeEvent ? "event-shell" : ""}`}>
-      {!activeEvent && <TopHud state={state} online={online} />}
+    <main className={`game-shell ${activeEvent ? "event-shell" : ""}`} style={stageStyle}>
+      {!activeEvent && <TopHud state={state} online={online} onOpenProfile={() => onOpenPanel("我的")} />}
       <section
         className={`stage scene-${scene} accent-${config.accent} ${
           inBattle ? "battle-stage" : ""
         } ${visualStage ? `event-stage visual-${visualStage}` : ""}`}
+        style={visualStage ? ({ "--visual-bg": getVisualBackground(visualStage) } as CSSProperties) : undefined}
       >
         <div className="stage-bg">
           {activeEvent ? (
@@ -2357,7 +3343,7 @@ function HomeScene({
 
         {!activeEvent && (
           <aside className="right-menu">
-            {(["日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
+            {(["我的", "日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
               <button
                 key={item}
                 disabled={busy}
@@ -2446,7 +3432,7 @@ function HomeScene({
                   disabled={busy}
                   onClick={() => {
                     playSceneClick();
-                    onAction("start_mouse_cave");
+                    onAction("start_event:mouse_cave_treasure");
                   }}
                 >
                   传送山鼠洞
@@ -2505,7 +3491,9 @@ function HomeScene({
           panel={panel}
           state={state}
           events={events}
+          busyAction={busyAction}
           musicEnabled={musicEnabled}
+          onAction={onAction}
           onClose={onClosePanel}
           onReset={onReset}
           onToggleMusic={onToggleMusic}
@@ -2663,3 +3651,4 @@ function App() {
 }
 
 export default App;
+
