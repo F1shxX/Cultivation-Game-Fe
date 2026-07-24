@@ -231,6 +231,24 @@ type LoadState =
 
 type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
 type ProfileTab = "属性" | "物品" | "装备" | "功法" | "术法";
+type BagCategory = "装备" | "丹药" | "秘籍" | "任务" | "材料" | "其他";
+type EquipmentView = "武器" | "服饰" | "法宝" | "丹药";
+type BagItem = {
+  id: string;
+  icon?: string;
+  category: BagCategory;
+  name: string;
+  value: number;
+  description: string;
+  useLabel: string;
+};
+type SceneMenuItem = {
+  label: string;
+  hint?: string;
+  action?: DemoAction;
+  panel?: Panel;
+  profileTab?: ProfileTab;
+};
 
 const profileTabItems: { id: ProfileTab; note: string }[] = [
   { id: "属性", note: "主角状态" },
@@ -239,6 +257,9 @@ const profileTabItems: { id: ProfileTab; note: string }[] = [
   { id: "功法", note: "主修切换" },
   { id: "术法", note: "技能配置" },
 ];
+
+const bagCategories: BagCategory[] = ["装备", "丹药", "秘籍", "任务", "材料", "其他"];
+const equipmentViews: EquipmentView[] = ["武器", "服饰", "法宝", "丹药"];
 
 type PortraitKey =
   | "player"
@@ -917,6 +938,80 @@ const sceneConfig: Record<
 
 const scenes = Object.keys(sceneConfig) as DemoScene[];
 
+const hubSceneTargets: DemoScene[] = [
+  "hall",
+  "dormitory",
+  "sister_room",
+  "meditation_room",
+  "forge",
+  "alchemy_room",
+  "spirit_garden",
+  "teleport_array",
+];
+
+function getSceneMenuItems(scene: DemoScene): SceneMenuItem[] {
+  if (scene === "plaza") {
+    return hubSceneTargets.map((target) => ({
+      label: sceneConfig[target].label,
+      hint: sceneConfig[target].subtitle,
+      action: `change_scene:${target}`,
+    }));
+  }
+
+  const backToPlaza: SceneMenuItem = {
+    label: "返回",
+    hint: "回到鹿石宗广场主界面",
+    action: "change_scene:plaza",
+  };
+
+  const sceneMenus: Partial<Record<DemoScene, SceneMenuItem[]>> = {
+    hall: [
+      { label: "阅读门规", hint: "查看鹿石宗和五宗设定", panel: "世界" },
+      { label: "鹿真人手记", hint: "查看最近事件与主线线索", panel: "日志" },
+      backToPlaza,
+    ],
+    dormitory: [
+      { label: "休息", hint: "推进一月并恢复状态", action: "rest" },
+      { label: "仓库", hint: "打开人物背包", panel: "我的", profileTab: "物品" },
+      backToPlaza,
+    ],
+    sister_room: [
+      { label: "交谈", hint: "找小娴师姐说话", action: "talk_xiaoxian" },
+      { label: "查看丹药", hint: "打开背包丹药栏", panel: "我的", profileTab: "物品" },
+      backToPlaza,
+    ],
+    meditation_room: [
+      { label: "练功", hint: "运转功法提升修为", action: "cultivate" },
+      { label: "研习", hint: "打开功法配置", panel: "我的", profileTab: "功法" },
+      { label: "闭修", hint: "消耗灵石闭关一月", action: "cultivate" },
+      backToPlaza,
+    ],
+    forge: [
+      { label: "炼制装备", hint: "消耗矿石炼器", action: "forge" },
+      { label: "淬炼法宝", hint: "打开装备槽并查看候选物品", panel: "我的", profileTab: "装备" },
+      backToPlaza,
+    ],
+    alchemy_room: [
+      { label: "炼丹", hint: "消耗草药获得丹药", action: "alchemy" },
+      { label: "查看丹药", hint: "打开背包物品说明", panel: "我的", profileTab: "物品" },
+      backToPlaza,
+    ],
+    spirit_garden: [
+      { label: "种植", hint: "照料灵植并推进时间", action: "plant" },
+      { label: "收获", hint: "收获一批草药", action: "plant" },
+      backToPlaza,
+    ],
+    teleport_array: [
+      { label: "检查阵纹", hint: "解锁传送事件线索", action: "inspect_teleport" },
+      { label: "山鼠洞", hint: "进入山鼠洞寻宝事件", action: "start_event:mouse_cave_treasure" },
+      { label: "断桥村", hint: "进入啖愿妖测试事件", action: "start_event:wish_eater_bridge" },
+      backToPlaza,
+    ],
+  };
+
+  return sceneMenus[scene] ?? [backToPlaza];
+}
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: {
@@ -1281,12 +1376,16 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
 
 function TopHud({
   state,
+  scene,
   online,
   onOpenProfile,
+  onOpenPanel,
 }: {
   state: DemoSaveState;
+  scene: DemoScene;
   online: boolean;
   onOpenProfile: () => void;
+  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
 }) {
   const inventory = state.inventory ?? {
     mouseDemonCore: 0,
@@ -1296,6 +1395,7 @@ function TopHud({
   };
   const loadout = getLoadout(state);
   const method = methodCatalog[loadout.methodId];
+  const maxHp = 100 + method.defense * 4 + method.shield;
 
   return (
     <header className="top-hud">
@@ -1308,21 +1408,61 @@ function TopHud({
         }}
       >
         <div className="avatar">{method.element}</div>
-        <div>
-          <strong>异世来客 · 鹿石宗</strong>
-          <span>
-            万化归途 · {formatTime(state)} · {state.cultivation.level} · {method.name}
-          </span>
+        <div className="player-hud-info">
+          <strong>异世来客</strong>
+          <span>鹿石宗 · 新入门弟子 · 万化道躯</span>
+          <div className="hud-bars">
+            <label>
+              <b>生命</b>
+              <i>
+                <em style={{ width: "100%" }} />
+              </i>
+              <small>{maxHp}/{maxHp}</small>
+            </label>
+            <label>
+              <b>修为</b>
+              <i>
+                <em style={{ width: `${state.cultivation.realmProgress}%` }} />
+              </i>
+              <small>{state.cultivation.realmProgress}/100</small>
+            </label>
+          </div>
         </div>
       </button>
-      <div className="resource-bar">
-        <ResourceChip icon={resourceIcons.spiritStones} label="灵石" value={state.resources.spiritStones} />
-        <ResourceChip icon={resourceIcons.spiritMarrow} label="灵髓" value={state.resources.spiritMarrow} />
-        <ResourceChip icon={resourceIcons.herbs} label="草药" value={state.resources.herbs} />
-        <ResourceChip icon={resourceIcons.ore} label="矿石" value={state.resources.ore} />
-        <ResourceChip icon={resourceIcons.pills} label="丹药" value={state.resources.pills} />
-        <span>妖丹 {inventory.mouseDemonCore}</span>
-        <span className={online ? "online" : "offline"}>{online ? "数据库已连接" : "本地未同步"}</span>
+      <div className="hud-right">
+        <div className="place-time">
+          <strong>{formatTime(state)}</strong>
+          <span>{sceneConfig[scene].label}</span>
+        </div>
+        <div className="hud-quick-actions">
+          <button
+            type="button"
+            onClick={() => {
+              playSceneClick();
+              onOpenPanel("事件");
+            }}
+          >
+            任务
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              playSceneClick();
+              onOpenPanel("设置");
+            }}
+          >
+            设置
+          </button>
+        </div>
+        <div className="resource-bar">
+          <ResourceChip icon={resourceIcons.spiritStones} label="灵石" value={state.resources.spiritStones} />
+          <ResourceChip icon={resourceIcons.spiritMarrow} label="灵髓" value={state.resources.spiritMarrow} />
+          <ResourceChip icon={resourceIcons.herbs} label="草药" value={state.resources.herbs} />
+          <ResourceChip icon={resourceIcons.ore} label="矿石" value={state.resources.ore} />
+          <ResourceChip icon={resourceIcons.pills} label="丹药" value={state.resources.pills} />
+          <span>妖丹 {inventory.mouseDemonCore}</span>
+          <span className={online ? "online" : "offline"}>{online ? "数据库已连接" : "本地未同步"}</span>
+        </div>
       </div>
     </header>
   );
@@ -1356,11 +1496,91 @@ function SceneNavigator({
   );
 }
 
+function SceneActionMenu({
+  scene,
+  busyAction,
+  onAction,
+  onOpenPanel,
+}: {
+  scene: DemoScene;
+  busyAction: DemoAction | "reset" | null;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+}) {
+  const busy = Boolean(busyAction);
+  const items = getSceneMenuItems(scene);
+
+  return (
+    <aside className="scene-action-menu" aria-label={`${sceneConfig[scene].label}功能`}>
+      <div>
+        <span>当前场景</span>
+        <strong>{sceneConfig[scene].label}</strong>
+      </div>
+      {items.map((item) => {
+        const activeBusy = item.action && busyAction === item.action;
+        return (
+          <button
+            key={`${scene}-${item.label}`}
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              if (item.panel) {
+                onOpenPanel(item.panel, item.profileTab);
+                return;
+              }
+              if (item.action) onAction(item.action);
+            }}
+          >
+            <strong>{activeBusy ? "进行中" : item.label}</strong>
+            {item.hint && <span>{item.hint}</span>}
+          </button>
+        );
+      })}
+    </aside>
+  );
+}
+
+function SceneCharacterDock({
+  scene,
+  actorBond,
+  busy,
+  onAction,
+}: {
+  scene: DemoScene;
+  actorBond: number;
+  busy: boolean;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+}) {
+  const config = sceneConfig[scene];
+  const portrait = getActorPortrait(config.actor);
+  const interactionAction = config.actor === "xiaoxian" ? "talk_xiaoxian" : config.primaryAction;
+
+  return (
+    <button
+      type="button"
+      className="scene-character-dock"
+      disabled={busy}
+      onClick={() => {
+        playSceneClick();
+        onAction(interactionAction);
+      }}
+    >
+      <img src={portraitAssets[portrait.key][portrait.expression]} alt="" aria-hidden="true" />
+      <div>
+        <strong>{portrait.name}</strong>
+        <span>羁绊 {actorBond} · {sceneConfig[scene].primaryLabel}</span>
+      </div>
+    </button>
+  );
+}
+
 function UtilityPanel({
   panel,
   state,
   events,
   busyAction,
+  initialProfileTab,
   musicEnabled,
   onAction,
   onClose,
@@ -1372,6 +1592,7 @@ function UtilityPanel({
   state: DemoSaveState;
   events: Record<DemoEventId, DemoEventDefinition>;
   busyAction: DemoAction | "reset" | null;
+  initialProfileTab: ProfileTab;
   musicEnabled: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onClose: () => void;
@@ -1398,6 +1619,14 @@ function UtilityPanel({
   const lockLoadout = state.location === "battle" || Boolean(state.activeEvent);
   const equipBusy = Boolean(busyAction);
   const [profileTab, setProfileTab] = useState<ProfileTab>("属性");
+  const [bagCategory, setBagCategory] = useState<BagCategory>("材料");
+  const [selectedBagItemId, setSelectedBagItemId] = useState<string>("spiritStones");
+  const [bagNotice, setBagNotice] = useState("点击物品查看说明。");
+  const [equipmentView, setEquipmentView] = useState<EquipmentView>("武器");
+
+  useEffect(() => {
+    if (panel === "我的") setProfileTab(initialProfileTab);
+  }, [initialProfileTab, panel]);
 
   const content: Record<Panel, string[]> = {
     我的: [],
@@ -1429,33 +1658,144 @@ function UtilityPanel({
 
   function renderPanelBody() {
     if (panel === "我的") {
+      const maxHp = 100 + combatProfile.method.defense * 4 + combatProfile.method.shield;
+      const identityRows = [
+        ["姓名", "异世来客"],
+        ["性别", "待玩家设定"],
+        ["宗门-职位", "鹿石宗 · 新入门弟子"],
+        ["称号", "万化道躯"],
+        ["俸禄", "10 灵石/月"],
+      ];
       const statRows = [
+        ["血气", `${maxHp}/${maxHp}`],
+        ["灵气", "60/60"],
+        ["资质", "无灵根 · 万化可塑"],
+        ["悟性", "良"],
+        ["神识", "炼气初识"],
+        ["遁速", `${combatProfile.method.projectileSpeed}`],
+        ["福缘", `${state.resources.spiritMarrow + 1}`],
+        ["寿元", "80/120"],
         ["境界", state.cultivation.level],
+        ["修为", `${state.cultivation.realmProgress}/100`],
+        ["修炼速度", `${combatProfile.method.cultivateSpeed}/月`],
         ["体质", state.cultivation.root],
         ["主修", combatProfile.method.name],
-        ["气血", `${100 + combatProfile.method.defense * 4}`],
-        ["灵力", "60"],
         ["防御", `${combatProfile.method.defense}`],
         ["回血", combatProfile.method.regen > 0 ? `${combatProfile.method.regen}/秒` : "无"],
-        ["修炼速度", `${combatProfile.method.cultivateSpeed}/月`],
       ];
-      const inventoryRows = [
-        { icon: resourceIcons.spiritStones, name: "灵石", value: state.resources.spiritStones },
-        { icon: resourceIcons.spiritMarrow, name: "灵髓", value: state.resources.spiritMarrow },
-        { icon: resourceIcons.herbs, name: "草药", value: state.resources.herbs },
-        { icon: resourceIcons.ore, name: "矿石", value: state.resources.ore },
-        { icon: resourceIcons.pills, name: "丹药", value: state.resources.pills },
-        { name: "山鼠妖丹", value: inventory.mouseDemonCore },
-        { name: "忘忧根", value: inventory.worryForgetRoot },
-        { name: "青木疗伤丹", value: inventory.qingmuHealingPills },
-        { name: "金灵宗信物", value: inventory.jinlingToken },
+      const inventoryRows: BagItem[] = [
+        {
+          id: "spiritStones",
+          icon: resourceIcons.spiritStones,
+          category: "材料" as BagCategory,
+          name: "灵石",
+          value: state.resources.spiritStones,
+          description: "修仙界通用货币，可用于闭关、购买普通道具和宗门日常消耗。",
+          useLabel: "查看用途",
+        },
+        {
+          id: "spiritMarrow",
+          icon: resourceIcons.spiritMarrow,
+          category: "其他" as BagCategory,
+          name: "灵髓",
+          value: state.resources.spiritMarrow,
+          description: "千年灵石孕出的高级资源，后续用于周目加点、DLC高级道具和特殊事件。",
+          useLabel: "标记关注",
+        },
+        {
+          id: "herbs",
+          icon: resourceIcons.herbs,
+          category: "材料" as BagCategory,
+          name: "草药",
+          value: state.resources.herbs,
+          description: "灵植园产出的基础药材，可在炼丹房炼制回气丹等丹药。",
+          useLabel: "前往炼丹",
+        },
+        {
+          id: "ore",
+          icon: resourceIcons.ore,
+          category: "材料" as BagCategory,
+          name: "矿石",
+          value: state.resources.ore,
+          description: "炼器坊消耗材料，用于打造或淬炼演示装备。",
+          useLabel: "前往炼器",
+        },
+        {
+          id: "pills",
+          icon: resourceIcons.pills,
+          category: "丹药" as BagCategory,
+          name: "回气丹",
+          value: state.resources.pills,
+          description: "小娴常备的基础丹药，当前 demo 中用于表示恢复和炼丹产出。",
+          useLabel: "服用",
+        },
+        {
+          id: "mouseDemonCore",
+          category: "材料" as BagCategory,
+          name: "山鼠妖丹",
+          value: inventory.mouseDemonCore,
+          description: "山鼠洞事件战利品，后续可接入炼器、炼丹或任务提交。",
+          useLabel: "查看事件",
+        },
+        {
+          id: "worryForgetRoot",
+          category: "材料" as BagCategory,
+          name: "忘忧根",
+          value: inventory.worryForgetRoot,
+          description: "啖愿妖事件相关药材，可用于后续剧情分支和丹方。",
+          useLabel: "查看事件",
+        },
+        {
+          id: "qingmuHealingPills",
+          category: "丹药" as BagCategory,
+          name: "青木疗伤丹",
+          value: inventory.qingmuHealingPills,
+          description: "羊七道人和豆髯道人相关事件奖励，定位为治疗类丹药。",
+          useLabel: "服用",
+        },
+        {
+          id: "jinlingToken",
+          category: "任务" as BagCategory,
+          name: "金灵宗信物",
+          value: inventory.jinlingToken,
+          description: "金灵宗事件凭证，后续可用于解锁金系宗门支线。",
+          useLabel: "查看线索",
+        },
+        {
+          id: "luhuaManual",
+          category: "秘籍" as BagCategory,
+          name: "鹿花诀抄本",
+          value: 1,
+          description: "鹿真人留下的基础功法抄本，主角万化道躯的第一门入门功法。",
+          useLabel: "研习",
+        },
+        {
+          id: "starterSword",
+          category: "装备" as BagCategory,
+          name: equipment.weapon,
+          value: 1,
+          description: "鹿石宗仓库里翻出的基础飞剑，承担当前 demo 的普攻演示。",
+          useLabel: "查看装备",
+        },
       ];
-      const equipmentRows = [
-        ["武器", equipment.weapon, "基础飞剑，承担普攻演示"],
-        ["护具", equipment.armor, "炼气期布袍，暂未开放替换"],
-        ["饰品", equipment.accessory, "鹿石宗身份凭证"],
+      const visibleBagItems = inventoryRows.filter((item) => item.category === bagCategory);
+      const selectedBagItem = inventoryRows.find((item) => item.id === selectedBagItemId) ?? inventoryRows[0];
+      const equipmentSlots = [
+        { view: "武器" as EquipmentView, label: "武器×1", name: equipment.weapon },
+        { view: "服饰" as EquipmentView, label: "服饰×1", name: equipment.armor },
+        { view: "法宝" as EquipmentView, label: "法宝×3", name: equipment.accessory },
+        { view: "法宝" as EquipmentView, label: "法宝", name: "离火珠" },
+        { view: "法宝" as EquipmentView, label: "法宝", name: "清心玉坠" },
+        { view: "丹药" as EquipmentView, label: "丹药栏×4", name: "回气丹" },
+        { view: "丹药" as EquipmentView, label: "丹药栏", name: "青木疗伤丹" },
+        { view: "丹药" as EquipmentView, label: "丹药栏", name: "空槽" },
+        { view: "丹药" as EquipmentView, label: "丹药栏", name: "空槽" },
       ];
-      const resourceTotal = inventoryRows.reduce((total, item) => total + Number(item.value || 0), 0);
+      const equipmentCandidates = inventoryRows.filter((item) => {
+        if (equipmentView === "丹药") return item.category === "丹药";
+        if (equipmentView === "武器" || equipmentView === "服饰") return item.category === "装备";
+        return item.category === "装备" || item.category === "材料";
+      });
 
       return (
         <div className="profile-panel profile-panel-fixed">
@@ -1469,6 +1809,14 @@ function UtilityPanel({
               <span>主角</span>
               <h3>异世来客</h3>
               <p>身无灵根，身怀先天万化道躯。当前功法会决定战斗普攻形态，法术位决定空格主动技能。</p>
+              <dl className="profile-meta-grid">
+                {identityRows.map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
             <dl className="profile-stats">
               {statRows.map(([label, value]) => (
@@ -1485,16 +1833,72 @@ function UtilityPanel({
           <section className="profile-section">
             <div className="profile-section-title">
               <h3>物品栏</h3>
-              <span>{resourceTotal} 件资源</span>
+              <span>储物空间 {inventoryRows.length}/120 · 灵石 {state.resources.spiritStones}</span>
             </div>
-            <div className="inventory-grid">
-              {inventoryRows.map((item) => (
-                <div key={item.name} className="inventory-cell">
-                  {item.icon ? <img src={item.icon} alt="" aria-hidden="true" /> : <b>{item.name.slice(0, 1)}</b>}
-                  <span>{item.name}</span>
-                  <strong>{item.value}</strong>
-                </div>
+
+            <div className="bag-category-tabs">
+              {bagCategories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={bagCategory === category ? "active" : ""}
+                  onClick={() => {
+                    playSceneClick();
+                    setBagCategory(category);
+                    const firstInCategory = inventoryRows.find((item) => item.category === category);
+                    if (firstInCategory) setSelectedBagItemId(firstInCategory.id);
+                    setBagNotice(`${category}分类已切换。`);
+                  }}
+                >
+                  {category}
+                </button>
               ))}
+            </div>
+
+            <div className="bag-layout">
+              <div className="inventory-grid">
+                {visibleBagItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`inventory-cell ${selectedBagItem.id === item.id ? "active" : ""}`}
+                    onClick={() => {
+                      playSceneClick();
+                      setSelectedBagItemId(item.id);
+                      setBagNotice(`已选中 ${item.name}。`);
+                    }}
+                  >
+                    {item.icon ? <img src={item.icon} alt="" aria-hidden="true" /> : <b>{item.name.slice(0, 1)}</b>}
+                    <span>{item.name}</span>
+                    <strong>{item.value}</strong>
+                  </button>
+                ))}
+                {visibleBagItems.length === 0 && <p className="empty-note">该分类暂时没有物品。</p>}
+              </div>
+
+              <aside className="item-detail-panel">
+                <span>物品详情</span>
+                <div className="detail-icon">
+                  {selectedBagItem.icon ? (
+                    <img src={selectedBagItem.icon} alt="" aria-hidden="true" />
+                  ) : (
+                    <b>{selectedBagItem.name.slice(0, 1)}</b>
+                  )}
+                </div>
+                <h3>{selectedBagItem.name}</h3>
+                <strong>堆叠：{selectedBagItem.value}</strong>
+                <p>{selectedBagItem.description}</p>
+                <small>{bagNotice}</small>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSceneClick();
+                    setBagNotice(`${selectedBagItem.name}：${selectedBagItem.useLabel}已记录到 demo 提示。`);
+                  }}
+                >
+                  {selectedBagItem.useLabel}
+                </button>
+              </aside>
             </div>
           </section>
           )}
@@ -1503,16 +1907,66 @@ function UtilityPanel({
           <section className="profile-section">
             <div className="profile-section-title">
               <h3>装备栏</h3>
-              <span>炼气期基础装备</span>
+              <span>武器×1 / 服饰×1 / 法宝×3 / 丹药栏×4</span>
             </div>
-            <div className="equipment-grid">
-              {equipmentRows.map(([slot, name, note]) => (
-                <div key={slot} className="equipment-slot">
-                  <small>{slot}</small>
-                  <strong>{name}</strong>
-                  <span>{note}</span>
+
+            <div className="equipment-panel-layout">
+              <div className="equipment-body">
+                <img src={portraitAssets.player.normal} alt="" aria-hidden="true" />
+                <div className="equipment-slot-grid">
+                  {equipmentSlots.map((slot, index) => (
+                    <button
+                      key={`${slot.label}-${index}`}
+                      type="button"
+                      className={`equipment-slot ${equipmentView === slot.view ? "active" : ""}`}
+                      onClick={() => {
+                        playSceneClick();
+                        setEquipmentView(slot.view);
+                      }}
+                    >
+                      <small>{slot.label}</small>
+                      <strong>{slot.name}</strong>
+                      <span>{slot.view === "丹药" ? "战前携带" : "点击查看候选物品"}</span>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <aside className="equipment-inventory">
+                <div className="bag-category-tabs compact-tabs">
+                  {equipmentViews.map((view) => (
+                    <button
+                      key={view}
+                      type="button"
+                      className={equipmentView === view ? "active" : ""}
+                      onClick={() => {
+                        playSceneClick();
+                        setEquipmentView(view);
+                      }}
+                    >
+                      {view}
+                    </button>
+                  ))}
+                </div>
+                <div className="inventory-grid compact-inventory">
+                  {equipmentCandidates.map((item) => (
+                    <button
+                      key={`${equipmentView}-${item.id}`}
+                      type="button"
+                      className="inventory-cell"
+                      onClick={() => {
+                        playSceneClick();
+                        setBagNotice(`${item.name}已放入${equipmentView}候选栏；正式替换待接装备系统。`);
+                      }}
+                    >
+                      {item.icon ? <img src={item.icon} alt="" aria-hidden="true" /> : <b>{item.name.slice(0, 1)}</b>}
+                      <span>{item.name}</span>
+                      <strong>{item.value}</strong>
+                    </button>
+                  ))}
+                </div>
+                <p className="empty-note">{bagNotice}</p>
+              </aside>
             </div>
           </section>
           )}
@@ -1523,35 +1977,50 @@ function UtilityPanel({
               <h3>功法栏</h3>
               <span>{lockLoadout ? "战斗/事件中锁定" : "点击切换主修"}</span>
             </div>
-            <div className="method-grid">
-              {methodIds.map((id) => {
-                const method = methodCatalog[id];
-                const active = loadout.methodId === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`loadout-card method-card ${active ? "active" : ""}`}
-                    aria-pressed={active}
-                    disabled={equipBusy || lockLoadout}
-                    onClick={() => {
-                      playSceneClick();
-                      onAction(`equip_method:${id}`);
-                    }}
-                  >
-                    {method.icon ? (
-                      <img src={method.icon} alt="" aria-hidden="true" />
-                    ) : (
-                      <i style={{ background: method.color }}>{method.element}</i>
-                    )}
-                    <strong>{method.name}</strong>
-                    <span>
-                      {method.element} · {method.rank} · {method.role}
-                    </span>
-                    <small>{method.attackName} · 伤害{method.attackDamage} · 攻速{method.attackInterval}s</small>
-                  </button>
-                );
-              })}
+            <div className="loadout-panel-layout">
+              <div className="loadout-body-board">
+                <img src={assetPath("assets/tapflow/loadout/wanhua-diagram.webp")} alt="" aria-hidden="true" />
+                <div className="equipped-loadout-card">
+                  <span>已装备主修</span>
+                  <strong>{combatProfile.method.name}</strong>
+                  <small>
+                    {combatProfile.method.element} · {combatProfile.method.rank} · {combatProfile.method.attackName}
+                  </small>
+                </div>
+              </div>
+
+              <aside className="loadout-side-list">
+                <div className="method-grid compact-method-grid">
+                  {methodIds.map((id) => {
+                    const method = methodCatalog[id];
+                    const active = loadout.methodId === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`loadout-card method-card ${active ? "active" : ""}`}
+                        aria-pressed={active}
+                        disabled={equipBusy || lockLoadout}
+                        onClick={() => {
+                          playSceneClick();
+                          onAction(`equip_method:${id}`);
+                        }}
+                      >
+                        {method.icon ? (
+                          <img src={method.icon} alt="" aria-hidden="true" />
+                        ) : (
+                          <i style={{ background: method.color }}>{method.element}</i>
+                        )}
+                        <strong>{method.name}</strong>
+                        <span>
+                          {method.element} · {method.rank} · {method.role}
+                        </span>
+                        <small>{method.attackName} · 伤害{method.attackDamage} · 攻速{method.attackInterval}s</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
             </div>
           </section>
           )}
@@ -1563,115 +2032,121 @@ function UtilityPanel({
               <span>炼气期丹海 · 1 个黄阶法术位</span>
             </div>
 
-            <div className="spell-preview">
-              <div>
-                <span>当前主动技能</span>
-                <strong>{combatProfile.activeSkillName}</strong>
-                <small>
-                  伤害 {combatProfile.activeDamage} / BOSS {combatProfile.bossDamage} · 暴击
-                  {Math.round(combatProfile.critChance * 100)}% · 灵力 {combatProfile.spell.manaCost} · 冷却
-                  {combatProfile.spell.cooldown}s
-                </small>
-              </div>
-              <div>
-                <span>五行匹配</span>
-                <strong>{combatProfile.elementMatch ? "完全匹配" : "伤害70%"}</strong>
-                <small>
-                  {combatProfile.method.element}功法 + {combatProfile.spell.element}术法 · 射程 {combatProfile.range}
-                </small>
-              </div>
-            </div>
-
-            {lockLoadout && <p className="loadout-lock">当前已进入事件或战斗，功法和术法不能切换。</p>}
-
-            <div className="slot-group">
-              <h4>术法槽</h4>
-              <div className="slot-options">
-                {spellIds.map((id) => {
-                  const spell = spellCatalog[id];
-                  const active = loadout.spellSlot.spellId === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`slot-option element-${spell.element} ${active ? "active" : ""}`}
-                      aria-pressed={active}
-                      disabled={equipBusy || lockLoadout}
-                      onClick={() => {
-                        playSceneClick();
-                        onAction(`equip_spell:${id}`);
-                      }}
-                    >
-                      <strong>{spell.name}</strong>
-                      <span>
-                        {spell.element} · 伤害{spell.baseDamage} · 灵力{spell.manaCost}
-                      </span>
-                      <small>{spell.effect}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="slot-group">
-              <h4>技法槽</h4>
-              <div className="slot-options">
-                {techniqueIds.map((id) => {
-                  const technique = techniqueCatalog[id];
-                  const active = loadout.spellSlot.techniqueId === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`slot-option ${active ? "active" : ""}`}
-                      aria-pressed={active}
-                      disabled={equipBusy || lockLoadout}
-                      onClick={() => {
-                        playSceneClick();
-                        onAction(`equip_technique:${id}`);
-                      }}
-                    >
-                      <strong>{technique.name}</strong>
-                      <span>
-                        {technique.projectileType} · ×{technique.damageMultiplier}
-                      </span>
-                      <small>{technique.description}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {[0, 1].map((slotIndex) => (
-              <div key={slotIndex} className="slot-group">
-                <h4>秘法槽 {slotIndex + 1}</h4>
-                <div className="slot-options secret-options">
-                  {secretIds.map((id) => {
-                    const secret = secretCatalog[id];
-                    const active = loadout.spellSlot.secretIds[slotIndex] === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`slot-option ${active ? "active" : ""}`}
-                        aria-pressed={active}
-                        disabled={equipBusy || lockLoadout}
-                        onClick={() => {
-                          playSceneClick();
-                          onAction(`equip_secret_${slotIndex + 1}:${id}` as DemoAction);
-                        }}
-                      >
-                        <strong>{secret.name}</strong>
-                        <span>
-                          {secret.effectType} {secret.effectValue}
-                        </span>
-                        <small>{secret.description}</small>
-                      </button>
-                    );
-                  })}
+            <div className="loadout-panel-layout spell-loadout-layout">
+              <div className="loadout-body-board spell-body-board">
+                <img src={assetPath("assets/tapflow/loadout/wanhua-diagram.webp")} alt="" aria-hidden="true" />
+                <div className="spell-preview">
+                  <div>
+                    <span>当前主动技能</span>
+                    <strong>{combatProfile.activeSkillName}</strong>
+                    <small>
+                      伤害 {combatProfile.activeDamage} / BOSS {combatProfile.bossDamage} · 暴击
+                      {Math.round(combatProfile.critChance * 100)}% · 灵力 {combatProfile.spell.manaCost} · 冷却
+                      {combatProfile.spell.cooldown}s
+                    </small>
+                  </div>
+                  <div>
+                    <span>五行匹配</span>
+                    <strong>{combatProfile.elementMatch ? "完全匹配" : "伤害70%"}</strong>
+                    <small>
+                      {combatProfile.method.element}功法 + {combatProfile.spell.element}术法 · 射程 {combatProfile.range}
+                    </small>
+                  </div>
                 </div>
+                {lockLoadout && <p className="loadout-lock">当前已进入事件或战斗，功法和术法不能切换。</p>}
               </div>
-            ))}
+
+              <aside className="spell-side-list">
+                <div className="slot-group">
+                  <h4>术法槽</h4>
+                  <div className="slot-options">
+                    {spellIds.map((id) => {
+                      const spell = spellCatalog[id];
+                      const active = loadout.spellSlot.spellId === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`slot-option element-${spell.element} ${active ? "active" : ""}`}
+                          aria-pressed={active}
+                          disabled={equipBusy || lockLoadout}
+                          onClick={() => {
+                            playSceneClick();
+                            onAction(`equip_spell:${id}`);
+                          }}
+                        >
+                          <strong>{spell.name}</strong>
+                          <span>
+                            {spell.element} · 伤害{spell.baseDamage} · 灵力{spell.manaCost}
+                          </span>
+                          <small>{spell.effect}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="slot-group">
+                  <h4>技法槽</h4>
+                  <div className="slot-options">
+                    {techniqueIds.map((id) => {
+                      const technique = techniqueCatalog[id];
+                      const active = loadout.spellSlot.techniqueId === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`slot-option ${active ? "active" : ""}`}
+                          aria-pressed={active}
+                          disabled={equipBusy || lockLoadout}
+                          onClick={() => {
+                            playSceneClick();
+                            onAction(`equip_technique:${id}`);
+                          }}
+                        >
+                          <strong>{technique.name}</strong>
+                          <span>
+                            {technique.projectileType} · ×{technique.damageMultiplier}
+                          </span>
+                          <small>{technique.description}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {[0, 1].map((slotIndex) => (
+                  <div key={slotIndex} className="slot-group">
+                    <h4>秘法槽 {slotIndex + 1}</h4>
+                    <div className="slot-options secret-options">
+                      {secretIds.map((id) => {
+                        const secret = secretCatalog[id];
+                        const active = loadout.spellSlot.secretIds[slotIndex] === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`slot-option ${active ? "active" : ""}`}
+                            aria-pressed={active}
+                            disabled={equipBusy || lockLoadout}
+                            onClick={() => {
+                              playSceneClick();
+                              onAction(`equip_secret_${slotIndex + 1}:${id}` as DemoAction);
+                            }}
+                          >
+                            <strong>{secret.name}</strong>
+                            <span>
+                              {secret.effectType} {secret.effectValue}
+                            </span>
+                            <small>{secret.description}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </aside>
+            </div>
           </section>
           )}
           </div>
@@ -3282,6 +3757,7 @@ function HomeScene({
   online,
   busyAction,
   panel,
+  profileInitialTab,
   musicEnabled,
   onAction,
   onReset,
@@ -3295,10 +3771,11 @@ function HomeScene({
   online: boolean;
   busyAction: DemoAction | "reset" | null;
   panel: Panel | null;
+  profileInitialTab: ProfileTab;
   musicEnabled: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onReset: () => void;
-  onOpenPanel: (panel: Panel) => void;
+  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
   onClosePanel: () => void;
   onToggleMusic: () => void;
   onReplayOpening: () => void;
@@ -3364,7 +3841,15 @@ function HomeScene({
 
   return (
     <main className={`game-shell ${activeEvent ? "event-shell" : ""}`} style={stageStyle}>
-      {!activeEvent && <TopHud state={state} online={online} onOpenProfile={() => onOpenPanel("我的")} />}
+      {!activeEvent && (
+        <TopHud
+          state={state}
+          scene={scene}
+          online={online}
+          onOpenProfile={() => onOpenPanel("我的", "属性")}
+          onOpenPanel={onOpenPanel}
+        />
+      )}
       <section
         className={`stage scene-${scene} accent-${config.accent} ${
           inBattle ? "battle-stage" : ""
@@ -3383,123 +3868,38 @@ function HomeScene({
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
         {!activeEvent && (
-          <aside className="right-menu">
-            {(["我的", "日志", "世界", "事件", "关系", "人物", "功法", "设置"] as Panel[]).map((item) => (
-              <button
-                key={item}
-                disabled={busy}
-                onClick={() => {
-                  playSceneClick();
-                  onOpenPanel(item);
-                }}
-              >
-                {item}
-              </button>
-            ))}
-          </aside>
+          <SceneActionMenu
+            scene={scene}
+            busyAction={busyAction}
+            onAction={onAction}
+            onOpenPanel={onOpenPanel}
+          />
         )}
 
         {activeEvent ? (
           <ActiveEventOverlay activeEvent={activeEvent} busyAction={busyAction} onAction={onAction} />
         ) : (
-          <section className="dialogue">
-            <div className="speaker">
-              {dialogueSpeaker}
-              <small>{`羁绊 ${actorBond}`}</small>
-            </div>
-            <p>{dialogueText}</p>
-          </section>
+          <>
+            <SceneCharacterDock scene={scene} actorBond={actorBond} busy={busy} onAction={onAction} />
+            <section className="dialogue">
+              <div className="speaker">
+                {dialogueSpeaker}
+                <small>{`羁绊 ${actorBond}`}</small>
+              </div>
+              <p>{dialogueText}</p>
+            </section>
+          </>
         )}
       </section>
 
       {!activeEvent && (
-        <section className="control-panel">
+        <section className="control-panel layout-info-panel">
           <div className="stat-card">
             <span>万化道躯</span>
             <strong>{state.cultivation.realmProgress}%</strong>
             <div className="progress">
               <i style={{ width: `${state.cultivation.realmProgress}%` }} />
             </div>
-          </div>
-          <div className="action-grid">
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction(config.primaryAction);
-              }}
-            >
-              {busyAction === config.primaryAction ? "进行中" : config.primaryLabel}
-            </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("cultivate");
-              }}
-            >
-              闭关修炼
-            </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("alchemy");
-              }}
-            >
-              炼丹
-            </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("plant");
-              }}
-            >
-              种植
-            </button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction("forge");
-              }}
-            >
-              炼器
-            </button>
-            {scene === "teleport_array" ? (
-              <>
-                <button
-                  disabled={busy}
-                  onClick={() => {
-                    playSceneClick();
-                    onAction("start_event:mouse_cave_treasure");
-                  }}
-                >
-                  传送山鼠洞
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() => {
-                    playSceneClick();
-                    onAction("start_event:wish_eater_bridge");
-                  }}
-                >
-                  传送断桥村
-                </button>
-              </>
-            ) : (
-              <button
-                disabled={busy}
-                onClick={() => {
-                  playSceneClick();
-                  onAction("change_scene:teleport_array");
-                }}
-              >
-                前往传送阵
-              </button>
-            )}
-            {inBattle && <button disabled>进入战场操作</button>}
           </div>
           <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
         </section>
@@ -3533,6 +3933,7 @@ function HomeScene({
           state={state}
           events={events}
           busyAction={busyAction}
+          initialProfileTab={profileInitialTab}
           musicEnabled={musicEnabled}
           onAction={onAction}
           onClose={onClosePanel}
@@ -3550,6 +3951,7 @@ function App() {
   const [health, setHealth] = useState<ApiHealth | null>(null);
   const [busyAction, setBusyAction] = useState<DemoAction | "reset" | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
   const [showOpening, setShowOpening] = useState(() => !localStorage.getItem("cultivation-opening-seen"));
   const [musicEnabled, setMusicEnabled] = useState(
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
@@ -3595,6 +3997,11 @@ function App() {
 
   function replaceSave(save: DemoSave) {
     setLoadState((current) => (current.status === "ready" ? { ...current, save } : current));
+  }
+
+  function openPanel(nextPanel: Panel, profileTab: ProfileTab = "属性") {
+    if (nextPanel === "我的") setProfileInitialTab(profileTab);
+    setPanel(nextPanel);
   }
 
   async function perform(action: DemoAction, requestPayload?: DemoActionPayload) {
@@ -3676,10 +4083,11 @@ function App() {
       online={health?.supabase?.configured ?? false}
       busyAction={busyAction}
       panel={panel}
+      profileInitialTab={profileInitialTab}
       musicEnabled={musicEnabled}
       onAction={(action, payload) => void perform(action, payload)}
       onReset={() => void reset()}
-      onOpenPanel={setPanel}
+      onOpenPanel={openPanel}
       onClosePanel={() => setPanel(null)}
       onToggleMusic={toggleAmbientMusic}
       onReplayOpening={() => {
