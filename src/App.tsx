@@ -242,14 +242,6 @@ type BagItem = {
   description: string;
   useLabel: string;
 };
-type SceneMenuItem = {
-  label: string;
-  hint?: string;
-  action?: DemoAction;
-  panel?: Panel;
-  profileTab?: ProfileTab;
-};
-
 const profileTabItems: { id: ProfileTab; note: string }[] = [
   { id: "属性", note: "主角状态" },
   { id: "物品", note: "资源道具" },
@@ -938,80 +930,6 @@ const sceneConfig: Record<
 
 const scenes = Object.keys(sceneConfig) as DemoScene[];
 
-const hubSceneTargets: DemoScene[] = [
-  "hall",
-  "dormitory",
-  "sister_room",
-  "meditation_room",
-  "forge",
-  "alchemy_room",
-  "spirit_garden",
-  "teleport_array",
-];
-
-function getSceneMenuItems(scene: DemoScene): SceneMenuItem[] {
-  if (scene === "plaza") {
-    return [
-      { label: "洒扫广场", hint: "帮小张整理演武木桩", action: "sweep_plaza" },
-      { label: "找小张", hint: "与大师兄聊聊近况", action: "sweep_plaza" },
-      { label: "宗门记录", hint: "查看最近发生的事", panel: "日志" },
-    ];
-  }
-
-  const backToPlaza: SceneMenuItem = {
-    label: "返回",
-    hint: "回到鹿石宗广场主界面",
-    action: "change_scene:plaza",
-  };
-
-  const sceneMenus: Partial<Record<DemoScene, SceneMenuItem[]>> = {
-    hall: [
-      { label: "阅读门规", hint: "查看鹿石宗和五宗设定", panel: "世界" },
-      { label: "鹿真人手记", hint: "查看最近事件与主线线索", panel: "日志" },
-      backToPlaza,
-    ],
-    dormitory: [
-      { label: "休息", hint: "推进一月并恢复状态", action: "rest" },
-      { label: "仓库", hint: "打开人物背包", panel: "我的", profileTab: "物品" },
-      backToPlaza,
-    ],
-    sister_room: [
-      { label: "交谈", hint: "找小娴师姐说话", action: "talk_xiaoxian" },
-      { label: "查看丹药", hint: "打开背包丹药栏", panel: "我的", profileTab: "物品" },
-      backToPlaza,
-    ],
-    meditation_room: [
-      { label: "练功", hint: "运转功法提升修为", action: "cultivate" },
-      { label: "研习", hint: "打开功法配置", panel: "我的", profileTab: "功法" },
-      { label: "闭修", hint: "消耗灵石闭关一月", action: "cultivate" },
-      backToPlaza,
-    ],
-    forge: [
-      { label: "炼制装备", hint: "消耗矿石炼器", action: "forge" },
-      { label: "淬炼法宝", hint: "打开装备槽并查看候选物品", panel: "我的", profileTab: "装备" },
-      backToPlaza,
-    ],
-    alchemy_room: [
-      { label: "炼丹", hint: "消耗草药获得丹药", action: "alchemy" },
-      { label: "查看丹药", hint: "打开背包物品说明", panel: "我的", profileTab: "物品" },
-      backToPlaza,
-    ],
-    spirit_garden: [
-      { label: "种植", hint: "照料灵植并推进时间", action: "plant" },
-      { label: "收获", hint: "收获一批草药", action: "plant" },
-      backToPlaza,
-    ],
-    teleport_array: [
-      { label: "检查阵纹", hint: "解锁传送事件线索", action: "inspect_teleport" },
-      { label: "山鼠洞", hint: "进入山鼠洞寻宝事件", action: "start_event:mouse_cave_treasure" },
-      { label: "断桥村", hint: "进入啖愿妖测试事件", action: "start_event:wish_eater_bridge" },
-      backToPlaza,
-    ],
-  };
-
-  return sceneMenus[scene] ?? [backToPlaza];
-}
-
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: {
@@ -1032,7 +950,7 @@ function formatTime(state: DemoSaveState) {
 }
 
 function getScene(state: DemoSaveState): DemoScene {
-  return state.scene ?? "hall";
+  return state.scene ?? "plaza";
 }
 
 function isKnownId<T extends string>(value: unknown, ids: T[]): value is T {
@@ -1494,51 +1412,6 @@ function SceneNavigator({
         </button>
       ))}
     </nav>
-  );
-}
-
-function SceneActionMenu({
-  scene,
-  busyAction,
-  onAction,
-  onOpenPanel,
-}: {
-  scene: DemoScene;
-  busyAction: DemoAction | "reset" | null;
-  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
-  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
-}) {
-  const busy = Boolean(busyAction);
-  const items = getSceneMenuItems(scene);
-
-  return (
-    <aside className="scene-action-menu" aria-label={`${sceneConfig[scene].label}当前场景功能`}>
-      <div>
-        <span>当前场景</span>
-        <strong>{sceneConfig[scene].label}</strong>
-      </div>
-      {items.map((item) => {
-        const activeBusy = item.action && busyAction === item.action;
-        return (
-          <button
-            key={`${scene}-${item.label}`}
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              if (item.panel) {
-                onOpenPanel(item.panel, item.profileTab);
-                return;
-              }
-              if (item.action) onAction(item.action);
-            }}
-          >
-            <strong>{activeBusy ? "进行中" : item.label}</strong>
-            {item.hint && <span>{item.hint}</span>}
-          </button>
-        );
-      })}
-    </aside>
   );
 }
 
@@ -3868,15 +3741,6 @@ function HomeScene({
         {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
         {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
-        {!activeEvent && (
-          <SceneActionMenu
-            scene={scene}
-            busyAction={busyAction}
-            onAction={onAction}
-            onOpenPanel={onOpenPanel}
-          />
-        )}
-
         {activeEvent ? (
           <ActiveEventOverlay activeEvent={activeEvent} busyAction={busyAction} onAction={onAction} />
         ) : (
@@ -4101,4 +3965,3 @@ function App() {
 }
 
 export default App;
-
