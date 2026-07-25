@@ -230,7 +230,7 @@ type LoadState =
   | { status: "error"; message: string };
 
 type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
-type ProfileTab = "属性" | "物品" | "装备" | "功法" | "术法";
+type ProfileTab = "属性" | "背包" | "装备" | "功法" | "术法";
 type BagCategory = "装备" | "丹药" | "秘籍" | "任务" | "材料" | "其他";
 type EquipmentView = "武器" | "服饰" | "法宝" | "丹药";
 type BagItem = {
@@ -244,7 +244,7 @@ type BagItem = {
 };
 const profileTabItems: { id: ProfileTab; note: string }[] = [
   { id: "属性", note: "主角状态" },
-  { id: "物品", note: "资源道具" },
+  { id: "背包", note: "资源道具" },
   { id: "装备", note: "武器护具" },
   { id: "功法", note: "主修切换" },
   { id: "术法", note: "技能配置" },
@@ -1415,40 +1415,6 @@ function SceneNavigator({
   );
 }
 
-function SceneCharacterDock({
-  scene,
-  actorBond,
-  busy,
-  onAction,
-}: {
-  scene: DemoScene;
-  actorBond: number;
-  busy: boolean;
-  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
-}) {
-  const config = sceneConfig[scene];
-  const portrait = getActorPortrait(config.actor);
-  const interactionAction = config.actor === "xiaoxian" ? "talk_xiaoxian" : config.primaryAction;
-
-  return (
-    <button
-      type="button"
-      className="scene-character-dock"
-      disabled={busy}
-      onClick={() => {
-        playSceneClick();
-        onAction(interactionAction);
-      }}
-    >
-      <img src={portraitAssets[portrait.key][portrait.expression]} alt="" aria-hidden="true" />
-      <div>
-        <strong>{portrait.name}</strong>
-        <span>羁绊 {actorBond} · {sceneConfig[scene].primaryLabel}</span>
-      </div>
-    </button>
-  );
-}
-
 function UtilityPanel({
   panel,
   state,
@@ -1703,10 +1669,10 @@ function UtilityPanel({
           </section>
           )}
 
-          {profileTab === "物品" && (
+          {profileTab === "背包" && (
           <section className="profile-section">
             <div className="profile-section-title">
-              <h3>物品栏</h3>
+              <h3>背包</h3>
               <span>储物空间 {inventoryRows.length}/120 · 灵石 {state.resources.spiritStones}</span>
             </div>
 
@@ -1800,7 +1766,6 @@ function UtilityPanel({
                     >
                       <small>{slot.label}</small>
                       <strong>{slot.name}</strong>
-                      <span>{slot.view === "丹药" ? "战前携带" : "点击查看候选物品"}</span>
                     </button>
                   ))}
                 </div>
@@ -2037,8 +2002,11 @@ function UtilityPanel({
                   setProfileTab(item.id);
                 }}
               >
-                <strong>{item.id}</strong>
-                <span>{item.note}</span>
+                <i aria-hidden="true">{item.id.slice(0, 1)}</i>
+                <span>
+                  <strong>{item.id}</strong>
+                  <small>{item.note}</small>
+                </span>
               </button>
             ))}
           </nav>
@@ -2124,11 +2092,18 @@ function UtilityPanel({
   }
 
   return (
-    <div className="panel-backdrop">
+    <div className={panel === "我的" ? "panel-backdrop profile-backdrop" : "panel-backdrop"}>
       <section className={panel === "我的" ? "utility-panel profile-utility" : "utility-panel"}>
         <header>
-          <h2>{panel}</h2>
-          <button onClick={onClose}>关闭</button>
+          {panel === "我的" ? (
+            <div className="profile-heading">
+              <h2>人物面板</h2>
+              <span>万化道躯 · 角色信息与战前配置</span>
+            </div>
+          ) : (
+            <h2>{panel}</h2>
+          )}
+          <button onClick={onClose}>{panel === "我的" ? "返回场景" : "关闭"}</button>
         </header>
         <div className={panel === "我的" ? "panel-body profile-body" : "panel-body"}>{renderPanelBody()}</div>
         {panel === "设置" && (
@@ -3665,6 +3640,7 @@ function HomeScene({
   const luBond = state.relationships.find((item) => item.characterId === "lu-zhenren")?.bond ?? 0;
   const actorBond = config.actor === "xiaoxian" ? xiaoxianBond : config.actor === "xiaozhang" ? zhangBond : luBond;
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
+  const sceneInteractionAction = config.actor === "xiaoxian" ? "talk_xiaoxian" : config.primaryAction;
   const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
   const dialogueText =
     activeEvent?.node.text ??
@@ -3745,13 +3721,24 @@ function HomeScene({
           <ActiveEventOverlay activeEvent={activeEvent} busyAction={busyAction} onAction={onAction} />
         ) : (
           <>
-            <SceneCharacterDock scene={scene} actorBond={actorBond} busy={busy} onAction={onAction} />
             <section className="dialogue">
               <div className="speaker">
                 {dialogueSpeaker}
                 <small>{`羁绊 ${actorBond}`}</small>
               </div>
               <p>{dialogueText}</p>
+              <button
+                type="button"
+                className="dialogue-action"
+                disabled={busy}
+                onClick={() => {
+                  playSceneClick();
+                  onAction(sceneInteractionAction);
+                }}
+              >
+                <strong>{config.primaryLabel}</strong>
+                <small>与{actorName}互动</small>
+              </button>
             </section>
           </>
         )}
