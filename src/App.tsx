@@ -951,11 +951,11 @@ const hubSceneTargets: DemoScene[] = [
 
 function getSceneMenuItems(scene: DemoScene): SceneMenuItem[] {
   if (scene === "plaza") {
-    return hubSceneTargets.map((target) => ({
-      label: sceneConfig[target].label,
-      hint: sceneConfig[target].subtitle,
-      action: `change_scene:${target}`,
-    }));
+    return [
+      { label: "洒扫广场", hint: "帮小张整理演武木桩", action: "sweep_plaza" },
+      { label: "找小张", hint: "与大师兄聊聊近况", action: "sweep_plaza" },
+      { label: "宗门记录", hint: "查看最近发生的事", panel: "日志" },
+    ];
   }
 
   const backToPlaza: SceneMenuItem = {
@@ -1478,7 +1478,8 @@ function SceneNavigator({
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
 }) {
   return (
-    <nav className="scene-nav" aria-label="鹿石宗场景">
+    <nav className="scene-nav" aria-label="前往鹿石宗场景">
+      <span className="scene-nav-title">前往场景</span>
       {scenes.map((scene) => (
         <button
           key={scene}
@@ -1511,7 +1512,7 @@ function SceneActionMenu({
   const items = getSceneMenuItems(scene);
 
   return (
-    <aside className="scene-action-menu" aria-label={`${sceneConfig[scene].label}功能`}>
+    <aside className="scene-action-menu" aria-label={`${sceneConfig[scene].label}当前场景功能`}>
       <div>
         <span>当前场景</span>
         <strong>{sceneConfig[scene].label}</strong>
