@@ -1,0 +1,69 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DEPLOY_HOST: 121.43.243.129
+      DEPLOY_PORT: 22
+      DEPLOY_USER: root
+      DEPLOY_PATH: /var/www/wanhua-xiantu
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY || secrets.SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Package build
+        run: tar -C dist -czf /tmp/wanhua-dist.tar.gz .
+
+      - name: Upload build
+        run: |
+          set -euo pipefail
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" /tmp/wanhua-dist.tar.gz \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/wanhua-dist-${GITHUB_SHA}.tar.gz"
+
+      - name: Publish on server
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -euo pipefail
+             archive=/tmp/wanhua-dist-${GITHUB_SHA}.tar.gz
+             tmpdir=\$(mktemp -d)
+             tar -xzf \"\$archive\" -C \"\$tmpdir\"
+             mkdir -p \"$DEPLOY_PATH\"
+             find \"$DEPLOY_PATH\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+             cp -a \"\$tmpdir\"/. \"$DEPLOY_PATH\"/
+             rm -rf \"\$tmpdir\" \"\$archive\"
+             nginx -t"
