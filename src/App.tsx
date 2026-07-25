@@ -233,6 +233,8 @@ type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "
 type ProfileTab = "属性" | "背包" | "装备" | "功法" | "术法";
 type BagCategory = "装备" | "丹药" | "秘籍" | "任务" | "材料" | "其他";
 type EquipmentView = "武器" | "服饰" | "法宝" | "丹药";
+type MethodNode = "method" | "attack" | "root" | "passive";
+type SpellBuilderSlot = "result" | "spell" | "technique" | "secret1" | "secret2";
 type BagItem = {
   id: string;
   icon?: string;
@@ -1463,6 +1465,8 @@ function UtilityPanel({
   const [selectedBagItemId, setSelectedBagItemId] = useState<string>("spiritStones");
   const [bagNotice, setBagNotice] = useState("点击物品查看说明。");
   const [equipmentView, setEquipmentView] = useState<EquipmentView>("武器");
+  const [methodNode, setMethodNode] = useState<MethodNode>("method");
+  const [spellBuilderSlot, setSpellBuilderSlot] = useState<SpellBuilderSlot>("spell");
 
   useEffect(() => {
     if (panel === "我的") setProfileTab(initialProfileTab);
@@ -1636,6 +1640,40 @@ function UtilityPanel({
         if (equipmentView === "武器" || equipmentView === "服饰") return item.category === "装备";
         return item.category === "装备" || item.category === "材料";
       });
+      const methodNodeDetails: Record<MethodNode, { kicker: string; title: string; value: string; description: string }> = {
+        method: {
+          kicker: "主修核心",
+          title: combatProfile.method.name,
+          value: `${combatProfile.method.element}系 · ${combatProfile.method.rank}阶 · 修炼速度 ${combatProfile.method.cultivateSpeed}/月`,
+          description: "主修核心决定灵根转化、自动攻击与防御被动。切换右侧功法后，整条战斗链同步更新。",
+        },
+        attack: {
+          kicker: "自动攻击",
+          title: combatProfile.method.attackName,
+          value: `伤害 ${combatProfile.method.attackDamage} · 间隔 ${combatProfile.method.attackInterval}s · 弹速 ${combatProfile.method.projectileSpeed}`,
+          description: "战斗开始后自动锁定最近敌人发动，不占用主动法术位。",
+        },
+        root: {
+          kicker: "灵根转化",
+          title: combatProfile.method.element === "无" ? "万化无相" : `${combatProfile.method.element}灵根`,
+          value: combatProfile.elementMatch ? "当前术法完全匹配" : "当前术法跨系，最终伤害降至 70%",
+          description: "万化道躯会随主修功法改变属性；同系术法不会受到跨系衰减。",
+        },
+        passive: {
+          kicker: "护体被动",
+          title: combatProfile.method.regen > 0 ? "生息回元" : combatProfile.method.defense > 0 ? "护体真气" : "攻伐专精",
+          value: `防御 ${combatProfile.method.defense} · 回血 ${combatProfile.method.regen}/秒 · 护盾 ${combatProfile.method.shield}`,
+          description: "这些数值直接写入战斗角色属性，并参与受击减伤、生命恢复和最大气血计算。",
+        },
+      };
+      const activeMethodNode = methodNodeDetails[methodNode];
+      const spellSlotMeta: Record<SpellBuilderSlot, { eyebrow: string; title: string; hint: string }> = {
+        result: { eyebrow: "成招预览", title: combatProfile.activeSkillName, hint: "查看最终战斗数值" },
+        spell: { eyebrow: "构件一", title: combatProfile.spell.name, hint: "决定元素、基础伤害与命中特效" },
+        technique: { eyebrow: "构件二", title: combatProfile.technique.name, hint: "决定弹道形态、倍率与射程" },
+        secret1: { eyebrow: "构件三", title: combatProfile.secrets[0].name, hint: "叠加第一条战斗修正" },
+        secret2: { eyebrow: "构件四", title: combatProfile.secrets[1].name, hint: "叠加第二条战斗修正" },
+      };
 
       return (
         <div className="profile-panel profile-panel-fixed">
@@ -1644,11 +1682,33 @@ function UtilityPanel({
           <section className="profile-identity profile-identity-fixed">
             <div className="profile-portrait">
               <img src={portraitAssets.player.normal} alt="主角半身像" />
+              <span className="profile-portrait-realm">炼气境</span>
+              <div className="profile-portrait-nameplate">
+                <small>万化道躯</small>
+                <strong>异世来客</strong>
+              </div>
             </div>
-            <div>
-              <span>主角</span>
+            <div className="profile-summary">
+              <span>主角 · 鹿石宗弟子</span>
               <h3>异世来客</h3>
               <p>身无灵根，身怀先天万化道躯。当前功法会决定战斗普攻形态，法术位决定空格主动技能。</p>
+              <div className="profile-vitals" aria-label="核心战斗状态">
+                <div>
+                  <span>气血</span>
+                  <strong>{maxHp} / {maxHp}</strong>
+                  <i><b style={{ width: "100%" }} /></i>
+                </div>
+                <div>
+                  <span>灵气</span>
+                  <strong>60 / 60</strong>
+                  <i><b style={{ width: "100%" }} /></i>
+                </div>
+                <div>
+                  <span>修为</span>
+                  <strong>{state.cultivation.realmProgress} / 100</strong>
+                  <i><b style={{ width: `${state.cultivation.realmProgress}%` }} /></i>
+                </div>
+              </div>
               <dl className="profile-meta-grid">
                 {identityRows.map(([label, value]) => (
                   <div key={label}>
@@ -1670,7 +1730,7 @@ function UtilityPanel({
           )}
 
           {profileTab === "背包" && (
-          <section className="profile-section">
+          <section className="profile-section bag-section">
             <div className="profile-section-title">
               <h3>背包</h3>
               <span>储物空间 {inventoryRows.length}/120 · 灵石 {state.resources.spiritStones}</span>
@@ -1811,24 +1871,66 @@ function UtilityPanel({
           )}
 
           {profileTab === "功法" && (
-          <section className="profile-section loadout-section">
+          <section className="profile-section loadout-section method-builder">
             <div className="profile-section-title">
-              <h3>功法栏</h3>
-              <span>{lockLoadout ? "战斗/事件中锁定" : "点击切换主修"}</span>
+              <div>
+                <h3>功法经脉</h3>
+                <small>主修功法同时驱动自动攻击、灵根转化与护体被动</small>
+              </div>
+              <span>{lockLoadout ? "战斗/事件中锁定" : "点击经脉节点查看 · 右侧切换主修"}</span>
             </div>
             <div className="loadout-panel-layout">
-              <div className="loadout-body-board">
-                <img src={assetPath("assets/tapflow/loadout/wanhua-diagram.webp")} alt="" aria-hidden="true" />
-                <div className="equipped-loadout-card">
-                  <span>已装备主修</span>
-                  <strong>{combatProfile.method.name}</strong>
-                  <small>
-                    {combatProfile.method.element} · {combatProfile.method.rank} · {combatProfile.method.attackName}
-                  </small>
+              <div className="method-circuit-board">
+                <div className="method-circuit">
+                  <div className="method-circuit-portrait">
+                    <img src={assetPath("assets/tapflow/loadout/wanhua-body.webp")} alt="" aria-hidden="true" />
+                    <span>{combatProfile.method.element}</span>
+                  </div>
+                  <i className="circuit-line circuit-line-a" aria-hidden="true" />
+                  <i className="circuit-line circuit-line-b" aria-hidden="true" />
+                  <i className="circuit-line circuit-line-c" aria-hidden="true" />
+                  {(Object.keys(methodNodeDetails) as MethodNode[]).map((node) => {
+                    const detail = methodNodeDetails[node];
+                    const nodeLabels: Record<MethodNode, string> = {
+                      method: "主修",
+                      attack: "攻",
+                      root: "灵",
+                      passive: "御",
+                    };
+                    return (
+                      <button
+                        key={node}
+                        type="button"
+                        className={`method-node method-node-${node} ${methodNode === node ? "active" : ""}`}
+                        aria-pressed={methodNode === node}
+                        onClick={() => {
+                          playSceneClick();
+                          setMethodNode(node);
+                        }}
+                      >
+                        <i aria-hidden="true">{nodeLabels[node]}</i>
+                        <span>{detail.kicker}</span>
+                        <strong>{detail.title}</strong>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="loadout-focus-card">
+                  <span>{activeMethodNode.kicker} · 已接入战斗</span>
+                  <strong>{activeMethodNode.title}</strong>
+                  <b>{activeMethodNode.value}</b>
+                  <small>{activeMethodNode.description}</small>
                 </div>
               </div>
 
               <aside className="loadout-side-list">
+                <div className="loadout-list-heading">
+                  <div>
+                    <span>已习得功法</span>
+                    <strong>{methodIds.length} / 6</strong>
+                  </div>
+                  <small>切换后自动保存，并在下一场战斗生效</small>
+                </div>
                 <div className="method-grid compact-method-grid">
                   {methodIds.map((id) => {
                     const method = methodCatalog[id];
@@ -1850,11 +1952,14 @@ function UtilityPanel({
                         ) : (
                           <i style={{ background: method.color }}>{method.element}</i>
                         )}
-                        <strong>{method.name}</strong>
+                        <strong>{method.name}{active ? " · 主修中" : ""}</strong>
                         <span>
                           {method.element} · {method.rank} · {method.role}
                         </span>
-                        <small>{method.attackName} · 伤害{method.attackDamage} · 攻速{method.attackInterval}s</small>
+                        <small>
+                          {method.attackName} · 伤害{method.attackDamage} · 间隔{method.attackInterval}s ·
+                          防御{method.defense} · 回血{method.regen}/秒
+                        </small>
                       </button>
                     );
                   })}
@@ -1867,37 +1972,70 @@ function UtilityPanel({
           {profileTab === "术法" && (
           <section className="profile-section loadout-section spell-builder">
             <div className="profile-section-title">
-              <h3>术法栏</h3>
-              <span>炼气期丹海 · 1 个黄阶法术位</span>
+              <div>
+                <h3>法术构筑</h3>
+                <small>术法 + 技法 + 两个秘法，共同组成空格主动技能</small>
+              </div>
+              <span>炼气期丹海 · 1 个黄阶法术位 · 4/4 构件</span>
             </div>
 
             <div className="loadout-panel-layout spell-loadout-layout">
-              <div className="loadout-body-board spell-body-board">
-                <img src={assetPath("assets/tapflow/loadout/wanhua-diagram.webp")} alt="" aria-hidden="true" />
-                <div className="spell-preview">
+              <div className="spell-circuit-board">
+                <div className="spell-circuit">
+                  <div className="spell-circuit-avatar">
+                    <img src={assetPath("assets/tapflow/loadout/wanhua-body.webp")} alt="" aria-hidden="true" />
+                    <span>{combatProfile.method.element}系灵气</span>
+                  </div>
+                  {(["spell", "technique", "secret1", "secret2", "result"] as SpellBuilderSlot[]).map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      className={`spell-circuit-slot spell-circuit-${slot} ${spellBuilderSlot === slot ? "active" : ""}`}
+                      aria-pressed={spellBuilderSlot === slot}
+                      onClick={() => {
+                        playSceneClick();
+                        setSpellBuilderSlot(slot);
+                      }}
+                    >
+                      <kbd>{slot === "result" ? "SPACE" : String((["spell", "technique", "secret1", "secret2"] as SpellBuilderSlot[]).indexOf(slot) + 1).padStart(2, "0")}</kbd>
+                      <small>{spellSlotMeta[slot].eyebrow}</small>
+                      <strong>{spellSlotMeta[slot].title}</strong>
+                      <span>{spellSlotMeta[slot].hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="spell-result-readout">
                   <div>
-                    <span>当前主动技能</span>
-                    <strong>{combatProfile.activeSkillName}</strong>
-                    <small>
-                      伤害 {combatProfile.activeDamage} / BOSS {combatProfile.bossDamage} · 暴击
-                      {Math.round(combatProfile.critChance * 100)}% · 灵力 {combatProfile.spell.manaCost} · 冷却
-                      {combatProfile.spell.cooldown}s
-                    </small>
+                    <span>最终伤害</span>
+                    <strong>{combatProfile.activeDamage}</strong>
+                    <small>BOSS {combatProfile.bossDamage} · 暴击 {combatProfile.critDamage}</small>
                   </div>
                   <div>
-                    <span>五行匹配</span>
-                    <strong>{combatProfile.elementMatch ? "完全匹配" : "伤害70%"}</strong>
-                    <small>
-                      {combatProfile.method.element}功法 + {combatProfile.spell.element}术法 · 射程 {combatProfile.range}
-                    </small>
+                    <span>施法参数</span>
+                    <strong>{combatProfile.spell.manaCost} 灵力 / {combatProfile.spell.cooldown}s</strong>
+                    <small>射程 {combatProfile.range} · 暴击率 {Math.round(combatProfile.critChance * 100)}%</small>
+                  </div>
+                  <div>
+                    <span>五行共鸣</span>
+                    <strong>{combatProfile.elementMatch ? "完全匹配" : "跨系 70%"}</strong>
+                    <small>{combatProfile.method.element}功法 + {combatProfile.spell.element}术法</small>
                   </div>
                 </div>
-                {lockLoadout && <p className="loadout-lock">当前已进入事件或战斗，功法和术法不能切换。</p>}
+                {lockLoadout && <p className="loadout-lock">当前已进入事件或战斗，配置已锁定。</p>}
               </div>
 
-              <aside className="spell-side-list">
+              <aside className="spell-side-list contextual-slot-editor">
+                <div className="slot-editor-heading">
+                  <div>
+                    <span>{spellSlotMeta[spellBuilderSlot].eyebrow}</span>
+                    <strong>{spellSlotMeta[spellBuilderSlot].title}</strong>
+                  </div>
+                  <small>{spellSlotMeta[spellBuilderSlot].hint}</small>
+                </div>
+
+                {spellBuilderSlot === "spell" && (
                 <div className="slot-group">
-                  <h4>术法槽</h4>
+                  <h4>选择术法</h4>
                   <div className="slot-options">
                     {spellIds.map((id) => {
                       const spell = spellCatalog[id];
@@ -1924,9 +2062,11 @@ function UtilityPanel({
                     })}
                   </div>
                 </div>
+                )}
 
+                {spellBuilderSlot === "technique" && (
                 <div className="slot-group">
-                  <h4>技法槽</h4>
+                  <h4>选择技法</h4>
                   <div className="slot-options">
                     {techniqueIds.map((id) => {
                       const technique = techniqueCatalog[id];
@@ -1953,13 +2093,15 @@ function UtilityPanel({
                     })}
                   </div>
                 </div>
+                )}
 
-                {[0, 1].map((slotIndex) => (
-                  <div key={slotIndex} className="slot-group">
-                    <h4>秘法槽 {slotIndex + 1}</h4>
+                {(spellBuilderSlot === "secret1" || spellBuilderSlot === "secret2") && (
+                  <div className="slot-group">
+                    <h4>选择秘法 · 槽位 {spellBuilderSlot === "secret1" ? "一" : "二"}</h4>
                     <div className="slot-options secret-options">
                       {secretIds.map((id) => {
                         const secret = secretCatalog[id];
+                        const slotIndex = spellBuilderSlot === "secret1" ? 0 : 1;
                         const active = loadout.spellSlot.secretIds[slotIndex] === id;
                         return (
                           <button
@@ -1983,7 +2125,26 @@ function UtilityPanel({
                       })}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {spellBuilderSlot === "result" && (
+                  <div className="spell-combination-summary">
+                    <span>空格主动技能</span>
+                    <h4>{combatProfile.activeSkillName}</h4>
+                    <p>{combatProfile.spell.effect}</p>
+                    <dl>
+                      <div><dt>术法</dt><dd>{combatProfile.spell.name} · {combatProfile.spell.element}系命中特效</dd></div>
+                      <div><dt>技法</dt><dd>{combatProfile.technique.name} · ×{combatProfile.technique.damageMultiplier}</dd></div>
+                      <div><dt>秘法一</dt><dd>{combatProfile.secrets[0].name} · {combatProfile.secrets[0].effectValue}</dd></div>
+                      <div><dt>秘法二</dt><dd>{combatProfile.secrets[1].name} · {combatProfile.secrets[1].effectValue}</dd></div>
+                    </dl>
+                    <div className="combination-total">
+                      <strong>伤害 {combatProfile.activeDamage}</strong>
+                      <span>冷却 {combatProfile.spell.cooldown}s</span>
+                      <span>灵力 {combatProfile.spell.manaCost}</span>
+                    </div>
+                  </div>
+                )}
               </aside>
             </div>
           </section>
@@ -2103,7 +2264,9 @@ function UtilityPanel({
           ) : (
             <h2>{panel}</h2>
           )}
-          <button onClick={onClose}>{panel === "我的" ? "返回场景" : "关闭"}</button>
+          <button className={panel === "我的" ? "profile-close-button" : undefined} onClick={onClose}>
+            {panel === "我的" ? "返回场景" : "关闭"}
+          </button>
         </header>
         <div className={panel === "我的" ? "panel-body profile-body" : "panel-body"}>{renderPanelBody()}</div>
         {panel === "设置" && (
@@ -2409,6 +2572,7 @@ type CombatProjectile = {
   pierce: number;
   hitIds: number[];
   color: string;
+  methodId?: DemoMethodId;
   spellId?: DemoSpellId;
   critChance?: number;
   armorPierce?: number;
@@ -2653,7 +2817,7 @@ function pushCombatProjectile(
   damageValue: number,
   radius: number,
   life: number,
-  options: Partial<Pick<CombatProjectile, "range" | "pierce" | "color" | "spellId" | "critChance" | "armorPierce">> = {},
+  options: Partial<Pick<CombatProjectile, "range" | "pierce" | "color" | "methodId" | "spellId" | "critChance" | "armorPierce">> = {},
 ) {
   runtime.projectiles.push({
     id: runtime.nextId++,
@@ -2669,6 +2833,7 @@ function pushCombatProjectile(
     pierce: options.pierce ?? 0,
     hitIds: [],
     color: options.color ?? "rgba(255, 226, 125, 0.94)",
+    methodId: options.methodId,
     spellId: options.spellId,
     critChance: options.critChance,
     armorPierce: options.armorPierce,
@@ -2730,6 +2895,7 @@ function firePlayerShot(
     1.4,
     {
       color: isFireMethod ? "rgba(255, 119, 55, 0.96)" : isGoldMethod ? "rgba(245, 213, 102, 0.96)" : "rgba(220, 238, 255, 0.94)",
+      methodId: profile.loadout.methodId,
       pierce: isGoldMethod && kind !== "manual" ? 1 : 0,
       range: kind === "manual" ? 680 : 740,
     },
@@ -2795,6 +2961,7 @@ function castActiveSkill(runtime: CombatRuntime, profile: CombatProfile) {
   runtime.player.mana -= profile.spell.manaCost;
   runtime.skillCd = profile.spell.cooldown;
   runtime.skillMaxCd = profile.spell.cooldown;
+  setCombatNotice(runtime, `${profile.activeSkillName} · ${profile.technique.name}`);
 
   if (profile.loadout.spellSlot.techniqueId === "ring") {
     const radius = profile.range;
@@ -3048,7 +3215,7 @@ function BulletHellCombat({
       const target = nearestEnemy(runtime);
       if (target && runtime.autoCd <= 0) {
         firePlayerShot(runtime, target.x, target.y, "auto", profile);
-        runtime.autoCd = Math.max(0.34, profile.method.attackInterval * 0.55);
+        runtime.autoCd = Math.max(0.28, profile.method.attackInterval);
       }
 
       if (runtime.pointer.down && runtime.manualCd <= 0) {
@@ -3130,6 +3297,21 @@ function BulletHellCombat({
               projectile.armorPierce,
             );
             projectile.hitIds.push(enemy.id);
+            if (
+              projectile.methodId === "yanxin_jue" &&
+              (projectile.kind === "auto" || projectile.kind === "manual")
+            ) {
+              const splashDamage = Math.max(1, Math.round(projectile.damage * 0.35));
+              for (const nearbyEnemy of runtime.enemies) {
+                if (
+                  nearbyEnemy.id !== enemy.id &&
+                  distance(enemy.x, enemy.y, nearbyEnemy.x, nearbyEnemy.y) <= enemy.r + nearbyEnemy.r + 42
+                ) {
+                  applyEnemySkillHit(runtime, nearbyEnemy, splashDamage, undefined);
+                }
+              }
+              pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 34, "rgba(255, 119, 55, 0.58)", 0.32);
+            }
             if (projectile.pierce > 0) {
               projectile.pierce -= 1;
               continue;
@@ -3352,10 +3534,17 @@ function BulletHellCombat({
         </div>
       </div>
       {view.notice && <div className="combat-notice">{view.notice}</div>}
+      <div className="combat-build-strip" aria-label="当前战斗配置">
+        <span><b>功</b><small>主修</small><strong>{profile.method.name}</strong></span>
+        <span><b>术</b><small>术法</small><strong>{profile.spell.name}</strong></span>
+        <span><b>技</b><small>技法</small><strong>{profile.technique.name}</strong></span>
+        <span><b>秘</b><small>秘法一</small><strong>{profile.secrets[0].name}</strong></span>
+        <span><b>秘</b><small>秘法二</small><strong>{profile.secrets[1].name}</strong></span>
+      </div>
       <div className="combat-skillbar">
         <span>WASD/方向键移动</span>
-        <span>{profile.method.attackName}</span>
-        <span>鼠标按住连射</span>
+        <span>自动 · {profile.method.attackName}</span>
+        <span>鼠标 · 灵力飞射</span>
         <span className={skillReady ? "ready" : ""}>
           空格 {profile.activeSkillName} {skillReady ? "可用" : view.skillCooldown > 0 ? `${view.skillCooldown.toFixed(1)}s` : "灵力不足"}
         </span>
