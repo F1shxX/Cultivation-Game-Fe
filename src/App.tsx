@@ -1397,22 +1397,51 @@ function SceneNavigator({
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
 }) {
+  const atPlaza = currentScene === "plaza";
+  const destinations = scenes.filter((scene) => scene !== "plaza");
+
   return (
-    <nav className="scene-nav" aria-label="前往鹿石宗场景">
-      <span className="scene-nav-title">前往场景</span>
-      {scenes.map((scene) => (
-        <button
-          key={scene}
-          className={scene === currentScene ? "active" : ""}
-          disabled={busy}
-          onClick={() => {
-            playSceneClick();
-            onAction(`change_scene:${scene}`);
-          }}
-        >
-          {sceneConfig[scene].label}
-        </button>
-      ))}
+    <nav
+      className={`scene-nav ${atPlaza ? "scene-nav-hub" : "scene-nav-return"}`}
+      aria-label={atPlaza ? "从广场前往鹿石宗场景" : "返回鹿石宗广场"}
+    >
+      <span className="scene-nav-title">
+        {atPlaza ? "从广场出发" : `当前 · ${sceneConfig[currentScene].label}`}
+      </span>
+      {atPlaza ? (
+        <>
+          <span className="scene-nav-hub-marker" aria-current="location">
+            广场 · 当前所在
+          </span>
+          {destinations.map((scene) => (
+            <button
+              key={scene}
+              disabled={busy}
+              onClick={() => {
+                playSceneClick();
+                onAction(`change_scene:${scene}`);
+              }}
+            >
+              {sceneConfig[scene].label}
+            </button>
+          ))}
+          <span className="scene-nav-hint">所有地点均由广场前往</span>
+        </>
+      ) : (
+        <>
+          <button
+            className="return-to-plaza"
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction("change_scene:plaza");
+            }}
+          >
+            ← 返回广场
+          </button>
+          <span className="scene-nav-hint">前往其他地点前，请先返回广场</span>
+        </>
+      )}
     </nav>
   );
 }

@@ -1350,6 +1350,27 @@ button:focus-visible {
   text-align: center;
 }
 
+.scene-nav-hub-marker {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid rgba(246, 214, 130, 0.44);
+  border-radius: 6px;
+  color: #24170c;
+  background: linear-gradient(180deg, #f3da8a, #bd8740);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.scene-nav-hint {
+  padding: 4px 5px 1px;
+  color: rgba(255, 240, 201, 0.72);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .scene-nav button {
   display: flex;
   align-items: center;
@@ -1376,6 +1397,14 @@ button:focus-visible {
   white-space: nowrap;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+}
+
+.scene-nav button.return-to-plaza {
+  border: 1px solid rgba(246, 214, 130, 0.46);
+  color: #fff2c9;
+  background:
+    linear-gradient(180deg, rgba(107, 72, 36, 0.92), rgba(57, 36, 20, 0.96)),
+    var(--scene-button);
 }
 
 .scene-nav button:hover {
