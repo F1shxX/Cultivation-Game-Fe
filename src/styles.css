@@ -2628,8 +2628,38 @@ button:focus-visible {
 }
 
 .layout-info-panel .event-console {
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr);
   max-height: 144px;
+}
+
+.layout-info-panel .event-console header > div {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  min-width: 0;
+}
+
+.layout-info-panel .event-console header h2 {
+  margin-top: 0;
+}
+
+.layout-info-panel .event-console header p {
+  min-width: 0;
+}
+
+.layout-info-panel .event-start-list {
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+  padding-bottom: 1px;
+  scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
+  scrollbar-width: thin;
+}
+
+.layout-info-panel .event-start-list button {
+  min-height: 58px;
 }
 
 .stat-card,
