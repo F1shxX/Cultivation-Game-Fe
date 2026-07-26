@@ -378,44 +378,24 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.resource-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  pointer-events: auto;
-}
-
-.resource-bar span {
+.sync-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 7px 12px;
+  min-height: 24px;
+  padding: 3px 9px;
   border: 1px solid rgba(255, 233, 186, 0.18);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff3d2;
-  font-size: 14px;
+  background: rgba(0, 0, 0, 0.42);
+  font-size: 11px;
   font-weight: 800;
 }
 
-.resource-chip img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
-}
-
-.resource-chip b {
-  color: #ffe2a0;
-}
-
-.resource-bar .online {
+.sync-status.online {
   color: #9cff83;
 }
 
-.resource-bar .offline {
+.sync-status.offline {
   color: #ffbf7a;
 }
 
@@ -1371,7 +1351,8 @@ button:focus-visible {
   text-align: center;
 }
 
-.scene-nav button {
+.scene-nav button,
+.scene-actions button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1399,7 +1380,71 @@ button:focus-visible {
   text-rendering: geometricPrecision;
 }
 
-.scene-nav button.return-to-plaza {
+.scene-actions {
+  position: absolute;
+  z-index: 32;
+  top: 142px;
+  right: 22px;
+  display: grid;
+  gap: 7px;
+  width: 178px;
+  padding: 9px;
+  border: 1px solid rgba(255, 239, 204, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(10px);
+}
+
+.scene-actions-title {
+  padding: 2px 5px 5px;
+  border-bottom: 1px solid rgba(255, 239, 204, 0.12);
+  color: #fff0bd;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.scene-actions-location {
+  display: block;
+  color: #9bd6ff;
+  font-size: 12px;
+  text-align: center;
+}
+
+.scene-actions-list {
+  display: grid;
+  gap: 6px;
+}
+
+.scene-actions button {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  height: auto;
+  min-height: 52px;
+  padding: 7px 10px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.scene-actions button strong,
+.scene-actions button small {
+  display: block;
+}
+
+.scene-actions button strong {
+  color: #fff1bf;
+  font-size: 14px;
+}
+
+.scene-actions button small {
+  color: #9bd6ff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.scene-actions button.return-to-plaza {
+  margin-top: 2px;
   border: 1px solid rgba(246, 214, 130, 0.46);
   color: #fff2c9;
   background:
@@ -1407,7 +1452,8 @@ button:focus-visible {
     var(--scene-button);
 }
 
-.scene-nav button:hover {
+.scene-nav button:hover,
+.scene-actions button:hover {
   border-color: rgba(255, 226, 146, 0.72);
   background: rgba(83, 57, 33, 0.9);
 }
@@ -1418,7 +1464,8 @@ button:focus-visible {
   text-shadow: none;
 }
 
-.scene-nav button:disabled {
+.scene-nav button:disabled,
+.scene-actions button:disabled {
   cursor: wait;
   opacity: 0.68;
 }
@@ -2506,18 +2553,18 @@ button:focus-visible {
   transform: none;
 }
 
-.dialogue {
+.scene-footer {
   position: absolute;
   z-index: 18;
   left: 190px;
   right: 18px;
   bottom: 172px;
   display: grid;
-  grid-template-columns: minmax(190px, 20vw) minmax(0, 1fr) minmax(150px, 180px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 248px);
+  gap: 14px;
   align-items: center;
   min-height: 108px;
-  padding: 16px 26px 18px;
+  padding: 12px 20px 14px;
   border-top: 0;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.38)),
@@ -2527,79 +2574,101 @@ button:focus-visible {
   box-shadow: 0 -14px 32px rgba(0, 0, 0, 0.36);
 }
 
-.speaker {
-  align-self: end;
-  width: fit-content;
-  min-width: 168px;
-  padding: 10px 18px 12px;
-  color: #fff7e0;
-  font-size: 24px;
-  font-weight: 900;
-  background: var(--nameplate);
-  background-position: center;
-  background-size: 100% 100%;
-  text-shadow: 0 2px 0 #000;
+.scene-summary {
+  min-width: 0;
 }
 
-.speaker small {
+.scene-summary > span,
+.scene-npc-area > span {
   display: block;
-  margin-top: 5px;
   color: #e9c46f;
-  font-size: 15px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
 }
 
-.dialogue p {
-  align-self: center;
-  min-width: 0;
-  margin: 0;
-  color: #fffdf2;
-  font-size: clamp(16px, 1.55vw, 24px);
-  font-weight: 900;
-  line-height: 1.45;
+.scene-summary > strong {
+  display: inline-block;
+  margin-top: 3px;
+  color: #fff1bf;
+  font-size: 21px;
   text-shadow: 0 2px 0 #000;
 }
 
-.dialogue-action {
-  display: grid;
-  gap: 4px;
-  align-content: center;
-  min-width: 0;
-  min-height: 58px;
-  padding: 9px 14px;
-  border: 1px solid rgba(255, 235, 190, 0.36);
-  border-radius: 8px;
-  color: #fff7df;
-  background: linear-gradient(180deg, rgba(118, 80, 46, 0.88), rgba(45, 30, 24, 0.94));
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
-  cursor: pointer;
-  text-align: center;
-}
-
-.dialogue-action strong,
-.dialogue-action small {
-  display: block;
-}
-
-.dialogue-action strong {
-  color: #fff1bf;
-  font-size: 17px;
-}
-
-.dialogue-action small {
+.scene-summary > small {
+  margin-left: 10px;
   color: #9bd6ff;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
 }
 
-.dialogue-action:hover {
-  border-color: rgba(155, 214, 255, 0.72);
-  transform: translateY(-1px);
+.scene-summary p {
+  min-width: 0;
+  margin: 5px 0 0;
+  color: #fffdf2;
+  font-size: clamp(13px, 1vw, 16px);
+  font-weight: 700;
+  line-height: 1.5;
+  text-shadow: 0 2px 0 #000;
 }
 
-.dialogue-action:disabled {
-  cursor: wait;
-  opacity: 0.62;
-  transform: none;
+.scene-npc-area {
+  min-width: 0;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 239, 204, 0.16);
+}
+
+.scene-npc-area button {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  min-height: 70px;
+  margin-top: 5px;
+  padding: 5px 8px 5px 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 239, 204, 0.22);
+  border-radius: 8px;
+  color: #fff8e7;
+  background: rgba(12, 10, 8, 0.62);
+  cursor: pointer;
+  text-align: left;
+}
+
+.scene-npc-area button:hover,
+.scene-npc-area button.active {
+  border-color: rgba(244, 215, 132, 0.72);
+  background: rgba(83, 57, 33, 0.78);
+}
+
+.scene-npc-area button img {
+  width: 58px;
+  height: 58px;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: center 18%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.scene-npc-area button span,
+.scene-npc-area button strong,
+.scene-npc-area button small {
+  display: block;
+  min-width: 0;
+}
+
+.scene-npc-area button strong {
+  color: #fff1bf;
+  font-size: 16px;
+}
+
+.scene-npc-area button small {
+  margin-top: 4px;
+  color: #9bd6ff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .control-panel,
@@ -4735,21 +4804,6 @@ button:focus-visible {
     min-width: 240px;
   }
 
-  .resource-bar {
-    gap: 5px;
-  }
-
-  .resource-bar span {
-    min-height: 30px;
-    padding: 5px 8px;
-    font-size: 12px;
-  }
-
-  .resource-chip img {
-    width: 20px;
-    height: 20px;
-  }
-
   .portrait {
     left: 180px;
     width: min(320px, 28vw);
@@ -4760,9 +4814,9 @@ button:focus-visible {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .dialogue {
+  .scene-footer {
     left: 180px;
-    grid-template-columns: minmax(165px, 19vw) minmax(0, 1fr) 150px;
+    grid-template-columns: minmax(0, 1fr) 210px;
     gap: 12px;
     padding-inline: 18px;
   }
@@ -4827,6 +4881,32 @@ button:focus-visible {
 }
 
 @media (max-height: 820px) {
+  .scene-nav {
+    top: 116px;
+    max-height: calc(100vh - 304px);
+    overflow-y: auto;
+    scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
+    scrollbar-width: thin;
+  }
+
+  .scene-actions {
+    top: 116px;
+    max-height: calc(100vh - 304px);
+    overflow-y: auto;
+    scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
+    scrollbar-width: thin;
+  }
+
+  .scene-nav button {
+    height: 34px;
+    min-height: 34px;
+    line-height: 34px;
+  }
+
+  .scene-actions button {
+    min-height: 46px;
+  }
+
   .profile-backdrop {
     padding: 12px;
   }

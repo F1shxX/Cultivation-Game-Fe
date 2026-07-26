@@ -1236,24 +1236,6 @@ function CharacterPortrait({
   );
 }
 
-function ResourceChip({
-  icon,
-  label,
-  value,
-}: {
-  icon: (typeof resourceIcons)[keyof typeof resourceIcons];
-  label: string;
-  value: number;
-}) {
-  return (
-    <span className="resource-chip">
-      <img src={icon} alt="" aria-hidden="true" />
-      <b>{label}</b>
-      {value}
-    </span>
-  );
-}
-
 function OpeningScene({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const lines = [
@@ -1307,12 +1289,6 @@ function TopHud({
   onOpenProfile: () => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
 }) {
-  const inventory = state.inventory ?? {
-    mouseDemonCore: 0,
-    worryForgetRoot: 0,
-    qingmuHealingPills: 0,
-    jinlingToken: 0,
-  };
   const loadout = getLoadout(state);
   const method = methodCatalog[loadout.methodId];
   const maxHp = 100 + method.defense * 4 + method.shield;
@@ -1374,15 +1350,9 @@ function TopHud({
             设置
           </button>
         </div>
-        <div className="resource-bar">
-          <ResourceChip icon={resourceIcons.spiritStones} label="灵石" value={state.resources.spiritStones} />
-          <ResourceChip icon={resourceIcons.spiritMarrow} label="灵髓" value={state.resources.spiritMarrow} />
-          <ResourceChip icon={resourceIcons.herbs} label="草药" value={state.resources.herbs} />
-          <ResourceChip icon={resourceIcons.ore} label="矿石" value={state.resources.ore} />
-          <ResourceChip icon={resourceIcons.pills} label="丹药" value={state.resources.pills} />
-          <span>妖丹 {inventory.mouseDemonCore}</span>
-          <span className={online ? "online" : "offline"}>{online ? "数据库已连接" : "本地未同步"}</span>
-        </div>
+        <span className={`sync-status ${online ? "online" : "offline"}`}>
+          {online ? "存档已连接" : "本地未同步"}
+        </span>
       </div>
     </header>
   );
@@ -1397,52 +1367,173 @@ function SceneNavigator({
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
 }) {
-  const atPlaza = currentScene === "plaza";
+  if (currentScene !== "plaza") return null;
+
   const destinations = scenes.filter((scene) => scene !== "plaza");
 
   return (
-    <nav
-      className={`scene-nav ${atPlaza ? "scene-nav-hub" : "scene-nav-return"}`}
-      aria-label={atPlaza ? "从广场前往鹿石宗场景" : "返回鹿石宗广场"}
-    >
-      <span className="scene-nav-title">
-        {atPlaza ? "从广场出发" : `当前 · ${sceneConfig[currentScene].label}`}
+    <nav className="scene-nav" aria-label="从广场前往鹿石宗场景">
+      <span className="scene-nav-title">场景切换</span>
+      <span className="scene-nav-hub-marker" aria-current="location">
+        广场 · 当前所在
       </span>
-      {atPlaza ? (
-        <>
-          <span className="scene-nav-hub-marker" aria-current="location">
-            广场 · 当前所在
-          </span>
-          {destinations.map((scene) => (
-            <button
-              key={scene}
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction(`change_scene:${scene}`);
-              }}
-            >
-              {sceneConfig[scene].label}
-            </button>
-          ))}
-          <span className="scene-nav-hint">所有地点均由广场前往</span>
-        </>
-      ) : (
-        <>
-          <button
-            className="return-to-plaza"
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("change_scene:plaza");
-            }}
-          >
-            ← 返回广场
-          </button>
-          <span className="scene-nav-hint">前往其他地点前，请先返回广场</span>
-        </>
-      )}
+      {destinations.map((scene) => (
+        <button
+          key={scene}
+          disabled={busy}
+          onClick={() => {
+            playSceneClick();
+            onAction(`change_scene:${scene}`);
+          }}
+        >
+          {sceneConfig[scene].label}
+        </button>
+      ))}
+      <span className="scene-nav-hint">前往其他地点后，需返回广场再换场景</span>
     </nav>
+  );
+}
+
+function SceneActionPanel({
+  currentScene,
+  busy,
+  onAction,
+  onOpenPanel,
+}: {
+  currentScene: DemoScene;
+  busy: boolean;
+  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+}) {
+  const runAction = (action: DemoAction) => {
+    playSceneClick();
+    onAction(action);
+  };
+  const openPanel = (panel: Panel, profileTab?: ProfileTab) => {
+    playSceneClick();
+    onOpenPanel(panel, profileTab);
+  };
+
+  const actions: Array<{ label: string; description: string; onClick: () => void }> = (() => {
+    switch (currentScene) {
+      case "hall":
+        return [
+          { label: "阅读门规", description: "查看宗门与世界资料", onClick: () => openPanel("世界") },
+          { label: "鹿真人手记", description: "查看鹿石宗人物资料", onClick: () => openPanel("人物") },
+        ];
+      case "plaza":
+        return [
+          { label: "洒扫广场", description: "完成宗门日常", onClick: () => runAction("sweep_plaza") },
+        ];
+      case "dormitory":
+        return [
+          { label: "休息", description: "恢复状态并推进时间", onClick: () => runAction("rest") },
+          { label: "仓库", description: "打开背包与物品栏", onClick: () => openPanel("我的", "背包") },
+        ];
+      case "sister_room":
+        return [
+          { label: "与师姐交谈", description: "饮茶并提升羁绊", onClick: () => runAction("talk_xiaoxian") },
+        ];
+      case "meditation_room":
+        return [
+          { label: "练功", description: "查看当前主修功法", onClick: () => openPanel("我的", "功法") },
+          { label: "研习", description: "调整术法组合", onClick: () => openPanel("我的", "术法") },
+          { label: "闭修", description: "提升修为并推进时间", onClick: () => runAction("cultivate") },
+        ];
+      case "forge":
+        return [
+          { label: "炼制装备", description: "消耗矿石进行炼制", onClick: () => runAction("forge") },
+          { label: "淬炼法宝", description: "查看装备与法宝槽位", onClick: () => openPanel("我的", "装备") },
+        ];
+      case "alchemy_room":
+        return [
+          { label: "炼丹", description: "消耗草药炼制丹药", onClick: () => runAction("alchemy") },
+        ];
+      case "spirit_garden":
+        return [
+          { label: "种植 / 收获", description: "照料灵植并获得草药", onClick: () => runAction("plant") },
+        ];
+      case "teleport_array":
+        return [
+          { label: "传送", description: "检查阵纹并解锁外出事件", onClick: () => runAction("inspect_teleport") },
+        ];
+    }
+  })();
+
+  return (
+    <aside className="scene-actions" aria-label={`${sceneConfig[currentScene].label}场景功能`}>
+      <span className="scene-actions-title">场景功能</span>
+      <strong className="scene-actions-location">{sceneConfig[currentScene].label}</strong>
+      <div className="scene-actions-list">
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            disabled={busy}
+            onClick={action.onClick}
+          >
+            <strong>{action.label}</strong>
+            <small>{action.description}</small>
+          </button>
+        ))}
+        {currentScene !== "plaza" && (
+          <button className="return-to-plaza" disabled={busy} onClick={() => runAction("change_scene:plaza")}>
+            <strong>返回广场</strong>
+            <small>回到主界面后再前往其他地点</small>
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function SceneNpcStrip({
+  portrait,
+  actorName,
+  bond,
+  config,
+  expanded,
+  onToggle,
+}: {
+  portrait: { key: PortraitKey; expression: PortraitExpression; name: string };
+  actorName: string;
+  bond: number;
+  config: (typeof sceneConfig)[DemoScene];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const greetings: Record<(typeof config)["actor"], string> = {
+    xiaozhang: "小张见你过来，立刻摆出大师兄的架势，又忍不住问你下一步准备去哪。",
+    xiaoxian: "小娴放下手里的活计，笑着提醒你先照顾好自己，再去折腾那些危险差事。",
+    lu: "鹿真人捋了捋胡子，说修行不必着急，先把眼前这处地方摸清再说。",
+  };
+
+  return (
+    <section className={`scene-footer ${expanded ? "npc-expanded" : ""}`}>
+      <div className="scene-summary">
+        <span>当前场景</span>
+        <strong>{config.label}</strong>
+        <small>{config.subtitle}</small>
+        <p>{expanded ? greetings[config.actor] : config.description}</p>
+      </div>
+      <div className="scene-npc-area">
+        <span>场景人物</span>
+        <button
+          type="button"
+          className={expanded ? "active" : ""}
+          aria-expanded={expanded}
+          onClick={() => {
+            playSceneClick();
+            onToggle();
+          }}
+        >
+          <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
+          <span>
+            <strong>{actorName}</strong>
+            <small>羁绊 {bond} · {expanded ? "正在交谈" : "点击交互"}</small>
+          </span>
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -3849,6 +3940,7 @@ function HomeScene({
 }) {
   const state = save.state;
   const scene = getScene(state);
+  const [expandedNpcScene, setExpandedNpcScene] = useState<DemoScene | null>(null);
   const config = sceneConfig[scene];
   const activeEvent = getActiveEvent(state, events);
   const inBattle = state.location === "battle";
@@ -3858,13 +3950,7 @@ function HomeScene({
   const luBond = state.relationships.find((item) => item.characterId === "lu-zhenren")?.bond ?? 0;
   const actorBond = config.actor === "xiaoxian" ? xiaoxianBond : config.actor === "xiaozhang" ? zhangBond : luBond;
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
-  const sceneInteractionAction = config.actor === "xiaoxian" ? "talk_xiaoxian" : config.primaryAction;
   const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
-  const dialogueText =
-    activeEvent?.node.text ??
-    (inBattle
-      ? "师弟别慌，本真人先替你压阵。要是我撑不住......师姐救我！"
-      : config.description);
   const currentPortrait =
     activeEvent && activeEvent.node.mode !== "battle"
       ? getSpeakerPortrait(dialogueSpeaker, activeEvent.node)
@@ -3872,6 +3958,11 @@ function HomeScene({
         ? null
         : getActorPortrait(config.actor);
   const busy = Boolean(busyAction);
+
+  useEffect(() => {
+    setExpandedNpcScene(null);
+  }, [scene]);
+
   const stageStyle = {
     "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
     "--avatar-frame": `url("${assetPath("assets/tapflow/ui/avatar-frame.webp")}")`,
@@ -3932,34 +4023,35 @@ function HomeScene({
           )}
         </div>
 
-        {!activeEvent && <SceneNavigator currentScene={scene} busy={busy} onAction={onAction} />}
-        {currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
+        {!activeEvent && (
+          <SceneNavigator
+            currentScene={scene}
+            busy={busy}
+            onAction={onAction}
+          />
+        )}
+        {!activeEvent && (
+          <SceneActionPanel
+            currentScene={scene}
+            busy={busy}
+            onAction={onAction}
+            onOpenPanel={onOpenPanel}
+          />
+        )}
+        {activeEvent && currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
         {activeEvent ? (
           <ActiveEventOverlay activeEvent={activeEvent} busyAction={busyAction} onAction={onAction} />
-        ) : (
-          <>
-            <section className="dialogue">
-              <div className="speaker">
-                {dialogueSpeaker}
-                <small>{`羁绊 ${actorBond}`}</small>
-              </div>
-              <p>{dialogueText}</p>
-              <button
-                type="button"
-                className="dialogue-action"
-                disabled={busy}
-                onClick={() => {
-                  playSceneClick();
-                  onAction(sceneInteractionAction);
-                }}
-              >
-                <strong>{config.primaryLabel}</strong>
-                <small>与{actorName}互动</small>
-              </button>
-            </section>
-          </>
-        )}
+        ) : currentPortrait ? (
+          <SceneNpcStrip
+            portrait={currentPortrait}
+            actorName={actorName}
+            bond={actorBond}
+            config={config}
+            expanded={expandedNpcScene === scene}
+            onToggle={() => setExpandedNpcScene((current) => current === scene ? null : scene)}
+          />
+        ) : null}
       </section>
 
       {!activeEvent && (
