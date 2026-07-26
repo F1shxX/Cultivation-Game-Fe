@@ -210,6 +210,12 @@ type SaveResponse = {
   save: DemoSave;
 };
 
+type SceneActionFeedback = {
+  title: string;
+  text: string;
+  details: string[];
+};
+
 type EventsResponse = {
   ok: boolean;
   events: Record<DemoEventId, DemoEventDefinition>;
@@ -932,6 +938,88 @@ const sceneConfig: Record<
 
 const scenes = Object.keys(sceneConfig) as DemoScene[];
 
+type SceneNpcChoice = {
+  label: string;
+  response: string;
+  action?: DemoAction;
+};
+
+const sceneNpcInteractions: Record<
+  DemoScene,
+  {
+    greeting: string;
+    choices: SceneNpcChoice[];
+  }
+> = {
+  hall: {
+    greeting: "小张抱着一卷门规站在大厅里，神情严肃得像是马上要主持宗门大典。",
+    choices: [
+      { label: "问问宗门近况", response: "鹿真人又云游去了。宗门大小事务嘛……自然暂由本大师兄主持。" },
+      { label: "提醒牌匾歪了", response: "这叫随性自然。你要实在看不惯，等会儿搭把手扶正。" },
+    ],
+  },
+  plaza: {
+    greeting: "小张靠着木桩冲你招手，显然又在盘算新的宗门活动。",
+    choices: [
+      { label: "和他打招呼", response: "师弟来得正好！本真人正缺一个见证我绝世剑法的人。" },
+      { label: "问今天做什么", response: "先把宗门逛熟。要是还闲着，扫扫广场，说不定真能捡到灵石。" },
+    ],
+  },
+  dormitory: {
+    greeting: "小张从门边探出头，压低声音提醒你别把小娴留下的丹药忘在桌上。",
+    choices: [
+      { label: "问他为何在这里", response: "我只是路过！顺便确认师弟有没有偷懒……绝不是来找零食。" },
+      { label: "请他安静些", response: "好好好，你休息。本大师兄替你守门，保证谁都不来打扰。" },
+    ],
+  },
+  sister_room: {
+    greeting: "小娴放下手里的药册，为你添了一盏温茶。",
+    choices: [
+      {
+        label: "一起喝茶",
+        response: "小娴笑着推来茶盏，药香与茶香慢慢散开。",
+        action: "talk_xiaoxian",
+      },
+      { label: "问问小张近况", response: "他方才还说要炼一件惊天法宝。你若听见炸炉声，记得先躲远些。" },
+    ],
+  },
+  meditation_room: {
+    greeting: "鹿真人的身影停在阵纹旁，似真似幻，像是一缕留在此处的神念。",
+    choices: [
+      { label: "请教万化道躯", response: "莫急着给自己定形。能容万法，先要学会辨认何为自己的道。" },
+      { label: "询问闭关要诀", response: "闭关不是与世隔绝。心有所悟时入定，心有挂碍时便出去走走。" },
+    ],
+  },
+  forge: {
+    greeting: "小张举起一把刚出炉的短剑，似乎很希望你先夸一句。",
+    choices: [
+      { label: "评价这把短剑", response: "有眼光！虽然离绝世神兵还差一点，但拿去换灵石肯定不亏。" },
+      { label: "问问炉火", response: "火候最重要。小娴说我总开得太旺，我觉得那叫气势。" },
+    ],
+  },
+  alchemy_room: {
+    greeting: "小娴守在丹炉旁，见你靠近便递来一块隔热的软布。",
+    choices: [
+      { label: "询问炼丹进度", response: "火候正好，再等一会儿便能收丹。小张今天不在，应该不会出岔子。" },
+      { label: "问能否帮忙", response: "帮我把右边第二格的药匣拿来吧。慢些，别碰到炉壁。" },
+    ],
+  },
+  spirit_garden: {
+    greeting: "小娴蹲在灵田边松土，衣袖上沾了几片细小的草叶。",
+    choices: [
+      { label: "询问灵草长势", response: "这批长得很好。再照料一阵，就能留一部分炼丹，其余收入仓库。" },
+      { label: "帮她浇水", response: "多谢。沿着根部慢慢浇就好，别学小张直接用引水术冲。" },
+    ],
+  },
+  teleport_array: {
+    greeting: "鹿真人站在忽明忽暗的阵纹前，像是早已知道你会来。",
+    choices: [
+      { label: "询问传送去处", response: "阵盘会记住曾经抵达的地方。先检查阵纹，再选择你真正想去的方向。" },
+      { label: "问阵法是否安全", response: "能到地方。至于落地时是站着还是坐着，要看今日阵灵的心情。" },
+    ],
+  },
+};
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: {
@@ -949,6 +1037,65 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 function formatTime(state: DemoSaveState) {
   return `第${state.year}年${state.month}月`;
+}
+
+const feedbackActions: DemoAction[] = [
+  "cultivate",
+  "alchemy",
+  "plant",
+  "forge",
+  "rest",
+  "talk_xiaoxian",
+  "sweep_plaza",
+  "inspect_teleport",
+];
+
+function createSceneActionFeedback(
+  before: DemoSaveState | null,
+  after: DemoSaveState,
+): SceneActionFeedback {
+  const latestLog = after.eventLog[0];
+  const details: string[] = [];
+
+  if (before) {
+    if (before.year !== after.year || before.month !== after.month) {
+      details.push(`时间：${formatTime(before)} → ${formatTime(after)}`);
+    }
+
+    const resourceLabels: Array<[keyof DemoSaveState["resources"], string]> = [
+      ["spiritStones", "灵石"],
+      ["spiritMarrow", "灵髓"],
+      ["herbs", "草药"],
+      ["ore", "矿石"],
+      ["pills", "丹药"],
+    ];
+    resourceLabels.forEach(([key, label]) => {
+      const delta = after.resources[key] - before.resources[key];
+      if (delta !== 0) details.push(`${label}：${delta > 0 ? "+" : ""}${delta}`);
+    });
+
+    const progressDelta =
+      after.cultivation.realmProgress - before.cultivation.realmProgress;
+    if (progressDelta !== 0) {
+      details.push(`修为进度：${progressDelta > 0 ? "+" : ""}${progressDelta}%`);
+    }
+
+    after.relationships.forEach((relationship) => {
+      const previous = before.relationships.find(
+        (item) => item.characterId === relationship.characterId,
+      );
+      const delta = relationship.bond - (previous?.bond ?? relationship.bond);
+      if (delta !== 0) {
+        details.push(`${relationship.name}羁绊：${delta > 0 ? "+" : ""}${delta}`);
+      }
+    });
+  }
+
+  return {
+    title: latestLog?.title ?? "操作完成",
+    text: latestLog?.text ?? "场景功能已经执行。",
+    details,
+  };
 }
 
 function getScene(state: DemoSaveState): DemoScene {
@@ -1502,34 +1649,159 @@ function SceneNpcStrip({
   portrait,
   actorName,
   bond,
-  expanded,
-  onToggle,
+  onInteract,
 }: {
   portrait: { key: PortraitKey; expression: PortraitExpression; name: string };
   actorName: string;
   bond: number;
-  expanded: boolean;
-  onToggle: () => void;
+  onInteract: () => void;
 }) {
   return (
-    <section className={`scene-npc-strip ${expanded ? "npc-expanded" : ""}`} aria-label="场景人物">
+    <section className="scene-npc-strip" aria-label="场景人物">
       <span className="scene-npc-title">场景人物</span>
       <button
         type="button"
-        className={expanded ? "active" : ""}
-        aria-pressed={expanded}
         onClick={() => {
           playSceneClick();
-          onToggle();
+          onInteract();
         }}
       >
         <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
         <span>
           <strong>{actorName}</strong>
-          <small>羁绊 {bond} · {expanded ? "正在交谈" : "点击交互"}</small>
+          <small>羁绊 {bond} · 点击交互</small>
         </span>
       </button>
     </section>
+  );
+}
+
+function SceneNpcInteractionModal({
+  scene,
+  portrait,
+  actorName,
+  bond,
+  busy,
+  onAction,
+  onClose,
+}: {
+  scene: DemoScene;
+  portrait: { key: PortraitKey; expression: PortraitExpression; name: string };
+  actorName: string;
+  bond: number;
+  busy: boolean;
+  onAction: (action: DemoAction) => void;
+  onClose: () => void;
+}) {
+  const interaction = sceneNpcInteractions[scene];
+  const [response, setResponse] = useState(interaction.greeting);
+
+  useEffect(() => {
+    setResponse(interaction.greeting);
+  }, [interaction.greeting, scene]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="scene-modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="scene-interaction-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scene-interaction-title"
+      >
+        <button className="scene-modal-close" type="button" aria-label="关闭人物交互" onClick={onClose}>
+          ×
+        </button>
+        <div className="scene-interaction-person">
+          <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
+          <span>{sceneConfig[scene].label} · 场景人物</span>
+          <h2 id="scene-interaction-title">{actorName}</h2>
+          <strong>当前羁绊 {bond}</strong>
+        </div>
+        <div className="scene-interaction-content">
+          <span className="scene-modal-eyebrow">人物交互</span>
+          <p className="scene-interaction-response">{response}</p>
+          <div className="scene-interaction-choices">
+            {interaction.choices.map((choice) => (
+              <button
+                type="button"
+                key={choice.label}
+                disabled={busy}
+                onClick={() => {
+                  playSceneClick();
+                  if (choice.action) {
+                    onClose();
+                    onAction(choice.action);
+                    return;
+                  }
+                  setResponse(choice.response);
+                }}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SceneActionFeedbackModal({
+  feedback,
+  onClose,
+}: {
+  feedback: SceneActionFeedback;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="scene-modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="scene-result-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scene-result-title"
+      >
+        <span className="scene-modal-eyebrow">场景功能完成</span>
+        <h2 id="scene-result-title">{feedback.title}</h2>
+        <p>{feedback.text}</p>
+        {feedback.details.length > 0 && (
+          <ul>
+            {feedback.details.map((detail) => <li key={detail}>{detail}</li>)}
+          </ul>
+        )}
+        <button type="button" className="scene-result-confirm" onClick={onClose}>
+          知道了
+        </button>
+      </section>
+    </div>
   );
 }
 
@@ -3795,10 +4067,12 @@ function HomeScene({
   panel,
   profileInitialTab,
   musicEnabled,
+  sceneFeedback,
   onAction,
   onReset,
   onOpenPanel,
   onClosePanel,
+  onCloseSceneFeedback,
   onToggleMusic,
   onReplayOpening,
 }: {
@@ -3809,16 +4083,18 @@ function HomeScene({
   panel: Panel | null;
   profileInitialTab: ProfileTab;
   musicEnabled: boolean;
+  sceneFeedback: SceneActionFeedback | null;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onReset: () => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
   onClosePanel: () => void;
+  onCloseSceneFeedback: () => void;
   onToggleMusic: () => void;
   onReplayOpening: () => void;
 }) {
   const state = save.state;
   const scene = getScene(state);
-  const [expandedNpcScene, setExpandedNpcScene] = useState<DemoScene | null>(null);
+  const [npcInteractionOpen, setNpcInteractionOpen] = useState(false);
   const config = sceneConfig[scene];
   const activeEvent = getActiveEvent(state, events);
   const inBattle = state.location === "battle";
@@ -3838,7 +4114,7 @@ function HomeScene({
   const busy = Boolean(busyAction);
 
   useEffect(() => {
-    setExpandedNpcScene(null);
+    setNpcInteractionOpen(false);
   }, [scene]);
 
   const stageStyle = {
@@ -3927,11 +4203,29 @@ function HomeScene({
             portrait={currentPortrait}
             actorName={actorName}
             bond={actorBond}
-            expanded={expandedNpcScene === scene}
-            onToggle={() => setExpandedNpcScene((current) => current === scene ? null : scene)}
+            onInteract={() => setNpcInteractionOpen(true)}
           />
         ) : null}
       </section>
+
+      {npcInteractionOpen && currentPortrait && !activeEvent && (
+        <SceneNpcInteractionModal
+          scene={scene}
+          portrait={currentPortrait}
+          actorName={actorName}
+          bond={actorBond}
+          busy={busy}
+          onAction={onAction}
+          onClose={() => setNpcInteractionOpen(false)}
+        />
+      )}
+
+      {sceneFeedback && !activeEvent && (
+        <SceneActionFeedbackModal
+          feedback={sceneFeedback}
+          onClose={onCloseSceneFeedback}
+        />
+      )}
 
       {panel && !activeEvent && (
         <UtilityPanel
@@ -3958,6 +4252,7 @@ function App() {
   const [busyAction, setBusyAction] = useState<DemoAction | "reset" | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
+  const [sceneFeedback, setSceneFeedback] = useState<SceneActionFeedback | null>(null);
   const [showOpening, setShowOpening] = useState(() => !localStorage.getItem("cultivation-opening-seen"));
   const [musicEnabled, setMusicEnabled] = useState(
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
@@ -4011,6 +4306,7 @@ function App() {
   }
 
   async function perform(action: DemoAction, requestPayload?: DemoActionPayload) {
+    const beforeState = loadState.status === "ready" ? loadState.save.state : null;
     setBusyAction(action);
     try {
       const responsePayload = await fetchJson<SaveResponse>("/demo/action", {
@@ -4018,6 +4314,9 @@ function App() {
         body: JSON.stringify({ action, ...requestPayload }),
       });
       replaceSave(responsePayload.save);
+      if (feedbackActions.includes(action)) {
+        setSceneFeedback(createSceneActionFeedback(beforeState, responsePayload.save.state));
+      }
     } catch (error) {
       setLoadState({
         status: "error",
@@ -4036,6 +4335,7 @@ function App() {
       });
       replaceSave(payload.save);
       setPanel(null);
+      setSceneFeedback(null);
     } catch (error) {
       setLoadState({
         status: "error",
@@ -4091,10 +4391,12 @@ function App() {
       panel={panel}
       profileInitialTab={profileInitialTab}
       musicEnabled={musicEnabled}
+      sceneFeedback={sceneFeedback}
       onAction={(action, payload) => void perform(action, payload)}
       onReset={() => void reset()}
       onOpenPanel={openPanel}
       onClosePanel={() => setPanel(null)}
+      onCloseSceneFeedback={() => setSceneFeedback(null)}
       onToggleMusic={toggleAmbientMusic}
       onReplayOpening={() => {
         localStorage.removeItem("cultivation-opening-seen");
