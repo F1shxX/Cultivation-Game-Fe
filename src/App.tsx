@@ -1396,11 +1396,15 @@ function SceneNavigator({
 
 function SceneActionPanel({
   currentScene,
+  state,
+  events,
   busy,
   onAction,
   onOpenPanel,
 }: {
   currentScene: DemoScene;
+  state: DemoSaveState;
+  events: Record<DemoEventId, DemoEventDefinition>;
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
@@ -1455,13 +1459,21 @@ function SceneActionPanel({
         ];
       case "teleport_array":
         return [
-          { label: "传送", description: "检查阵纹并解锁外出事件", onClick: () => runAction("inspect_teleport") },
+          { label: "检查阵纹", description: "检查传送阵并准备外出", onClick: () => runAction("inspect_teleport") },
+          ...getEventList(events).map((event) => {
+            const completed = state.completedEvents?.includes(event.id) ?? false;
+            return {
+              label: `${completed ? "复盘" : "传送"} · ${event.title}`,
+              description: `第${event.triggerYear}年 · ${event.location}`,
+              onClick: () => runAction(`start_event:${event.id}` as DemoAction),
+            };
+          }),
         ];
     }
   })();
 
   return (
-    <aside className="scene-actions" aria-label={`${sceneConfig[currentScene].label}场景功能`}>
+    <section className="scene-actions" aria-label={`${sceneConfig[currentScene].label}场景功能`}>
       <span className="scene-actions-title">场景功能</span>
       <strong className="scene-actions-location">{sceneConfig[currentScene].label}</strong>
       <div className="scene-actions-list">
@@ -1482,7 +1494,7 @@ function SceneActionPanel({
           </button>
         )}
       </div>
-    </aside>
+    </section>
   );
 }
 
@@ -1490,49 +1502,33 @@ function SceneNpcStrip({
   portrait,
   actorName,
   bond,
-  config,
   expanded,
   onToggle,
 }: {
   portrait: { key: PortraitKey; expression: PortraitExpression; name: string };
   actorName: string;
   bond: number;
-  config: (typeof sceneConfig)[DemoScene];
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const greetings: Record<(typeof config)["actor"], string> = {
-    xiaozhang: "小张见你过来，立刻摆出大师兄的架势，又忍不住问你下一步准备去哪。",
-    xiaoxian: "小娴放下手里的活计，笑着提醒你先照顾好自己，再去折腾那些危险差事。",
-    lu: "鹿真人捋了捋胡子，说修行不必着急，先把眼前这处地方摸清再说。",
-  };
-
   return (
-    <section className={`scene-footer ${expanded ? "npc-expanded" : ""}`}>
-      <div className="scene-summary">
-        <span>当前场景</span>
-        <strong>{config.label}</strong>
-        <small>{config.subtitle}</small>
-        <p>{expanded ? greetings[config.actor] : config.description}</p>
-      </div>
-      <div className="scene-npc-area">
-        <span>场景人物</span>
-        <button
-          type="button"
-          className={expanded ? "active" : ""}
-          aria-expanded={expanded}
-          onClick={() => {
-            playSceneClick();
-            onToggle();
-          }}
-        >
-          <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
-          <span>
-            <strong>{actorName}</strong>
-            <small>羁绊 {bond} · {expanded ? "正在交谈" : "点击交互"}</small>
-          </span>
-        </button>
-      </div>
+    <section className={`scene-npc-strip ${expanded ? "npc-expanded" : ""}`} aria-label="场景人物">
+      <span className="scene-npc-title">场景人物</span>
+      <button
+        type="button"
+        className={expanded ? "active" : ""}
+        aria-pressed={expanded}
+        onClick={() => {
+          playSceneClick();
+          onToggle();
+        }}
+      >
+        <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
+        <span>
+          <strong>{actorName}</strong>
+          <small>羁绊 {bond} · {expanded ? "正在交谈" : "点击交互"}</small>
+        </span>
+      </button>
     </section>
   );
 }
@@ -3706,124 +3702,6 @@ function BulletHellCombat({
   );
 }
 
-function EventConsole({
-  state,
-  events,
-  busyAction,
-  onAction,
-}: {
-  state: DemoSaveState;
-  events: Record<DemoEventId, DemoEventDefinition>;
-  busyAction: DemoAction | "reset" | null;
-  onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
-}) {
-  const activeEvent = getActiveEvent(state, events);
-  const busy = Boolean(busyAction);
-
-  if (activeEvent) {
-    const { active, definition, node } = activeEvent;
-    const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
-    const modeText: Record<DemoEventNode["mode"], string> = {
-      dialogue: "剧情",
-      choice: "抉择",
-      battle: "战斗",
-      reward: "结算",
-    };
-
-    return (
-      <section className="event-console event-active">
-        <header>
-          <div>
-            <span className="event-eyebrow">DEMO事件进行中</span>
-            <h2>{definition.title}</h2>
-            <p>
-              {definition.location} · {definition.participants.join(" / ")}
-            </p>
-          </div>
-          <strong>{progress}%</strong>
-        </header>
-        <div className="event-progress">
-          <i style={{ width: `${progress}%` }} />
-        </div>
-        <div className="event-node">
-          <span>{modeText[node.mode]}</span>
-          <h3>{node.title}</h3>
-          <p>
-            {node.speaker}：{node.text}
-          </p>
-          {active.replay && <small>本次为复盘，完成后不会重复发放奖励。</small>}
-        </div>
-        {node.mode === "choice" && node.choices ? (
-          <div className="event-choice-grid">
-            {node.choices.map((choice) => (
-              <button
-                key={choice.action}
-                disabled={busy}
-                onClick={() => {
-                  playSceneClick();
-                  onAction(choice.action);
-                }}
-              >
-                {busyAction === choice.action ? "处理中" : choice.label}
-              </button>
-            ))}
-          </div>
-        ) : node.mode === "battle" ? (
-          <div className="event-primary event-battle-hint">
-            在上方战场完成目标后继续剧情
-          </div>
-        ) : (
-          <button
-            className="event-primary"
-            disabled={busy}
-            onClick={() => {
-              playSceneClick();
-              onAction("advance_event");
-            }}
-          >
-            {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
-          </button>
-        )}
-      </section>
-    );
-  }
-
-  return (
-    <section className="event-console">
-      <header>
-        <div>
-          <span className="event-eyebrow">DEMO测试事件</span>
-          <h2>事件流程测试</h2>
-          <p>用于展示时间事件、战斗节点、选择分支、人物登场和奖励入库。</p>
-        </div>
-      </header>
-      <div className="event-start-list">
-        {getEventList(events).map((event) => {
-          const completed = state.completedEvents?.includes(event.id) ?? false;
-          const action = `start_event:${event.id}` as DemoAction;
-          const isTeleportReady = getScene(state) === "teleport_array";
-          return (
-            <button
-              key={event.id}
-              disabled={busy}
-              onClick={() => {
-                playSceneClick();
-                onAction(isTeleportReady ? action : "change_scene:teleport_array");
-              }}
-            >
-              <strong>
-                {isTeleportReady ? (completed ? "复盘" : "传送") : "前往传送阵"} · 第{event.triggerYear}年 · {event.title}
-              </strong>
-              <span>{event.location}</span>
-              <small>{event.rewardText}</small>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function ActiveEventOverlay({
   activeEvent,
   busyAction,
@@ -4024,19 +3902,21 @@ function HomeScene({
         </div>
 
         {!activeEvent && (
-          <SceneNavigator
-            currentScene={scene}
-            busy={busy}
-            onAction={onAction}
-          />
-        )}
-        {!activeEvent && (
-          <SceneActionPanel
-            currentScene={scene}
-            busy={busy}
-            onAction={onAction}
-            onOpenPanel={onOpenPanel}
-          />
+          <aside className="scene-left-rail" aria-label="场景操作">
+            <SceneActionPanel
+              currentScene={scene}
+              state={state}
+              events={events}
+              busy={busy}
+              onAction={onAction}
+              onOpenPanel={onOpenPanel}
+            />
+            <SceneNavigator
+              currentScene={scene}
+              busy={busy}
+              onAction={onAction}
+            />
+          </aside>
         )}
         {activeEvent && currentPortrait && <CharacterPortrait portrait={currentPortrait} />}
 
@@ -4047,47 +3927,11 @@ function HomeScene({
             portrait={currentPortrait}
             actorName={actorName}
             bond={actorBond}
-            config={config}
             expanded={expandedNpcScene === scene}
             onToggle={() => setExpandedNpcScene((current) => current === scene ? null : scene)}
           />
         ) : null}
       </section>
-
-      {!activeEvent && (
-        <section className="control-panel layout-info-panel">
-          <div className="stat-card">
-            <span>万化道躯</span>
-            <strong>{state.cultivation.realmProgress}%</strong>
-            <div className="progress">
-              <i style={{ width: `${state.cultivation.realmProgress}%` }} />
-            </div>
-          </div>
-          <EventConsole state={state} events={events} busyAction={busyAction} onAction={onAction} />
-        </section>
-      )}
-
-      {!activeEvent && (
-        <section className="codex-panel">
-          <div>
-            <h2>{config.label}</h2>
-            <p>{config.subtitle}</p>
-          </div>
-          <div>
-            <h2>最近事件</h2>
-            <ul>
-              {state.eventLog.slice(0, 5).map((event, index) => (
-                <li key={`${event.title}-${index}`}>
-                  <strong>
-                    {event.year}年{event.month}月 · {event.title}
-                  </strong>
-                  <span>{event.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
 
       {panel && !activeEvent && (
         <UtilityPanel

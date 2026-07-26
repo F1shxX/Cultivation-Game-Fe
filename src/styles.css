@@ -1305,15 +1305,28 @@ button:focus-visible {
   text-shadow: 0 3px 0 #000;
 }
 
-.scene-nav {
+.scene-left-rail {
   position: absolute;
   z-index: 32;
   top: 142px;
+  bottom: 142px;
   left: 22px;
-  right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+  padding-right: 2px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
+  scrollbar-width: thin;
+}
+
+.scene-nav {
   display: grid;
+  flex: 0 0 auto;
   gap: 5px;
-  width: 154px;
+  width: 100%;
   padding: 8px;
   border: 1px solid rgba(255, 239, 204, 0.16);
   border-radius: 8px;
@@ -1381,13 +1394,10 @@ button:focus-visible {
 }
 
 .scene-actions {
-  position: absolute;
-  z-index: 32;
-  top: 142px;
-  right: 22px;
   display: grid;
+  flex: 0 0 auto;
   gap: 7px;
-  width: 178px;
+  width: 100%;
   padding: 9px;
   border: 1px solid rgba(255, 239, 204, 0.18);
   border-radius: 8px;
@@ -2553,79 +2563,36 @@ button:focus-visible {
   transform: none;
 }
 
-.scene-footer {
+.scene-npc-strip {
   position: absolute;
-  z-index: 18;
-  left: 190px;
-  right: 18px;
-  bottom: 172px;
+  z-index: 32;
+  left: 22px;
+  bottom: 18px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(210px, 248px);
-  gap: 14px;
-  align-items: center;
-  min-height: 108px;
-  padding: 12px 20px 14px;
-  border-top: 0;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.38)),
-    var(--dialogue-box);
-  background-position: center bottom;
-  background-size: 100% 100%;
-  box-shadow: 0 -14px 32px rgba(0, 0, 0, 0.36);
+  gap: 6px;
+  width: 260px;
+  padding: 9px;
+  border: 1px solid rgba(255, 239, 204, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.52);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(10px);
 }
 
-.scene-summary {
-  min-width: 0;
-}
-
-.scene-summary > span,
-.scene-npc-area > span {
-  display: block;
+.scene-npc-title {
   color: #e9c46f;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.08em;
 }
 
-.scene-summary > strong {
-  display: inline-block;
-  margin-top: 3px;
-  color: #fff1bf;
-  font-size: 21px;
-  text-shadow: 0 2px 0 #000;
-}
-
-.scene-summary > small {
-  margin-left: 10px;
-  color: #9bd6ff;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.scene-summary p {
-  min-width: 0;
-  margin: 5px 0 0;
-  color: #fffdf2;
-  font-size: clamp(13px, 1vw, 16px);
-  font-weight: 700;
-  line-height: 1.5;
-  text-shadow: 0 2px 0 #000;
-}
-
-.scene-npc-area {
-  min-width: 0;
-  padding-left: 14px;
-  border-left: 1px solid rgba(255, 239, 204, 0.16);
-}
-
-.scene-npc-area button {
+.scene-npc-strip button {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
   width: 100%;
   min-height: 70px;
-  margin-top: 5px;
   padding: 5px 8px 5px 5px;
   overflow: hidden;
   border: 1px solid rgba(255, 239, 204, 0.22);
@@ -2636,13 +2603,13 @@ button:focus-visible {
   text-align: left;
 }
 
-.scene-npc-area button:hover,
-.scene-npc-area button.active {
+.scene-npc-strip button:hover,
+.scene-npc-strip button.active {
   border-color: rgba(244, 215, 132, 0.72);
   background: rgba(83, 57, 33, 0.78);
 }
 
-.scene-npc-area button img {
+.scene-npc-strip button img {
   width: 58px;
   height: 58px;
   border-radius: 6px;
@@ -2651,19 +2618,19 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.scene-npc-area button span,
-.scene-npc-area button strong,
-.scene-npc-area button small {
+.scene-npc-strip button span,
+.scene-npc-strip button strong,
+.scene-npc-strip button small {
   display: block;
   min-width: 0;
 }
 
-.scene-npc-area button strong {
+.scene-npc-strip button strong {
   color: #fff1bf;
   font-size: 16px;
 }
 
-.scene-npc-area button small {
+.scene-npc-strip button small {
   margin-top: 4px;
   color: #9bd6ff;
   font-size: 11px;
@@ -4814,16 +4781,12 @@ button:focus-visible {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .scene-footer {
-    left: 180px;
-    grid-template-columns: minmax(0, 1fr) 210px;
-    gap: 12px;
-    padding-inline: 18px;
+  .scene-left-rail {
+    width: 168px;
   }
 
-  .control-panel {
-    left: 180px;
-    grid-template-columns: minmax(140px, 0.45fr) minmax(360px, 1.35fr) minmax(280px, 0.9fr);
+  .scene-npc-strip {
+    width: 238px;
   }
 
   .profile-panel.profile-panel-fixed {
@@ -4881,20 +4844,9 @@ button:focus-visible {
 }
 
 @media (max-height: 820px) {
-  .scene-nav {
+  .scene-left-rail {
     top: 116px;
-    max-height: calc(100vh - 304px);
-    overflow-y: auto;
-    scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
-    scrollbar-width: thin;
-  }
-
-  .scene-actions {
-    top: 116px;
-    max-height: calc(100vh - 304px);
-    overflow-y: auto;
-    scrollbar-color: rgba(244, 215, 132, 0.5) rgba(0, 0, 0, 0.18);
-    scrollbar-width: thin;
+    bottom: 126px;
   }
 
   .scene-nav button {
@@ -4905,6 +4857,23 @@ button:focus-visible {
 
   .scene-actions button {
     min-height: 46px;
+  }
+
+  .scene-npc-strip {
+    bottom: 12px;
+    gap: 4px;
+    width: 230px;
+    padding: 7px;
+  }
+
+  .scene-npc-strip button {
+    grid-template-columns: 50px minmax(0, 1fr);
+    min-height: 58px;
+  }
+
+  .scene-npc-strip button img {
+    width: 50px;
+    height: 50px;
   }
 
   .profile-backdrop {
