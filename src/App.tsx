@@ -353,6 +353,19 @@ const resourceIcons = {
   pills: assetPath("assets/tapflow/ui/pill.webp"),
 } as const;
 
+const profileTabIconAssets: Partial<Record<ProfileTab, string>> = {
+  功法: assetPath("assets/tapflow/arts/gold/huang-jinmang-jue.webp"),
+  术法: assetPath("assets/tapflow/loadout/wanhua-body.webp"),
+};
+
+const rankFrameAssets: Record<"黄" | "玄" | "地" | "天" | "仙", string> = {
+  黄: assetPath("assets/tapflow/loadout/rank-yellow.webp"),
+  玄: assetPath("assets/tapflow/loadout/rank-xuan.webp"),
+  地: assetPath("assets/tapflow/loadout/rank-earth.webp"),
+  天: assetPath("assets/tapflow/loadout/rank-heaven.webp"),
+  仙: assetPath("assets/tapflow/loadout/rank-immortal.webp"),
+};
+
 const methodIds: DemoMethodId[] = ["luhua_jue", "jinmang_jue", "yanxin_jue"];
 const spellIds: DemoSpellId[] = ["jinmang", "shuiren", "huodan"];
 const techniqueIds: DemoTechniqueId[] = ["straight", "ring", "drop"];
@@ -2332,8 +2345,14 @@ function UtilityPanel({
                           onAction(`equip_method:${id}`);
                         }}
                       >
+                        <img
+                          className="method-rank-frame"
+                          src={rankFrameAssets[method.rank]}
+                          alt=""
+                          aria-hidden="true"
+                        />
                         {method.icon ? (
-                          <img src={method.icon} alt="" aria-hidden="true" />
+                          <img className="method-card-icon" src={method.icon} alt="" aria-hidden="true" />
                         ) : (
                           <i style={{ background: method.color }}>{method.element}</i>
                         )}
@@ -2371,6 +2390,12 @@ function UtilityPanel({
                     <img src={assetPath("assets/tapflow/loadout/wanhua-body.webp")} alt="" aria-hidden="true" />
                     <span>{combatProfile.method.element}系灵气</span>
                   </div>
+                  <img
+                    className="spell-flow-arrow"
+                    src={assetPath("assets/tapflow/loadout/spell-arrow.webp")}
+                    alt=""
+                    aria-hidden="true"
+                  />
                   {(["spell", "technique", "secret1", "secret2", "result"] as SpellBuilderSlot[]).map((slot) => (
                     <button
                       key={slot}
@@ -2548,7 +2573,13 @@ function UtilityPanel({
                   setProfileTab(item.id);
                 }}
               >
-                <i aria-hidden="true">{item.id.slice(0, 1)}</i>
+                <i aria-hidden="true">
+                  {profileTabIconAssets[item.id] ? (
+                    <img src={profileTabIconAssets[item.id]} alt="" />
+                  ) : (
+                    item.id.slice(0, 1)
+                  )}
+                </i>
                 <span>
                   <strong>{item.id}</strong>
                   <small>{item.note}</small>
@@ -2639,7 +2670,13 @@ function UtilityPanel({
 
   return (
     <div className={panel === "我的" ? "panel-backdrop profile-backdrop" : "panel-backdrop"}>
-      <section className={panel === "我的" ? "utility-panel profile-utility" : "utility-panel"}>
+      <section
+        className={
+          panel === "我的"
+            ? `utility-panel profile-utility ${profileTab === "功法" || profileTab === "术法" ? "loadout-art-utility" : ""}`
+            : "utility-panel"
+        }
+      >
         <header>
           {panel === "我的" ? (
             <div className="profile-heading">
@@ -2649,8 +2686,17 @@ function UtilityPanel({
           ) : (
             <h2>{panel}</h2>
           )}
-          <button className={panel === "我的" ? "profile-close-button" : undefined} onClick={onClose}>
-            {panel === "我的" ? "返回场景" : "关闭"}
+          <button
+            className={panel === "我的" ? "profile-close-button" : undefined}
+            aria-label={panel === "我的" ? "返回场景" : "关闭"}
+            title={panel === "我的" ? "返回场景" : "关闭"}
+            onClick={onClose}
+          >
+            {panel === "我的" ? (
+              <img src={assetPath("assets/tapflow/loadout/wanhua-window-close.webp")} alt="" aria-hidden="true" />
+            ) : (
+              "关闭"
+            )}
           </button>
         </header>
         <div className={panel === "我的" ? "panel-body profile-body" : "panel-body"}>{renderPanelBody()}</div>
