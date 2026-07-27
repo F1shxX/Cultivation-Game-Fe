@@ -1520,10 +1520,11 @@ function SceneNavigator({
 
   return (
     <nav className="scene-nav" aria-label="从广场前往鹿石宗场景">
-      <span className="scene-nav-title">场景切换</span>
       <span className="scene-nav-hub-marker" aria-current="location">
-        广场 · 当前所在
+        <strong>广场</strong>
+        <small>当前所在</small>
       </span>
+      <span className="scene-nav-title">场景切换</span>
       {destinations.map((scene) => (
         <button
           key={scene}
@@ -1556,6 +1557,8 @@ function SceneActionPanel({
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
 }) {
+  if (currentScene === "plaza") return null;
+
   const runAction = (action: DemoAction) => {
     playSceneClick();
     onAction(action);
@@ -1571,10 +1574,6 @@ function SceneActionPanel({
         return [
           { label: "阅读门规", description: "查看宗门与世界资料", onClick: () => openPanel("世界") },
           { label: "鹿真人手记", description: "查看鹿石宗人物资料", onClick: () => openPanel("人物") },
-        ];
-      case "plaza":
-        return [
-          { label: "洒扫广场", description: "完成宗门日常", onClick: () => runAction("sweep_plaza") },
         ];
       case "dormitory":
         return [
@@ -1634,12 +1633,10 @@ function SceneActionPanel({
             <small>{action.description}</small>
           </button>
         ))}
-        {currentScene !== "plaza" && (
-          <button className="return-to-plaza" disabled={busy} onClick={() => runAction("change_scene:plaza")}>
-            <strong>返回广场</strong>
-            <small>回到主界面后再前往其他地点</small>
-          </button>
-        )}
+        <button className="return-to-plaza" disabled={busy} onClick={() => runAction("change_scene:plaza")}>
+          <strong>返回广场</strong>
+          <small>回到主界面后再前往其他地点</small>
+        </button>
       </div>
     </section>
   );

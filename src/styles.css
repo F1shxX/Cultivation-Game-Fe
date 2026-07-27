@@ -1346,14 +1346,31 @@ button:focus-visible {
 .scene-nav-hub-marker {
   display: grid;
   place-items: center;
-  min-height: 34px;
+  min-height: 48px;
   padding: 0 8px;
   border: 1px solid rgba(246, 214, 130, 0.44);
   border-radius: 6px;
   color: #24170c;
   background: linear-gradient(180deg, #f3da8a, #bd8740);
-  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 249, 218, 0.7);
+}
+
+.scene-nav-hub-marker strong,
+.scene-nav-hub-marker small {
+  display: block;
+  line-height: 1.05;
+}
+
+.scene-nav-hub-marker strong {
+  font-size: 21px;
   font-weight: 900;
+}
+
+.scene-nav-hub-marker small {
+  margin-top: 2px;
+  color: rgba(51, 31, 11, 0.78);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .scene-nav-hint {
