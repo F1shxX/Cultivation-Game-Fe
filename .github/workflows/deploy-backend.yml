@@ -1,0 +1,105 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Test and deploy API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      BACKEND_REPOSITORY: F1shxX/Cultivation-Game-Be
+      BACKEND_PATH: /opt/wanhua-xiantu-be
+      BACKEND_PROCESS: wanhua-xiantu-be
+
+    steps:
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.BACKEND_REPOSITORY }}
+          ref: main
+          path: backend
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Test and build
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          npm run typecheck
+          npm run build
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Package backend
+        run: tar -C backend -czf /tmp/wanhua-backend.tar.gz dist package.json package-lock.json
+
+      - name: Upload backend
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT:-22}" /tmp/wanhua-backend.tar.gz \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/wanhua-backend-${GITHUB_RUN_ID}.tar.gz"
+
+      - name: Publish and restart API
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "BACKEND_PATH='$BACKEND_PATH' BACKEND_PROCESS='$BACKEND_PROCESS' RUN_ID='$GITHUB_RUN_ID' bash -s" <<'REMOTE'
+          set -euo pipefail
+          archive="/tmp/wanhua-backend-${RUN_ID}.tar.gz"
+          release="${BACKEND_PATH}.release-${RUN_ID}"
+          backup="${BACKEND_PATH}.backup-${RUN_ID}"
+
+          rm -rf "$release"
+          mkdir -p "$release"
+          tar -xzf "$archive" -C "$release"
+          cp "$BACKEND_PATH/.env" "$release/.env"
+          cd "$release"
+          npm ci --omit=dev
+
+          mv "$BACKEND_PATH" "$backup"
+          mv "$release" "$BACKEND_PATH"
+
+          rollback() {
+            rm -rf "$BACKEND_PATH"
+            mv "$backup" "$BACKEND_PATH"
+            pm2 restart "$BACKEND_PROCESS" --update-env
+          }
+          trap rollback ERR
+
+          cd "$BACKEND_PATH"
+          pm2 restart "$BACKEND_PROCESS" --update-env
+          sleep 3
+          curl --fail --silent --show-error http://127.0.0.1:3201/health >/dev/null
+
+          trap - ERR
+          rm -rf "$backup" "$archive"
+          pm2 save
+          REMOTE
