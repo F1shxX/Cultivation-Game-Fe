@@ -1,0 +1,1983 @@
+.start-menu-screen,
+.creation-screen,
+.entry-cg-screen,
+.major-system-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-width: 960px;
+  min-height: 640px;
+  overflow: hidden;
+}
+
+.start-menu-screen {
+  color: #171310;
+  background: #f4eee3;
+}
+
+.start-menu-bg {
+  position: absolute;
+  inset: 0;
+  background: url("/assets/onboarding/start-bg.jpg") center / cover no-repeat;
+}
+
+.start-menu-logo {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: 395px;
+  height: auto;
+  transform: translateX(-50%);
+  object-fit: contain;
+}
+
+.start-menu-actions {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  display: grid;
+  width: 296px;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.start-menu-actions button {
+  position: relative;
+  width: 296px;
+  height: 64px;
+  padding: 0 44px;
+  border: 0;
+  color: #f8f1e1;
+  background: url("/assets/onboarding/menu-button.png") center / 100% 100% no-repeat;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease;
+}
+
+.start-menu-actions button:hover {
+  filter: brightness(1.18) sepia(0.16);
+  transform: translateY(-2px);
+}
+
+.start-menu-actions small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(248, 241, 225, 0.66);
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.start-settings {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(46, 39, 31, 0.48);
+  border-radius: 4px;
+  color: #28231e;
+  background: rgba(250, 246, 236, 0.82);
+  cursor: pointer;
+}
+
+.start-settings span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: "KaiTi", serif;
+  font-weight: 800;
+}
+
+.start-version {
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  color: rgba(35, 30, 25, 0.58);
+  font-size: 11px;
+}
+
+.start-notice {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 18px;
+  padding: 32px;
+  background: rgba(31, 27, 23, 0.46);
+  backdrop-filter: blur(3px);
+}
+
+.start-notice p {
+  width: 420px;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid #b49a69;
+  border-radius: 6px;
+  color: #251e18;
+  background: #f4ede0;
+  box-shadow: 0 18px 50px rgba(35, 26, 18, 0.28);
+  text-align: center;
+}
+
+.start-notice button {
+  justify-self: center;
+  min-width: 120px;
+  height: 40px;
+  border: 1px solid #5f4a31;
+  border-radius: 4px;
+  color: #fff8e9;
+  background: #3c3025;
+  cursor: pointer;
+}
+
+.creation-screen {
+  color: #30281f;
+  background: #e9dfce;
+  font-family: "STKaiti", "KaiTi", "Noto Serif SC", serif;
+}
+
+.creation-scroll-bg {
+  position: absolute;
+  inset: 0;
+  background: url("/assets/onboarding/character-scroll.jpg") center / cover no-repeat;
+}
+
+.creation-header {
+  position: absolute;
+  z-index: 1;
+  top: 52px;
+  right: 8.5%;
+  left: 8.5%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.creation-header div {
+  display: grid;
+  gap: 2px;
+}
+
+.creation-header strong {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.creation-header span {
+  color: #7c6d5c;
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+}
+
+.creation-header p {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.creation-steps {
+  position: absolute;
+  z-index: 1;
+  top: 140px;
+  right: 14%;
+  left: 14%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid rgba(139, 112, 64, 0.28);
+}
+
+.creation-steps button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: #8b7d6d;
+  background: transparent;
+  font-size: 18px;
+  cursor: default;
+}
+
+.creation-steps button.done {
+  color: #76603d;
+  cursor: pointer;
+}
+
+.creation-steps button.active {
+  border-bottom-color: #b78a31;
+  color: #35281c;
+  font-weight: 800;
+}
+
+.creation-steps button span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #b7a17b;
+  border-radius: 50%;
+}
+
+.creation-steps button.active span {
+  border-color: #b88a2f;
+  color: #a87318;
+  box-shadow: inset 0 0 0 3px rgba(183, 138, 49, 0.12);
+}
+
+.creation-body {
+  position: absolute;
+  z-index: 1;
+  top: 205px;
+  right: 8.5%;
+  bottom: 95px;
+  left: 8.5%;
+  display: grid;
+  min-height: 0;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.creation-preview {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 14px;
+}
+
+.creation-preview img {
+  width: auto;
+  height: min(52vh, 470px);
+  min-height: 320px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(61, 42, 24, 0.16));
+}
+
+.creation-preview strong {
+  min-width: 220px;
+  margin-top: 8px;
+  padding: 8px 18px;
+  border: 1px solid rgba(184, 138, 47, 0.48);
+  color: #3a2b1b;
+  background: rgba(250, 245, 232, 0.82);
+  font-size: 20px;
+  text-align: center;
+}
+
+.creation-preview span {
+  margin-top: 6px;
+  color: #857561;
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+}
+
+.creation-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.creation-content h1 {
+  margin: 0;
+  color: #2f261d;
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.creation-content h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.creation-content p {
+  color: #7b6b58;
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.creation-name-step {
+  display: grid;
+  height: 100%;
+  grid-template-columns: minmax(300px, 1fr) 440px;
+  gap: 26px;
+}
+
+.creation-copy {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.name-inputs {
+  display: grid;
+  width: 100%;
+  margin-top: 18px;
+  grid-template-columns: 100px minmax(150px, 1fr) 72px;
+  gap: 8px;
+}
+
+.name-inputs label {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  border: 1px solid #bba980;
+  background: rgba(255, 252, 244, 0.72);
+  font-size: 17px;
+}
+
+.name-inputs input {
+  width: 100%;
+  height: 44px;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  color: #2c251e;
+  background: transparent;
+  font: 18px "KaiTi", serif;
+}
+
+.name-inputs button,
+.gender-segments button,
+.perk-page-tabs button,
+.element-filters button,
+.material-filters button,
+.forge-segments button,
+.forge-form-list button {
+  border: 1px solid #b6a17a;
+  border-radius: 3px;
+  color: #5f513f;
+  background: rgba(250, 246, 235, 0.75);
+  cursor: pointer;
+}
+
+.gender-segments {
+  display: grid;
+  width: 100%;
+  margin-top: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gender-segments button {
+  height: 48px;
+  font-size: 18px;
+}
+
+.gender-segments button.active,
+.perk-page-tabs button.active,
+.element-filters button.active,
+.material-filters button.active,
+.forge-segments button.active,
+.forge-form-list button.active {
+  border-color: #ac7724;
+  color: #7a4c0b;
+  background: rgba(217, 178, 96, 0.18);
+}
+
+.outfit-picker {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.outfit-picker > div {
+  display: grid;
+  margin-top: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.outfit-picker button {
+  display: grid;
+  height: 290px;
+  padding: 10px 4px 8px;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  border: 1px solid rgba(164, 139, 95, 0.5);
+  border-radius: 4px;
+  color: #554837;
+  background: rgba(255, 252, 244, 0.5);
+  cursor: pointer;
+}
+
+.outfit-picker button.active {
+  border: 2px solid #b27b22;
+  background: rgba(222, 187, 112, 0.16);
+  box-shadow: inset 0 0 18px rgba(177, 125, 42, 0.12);
+}
+
+.outfit-picker img {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+}
+
+.outfit-picker strong {
+  font-size: 16px;
+}
+
+.outfit-picker small {
+  color: #887762;
+  font-size: 10px;
+}
+
+.creation-option-step,
+.creation-perk-step,
+.creation-attribute-step,
+.creation-confirm-step {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.difficulty-grid,
+.fate-grid {
+  display: grid;
+  margin-top: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.difficulty-grid button,
+.fate-grid button {
+  display: grid;
+  min-height: 112px;
+  padding: 15px 18px;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  border: 1px solid rgba(158, 137, 100, 0.55);
+  border-radius: 5px;
+  color: #4a3d2f;
+  background: rgba(255, 252, 244, 0.55);
+  text-align: left;
+  cursor: pointer;
+}
+
+.difficulty-grid button.active,
+.fate-grid button.active {
+  border: 2px solid #ad7928;
+  background: rgba(211, 171, 90, 0.14);
+}
+
+.difficulty-grid strong,
+.fate-grid strong {
+  font-size: 19px;
+}
+
+.difficulty-grid span,
+.fate-grid span {
+  color: #9a6a1c;
+  font: 12px "Microsoft YaHei", sans-serif;
+}
+
+.difficulty-grid small,
+.fate-grid small {
+  grid-column: 1 / -1;
+  color: #756653;
+  font: 11px/1.6 "Microsoft YaHei", sans-serif;
+}
+
+.creation-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.creation-section-heading > strong {
+  min-width: 100px;
+  padding: 8px 12px;
+  border: 1px solid rgba(174, 126, 48, 0.46);
+  color: #966016;
+  background: rgba(232, 205, 143, 0.16);
+  font-size: 18px;
+  text-align: center;
+}
+
+.perk-page-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.perk-page-tabs button {
+  height: 30px;
+  padding: 0 14px;
+}
+
+.perk-grid {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 9px;
+}
+
+.perk-grid button {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px;
+  border: 1px solid rgba(159, 137, 98, 0.52);
+  border-radius: 5px;
+  color: #4d4133;
+  background: rgba(255, 252, 244, 0.5);
+  text-align: left;
+  cursor: pointer;
+}
+
+.perk-grid button.active {
+  border: 2px solid #a97122;
+  background: rgba(218, 183, 105, 0.17);
+}
+
+.perk-grid button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.perk-grid button > span {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #a36a14;
+  font: 10px "Microsoft YaHei", sans-serif;
+}
+
+.perk-grid strong {
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.perk-grid small {
+  color: #796a57;
+  font: 11px/1.6 "Microsoft YaHei", sans-serif;
+}
+
+.attribute-list {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  gap: 7px;
+}
+
+.attribute-row {
+  display: grid;
+  align-items: center;
+  padding: 8px 12px;
+  grid-template-columns: minmax(280px, 1fr) minmax(140px, 0.8fr) 128px;
+  gap: 15px;
+  border: 1px solid rgba(161, 139, 99, 0.42);
+  background: rgba(255, 252, 244, 0.48);
+}
+
+.attribute-row > div:first-child {
+  display: grid;
+  grid-template-columns: 50px 84px 1fr;
+  align-items: center;
+}
+
+.attribute-row span,
+.attribute-row small {
+  color: #81715d;
+  font: 10px "Microsoft YaHei", sans-serif;
+}
+
+.attribute-meter {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(77, 63, 46, 0.13);
+}
+
+.attribute-meter i {
+  display: block;
+  height: 100%;
+  background: #b17c2b;
+}
+
+.attribute-controls {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  text-align: center;
+}
+
+.attribute-controls button {
+  width: 34px;
+  height: 32px;
+  border: 1px solid #a89572;
+  border-radius: 3px;
+  color: #4e4030;
+  background: rgba(255, 252, 244, 0.72);
+  cursor: pointer;
+}
+
+.attribute-controls b {
+  font-size: 20px;
+}
+
+.confirm-profile {
+  display: grid;
+  width: 560px;
+  margin: 14px auto 10px;
+  grid-template-columns: 170px 1fr;
+  border: 1px solid rgba(164, 137, 91, 0.52);
+  background: rgba(255, 252, 244, 0.5);
+}
+
+.confirm-profile img {
+  width: 160px;
+  height: 220px;
+  object-fit: contain;
+}
+
+.confirm-profile > div {
+  display: grid;
+  align-content: center;
+  grid-template-columns: 72px 1fr;
+  gap: 9px;
+}
+
+.confirm-profile span {
+  color: #806f5a;
+  font-size: 12px;
+}
+
+.confirm-profile strong {
+  font-size: 17px;
+}
+
+.confirm-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.confirm-stats span {
+  display: flex;
+  height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid rgba(164, 137, 91, 0.42);
+  background: rgba(255, 252, 244, 0.42);
+}
+
+.confirm-stats b {
+  color: #a26814;
+  font-size: 18px;
+}
+
+.confirm-perks {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid #a87529;
+  background: rgba(222, 194, 133, 0.12);
+}
+
+.confirm-perks p {
+  margin: 3px 0 0;
+}
+
+.creation-footer {
+  position: absolute;
+  z-index: 1;
+  right: 14%;
+  bottom: 38px;
+  left: 14%;
+  display: grid;
+  grid-template-columns: 240px 1fr 240px;
+  align-items: center;
+}
+
+.creation-footer button {
+  height: 48px;
+  border: 0;
+  color: #fff7e4;
+  background: url("/assets/onboarding/brush-primary.png") center / 100% 100% no-repeat;
+  font: 19px "KaiTi", serif;
+  cursor: pointer;
+}
+
+.creation-footer button.secondary {
+  color: #40362d;
+  background-image: url("/assets/onboarding/brush-secondary.png");
+}
+
+.creation-footer button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.creation-footer span {
+  color: #8c7962;
+  font: 11px "Microsoft YaHei", sans-serif;
+  text-align: center;
+}
+
+.entry-cg-screen {
+  display: grid;
+  place-items: center;
+  color: #f5ead3;
+  background: #070605;
+}
+
+.entry-cg-screen video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.entry-cg-title {
+  position: absolute;
+  top: 30px;
+  left: 38px;
+  display: grid;
+  padding: 14px 22px;
+  border-left: 3px solid #d0a354;
+  background: rgba(10, 8, 6, 0.72);
+}
+
+.entry-cg-title span,
+.entry-cg-title small {
+  color: #c8ae7b;
+  font-size: 11px;
+}
+
+.entry-cg-title strong {
+  font-family: "KaiTi", serif;
+  font-size: 26px;
+}
+
+.entry-cg-screen > button {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid rgba(220, 192, 137, 0.55);
+  border-radius: 4px;
+  color: #e6d4b3;
+  background: rgba(15, 12, 9, 0.7);
+  cursor: pointer;
+}
+
+.major-system-screen {
+  display: grid;
+  grid-template-rows: 68px minmax(0, 1fr);
+  color: #30291f;
+  background: #ddd2bf url("/assets/onboarding/character-scroll.jpg") center / cover no-repeat;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+.major-system-screen button {
+  color: inherit;
+  letter-spacing: 0;
+}
+
+.major-system-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(94, 75, 49, 0.55);
+  background: rgba(239, 232, 217, 0.94);
+  box-shadow: 0 5px 18px rgba(52, 40, 27, 0.12);
+}
+
+.major-system-header > div {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+.major-system-header h1 {
+  margin: 0;
+  font: 700 27px "STKaiti", "KaiTi", serif;
+}
+
+.major-system-header span {
+  color: #786a58;
+  font-size: 12px;
+}
+
+.major-system-header > button {
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid #806a4c;
+  border-radius: 4px;
+  background: rgba(250, 246, 236, 0.72);
+  cursor: pointer;
+}
+
+.major-system-header > button:hover {
+  color: #fff8e8;
+  background: #584735;
+}
+
+.major-system-body {
+  min-width: 0;
+  min-height: 0;
+  padding: 18px 24px 22px;
+  overflow: hidden;
+}
+
+.system-tabs {
+  display: flex;
+  min-height: 42px;
+  border-bottom: 1px solid rgba(117, 92, 56, 0.34);
+}
+
+.system-tabs button {
+  min-width: 110px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+.system-tabs button.active {
+  border-bottom-color: #a96c1a;
+  color: #7c4d10;
+  font-weight: 700;
+}
+
+.system-tabs button span {
+  display: inline-grid;
+  min-width: 22px;
+  height: 20px;
+  margin-left: 5px;
+  place-items: center;
+  border-radius: 10px;
+  color: #6b5c49;
+  background: rgba(118, 91, 53, 0.12);
+  font-size: 11px;
+}
+
+.quest-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(330px, 39%) minmax(0, 1fr);
+  border: 1px solid rgba(110, 87, 55, 0.46);
+  background: rgba(244, 238, 225, 0.82);
+  box-shadow: 0 16px 36px rgba(47, 36, 24, 0.14);
+}
+
+.quest-list-panel,
+.quest-detail-panel {
+  min-width: 0;
+  min-height: 0;
+}
+
+.quest-list-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-right: 1px solid rgba(110, 87, 55, 0.38);
+  background: rgba(225, 215, 196, 0.52);
+}
+
+.quest-list {
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.quest-list > button {
+  display: grid;
+  width: 100%;
+  min-height: 60px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(116, 91, 57, 0.18);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quest-list > button:hover,
+.quest-list > button.active {
+  background: rgba(255, 251, 241, 0.8);
+}
+
+.quest-list > button.current {
+  border-left: 3px solid #b57a22;
+}
+
+.quest-list > button > i {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #9e8561;
+  border-radius: 50%;
+  color: #806439;
+  font: normal 12px Georgia, serif;
+}
+
+.quest-list > button > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.quest-list strong,
+.quest-list small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quest-list small {
+  color: #867764;
+  font-size: 10px;
+}
+
+.quest-list > button > b {
+  color: #8b7556;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.quest-detail-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 34px 24px;
+  overflow: auto;
+}
+
+.quest-detail-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(118, 92, 56, 0.28);
+}
+
+.quest-detail-panel > header span {
+  color: #9a711e;
+  font-size: 11px;
+}
+
+.quest-detail-panel h1 {
+  margin: 5px 0 0;
+  font: 700 31px "STKaiti", "KaiTi", serif;
+}
+
+.quest-detail-panel > header > strong {
+  flex: none;
+  padding: 7px 11px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.quest-detail-panel > header > strong.ready {
+  color: #9b6615;
+}
+
+.quest-detail-panel > header > strong.done {
+  color: #447253;
+}
+
+.quest-detail-panel > header > strong.locked {
+  color: #887e70;
+}
+
+.quest-summary {
+  margin: 22px 0;
+  color: #5d5142;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.quest-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid rgba(117, 91, 53, 0.22);
+  border-left: 1px solid rgba(117, 91, 53, 0.22);
+}
+
+.quest-detail-grid > div {
+  display: grid;
+  min-height: 74px;
+  align-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border-right: 1px solid rgba(117, 91, 53, 0.22);
+  border-bottom: 1px solid rgba(117, 91, 53, 0.22);
+}
+
+.quest-detail-grid span,
+.quest-condition-box > span {
+  color: #8b7b67;
+  font-size: 10px;
+}
+
+.quest-detail-grid strong {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.quest-condition-box {
+  margin-top: 20px;
+  padding: 15px 18px;
+  border-left: 3px solid #a77728;
+  background: rgba(167, 119, 40, 0.07);
+}
+
+.quest-condition-box p {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 24px 0 0;
+  color: #675a49;
+  font-size: 11px;
+}
+
+.quest-condition-box i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid #a49278;
+  border-radius: 50%;
+}
+
+.quest-condition-box i.ok {
+  border-color: #4d7656;
+  background: #5e8b68;
+}
+
+.quest-detail-panel > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.quest-detail-panel > footer button,
+.system-primary-action {
+  min-width: 150px;
+  height: 43px;
+  padding: 0 18px;
+  border: 1px solid #624d32;
+  border-radius: 4px;
+  color: #fff8e9;
+  background: #574431;
+  cursor: pointer;
+}
+
+.quest-detail-panel > footer button.secondary {
+  color: #574735;
+  background: transparent;
+}
+
+.quest-detail-panel > footer button:disabled,
+.system-primary-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.garden-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+}
+
+.garden-main,
+.garden-sidebar,
+.recipe-panel,
+.alchemy-cauldron-panel,
+.herb-inventory-panel,
+.forge-options-panel,
+.forge-center-panel,
+.forge-material-panel {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(108, 83, 50, 0.4);
+  background: rgba(244, 238, 224, 0.84);
+}
+
+.garden-main {
+  display: grid;
+  grid-template-rows: 54px minmax(0, 1fr) 28px;
+  padding: 14px;
+}
+
+.garden-main > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(112, 87, 52, 0.27);
+}
+
+.garden-main > header div {
+  display: grid;
+  gap: 3px;
+}
+
+.garden-main > header strong {
+  font: 700 20px "STKaiti", "KaiTi", serif;
+}
+
+.garden-main > header span,
+.garden-main > header p {
+  margin: 0;
+  color: #766855;
+  font-size: 10px;
+}
+
+.garden-plots {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.garden-plots article {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid rgba(84, 108, 61, 0.48);
+  border-radius: 5px;
+  background: rgba(211, 222, 187, 0.44);
+  overflow: hidden;
+}
+
+.garden-plots article.locked {
+  align-items: center;
+  border-style: dashed;
+  color: #958b7c;
+  background: rgba(118, 110, 98, 0.09);
+  font-size: 11px;
+}
+
+.garden-plots article > button {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  color: #607548;
+  background: transparent;
+  cursor: pointer;
+}
+
+.garden-plots article > button b {
+  display: block;
+  font-size: 23px;
+}
+
+.garden-plots article > button span {
+  font-size: 10px;
+}
+
+.garden-plots article > header,
+.garden-plots article > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.garden-plots article > header strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.garden-plots article > header i {
+  color: #8c6d32;
+  font: normal 9px sans-serif;
+}
+
+.garden-plots article > b {
+  margin-top: 4px;
+  color: #7c5c24;
+  font-size: 12px;
+}
+
+.garden-plots article > small,
+.garden-plots article > p {
+  margin: 3px 0 0;
+  color: #6e675a;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.garden-plots article > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.garden-plots article > footer {
+  margin-top: auto;
+  padding-top: 5px;
+}
+
+.garden-plots article > footer button {
+  flex: 1;
+  height: 23px;
+  border: 1px solid rgba(94, 107, 64, 0.52);
+  border-radius: 3px;
+  background: rgba(250, 248, 238, 0.54);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.system-notice {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #80632f;
+  font-size: 10px;
+  line-height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.garden-sidebar {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  overflow: hidden;
+}
+
+.garden-sidebar > section {
+  min-height: 0;
+  padding: 12px;
+  border-bottom: 1px solid rgba(111, 85, 51, 0.25);
+}
+
+.garden-sidebar h2,
+.forge-options-panel h2 {
+  margin: 0 0 9px;
+  color: #5d4b35;
+  font: 700 15px "STKaiti", "KaiTi", serif;
+}
+
+.seed-list,
+.recipe-list,
+.alchemy-herb-list,
+.material-list,
+.equipment-select {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.seed-list {
+  display: grid;
+  max-height: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.seed-list button,
+.recipe-list button,
+.alchemy-herb-list button,
+.material-list button,
+.equipment-select button {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: rgba(255, 253, 245, 0.48);
+  text-align: left;
+  cursor: pointer;
+}
+
+.seed-list button {
+  grid-template-columns: 25px minmax(0, 1fr) auto;
+  gap: 5px;
+  padding: 5px;
+}
+
+.seed-list button.active,
+.recipe-list button.active,
+.equipment-select button.active {
+  border-color: #a17b3e;
+  background: rgba(239, 221, 178, 0.52);
+}
+
+.seed-list button i,
+.alchemy-herb-list button i,
+.material-list button i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff9ec;
+  background: #76835d;
+  font: normal 10px serif;
+}
+
+.seed-list button span,
+.recipe-list button span,
+.alchemy-herb-list button span,
+.material-list button span {
+  display: grid;
+  min-width: 0;
+}
+
+.seed-list button strong,
+.recipe-list button strong,
+.alchemy-herb-list button strong,
+.material-list button strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed-list button small,
+.recipe-list button small,
+.alchemy-herb-list button small,
+.material-list button small {
+  overflow: hidden;
+  color: #827461;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed-list button > b,
+.alchemy-herb-list button > b {
+  font-size: 9px;
+}
+
+.speed-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.speed-breakdown p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid rgba(112, 89, 55, 0.24);
+  font-size: 9px;
+}
+
+.speed-breakdown > strong {
+  grid-column: 1 / -1;
+  color: #6b5228;
+  font-size: 11px;
+  text-align: right;
+}
+
+.garden-switches {
+  display: grid;
+  gap: 5px;
+}
+
+.garden-switches button {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(104, 81, 50, 0.35);
+  border-radius: 3px;
+  background: rgba(255, 252, 243, 0.42);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.garden-switches button b {
+  color: #7b5b26;
+}
+
+.alchemy-layout,
+.forge-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: 260px minmax(350px, 1fr) 300px;
+  gap: 12px;
+}
+
+.recipe-panel,
+.herb-inventory-panel,
+.forge-options-panel,
+.forge-material-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.recipe-panel > header,
+.herb-inventory-panel > header,
+.forge-material-panel > header {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 13px;
+  border-bottom: 1px solid rgba(110, 85, 51, 0.3);
+}
+
+.recipe-panel > header span,
+.herb-inventory-panel > header span,
+.forge-material-panel > header span {
+  color: #81725e;
+  font-size: 9px;
+}
+
+.recipe-list,
+.alchemy-herb-list,
+.material-list {
+  padding: 7px;
+}
+
+.recipe-list button,
+.alchemy-herb-list button,
+.material-list button {
+  width: 100%;
+  min-height: 49px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 7px;
+  padding: 6px;
+  border-bottom-color: rgba(115, 89, 53, 0.16);
+}
+
+.recipe-list button > i {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid #997a4b;
+  border-radius: 50%;
+  font: normal 10px serif;
+}
+
+.alchemy-cauldron-panel,
+.forge-center-panel {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  flex-direction: column;
+  padding: 24px;
+  overflow: auto;
+  text-align: center;
+}
+
+.alchemy-cauldron-panel > header span,
+.forge-center-panel > header span {
+  color: #9a6c20;
+  font-size: 10px;
+}
+
+.alchemy-cauldron-panel > header h1,
+.forge-center-panel > header h1 {
+  margin: 5px 0;
+  font: 700 27px "STKaiti", "KaiTi", serif;
+}
+
+.alchemy-cauldron-panel > header h1 i {
+  color: #916e35;
+  font: normal 11px sans-serif;
+}
+
+.alchemy-cauldron-panel > header p,
+.forge-center-panel > header p {
+  margin: 0;
+  color: #81715d;
+  font-size: 10px;
+}
+
+.cauldron-slots,
+.forge-slots {
+  display: flex;
+  width: min(100%, 560px);
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 24px auto 18px;
+}
+
+.cauldron-slots > div,
+.forge-slots > div:not(.forge-fire) {
+  display: grid;
+  width: 112px;
+  height: 112px;
+  place-items: center;
+  border: 1px dashed #a48b66;
+  border-radius: 50%;
+  background: rgba(255, 252, 241, 0.45);
+}
+
+.cauldron-slots > div > span,
+.forge-slots > div > span {
+  color: #8b7d6b;
+  font-size: 11px;
+}
+
+.cauldron-slots > div > p {
+  margin: 3px 0 0;
+  color: #9c9080;
+  font-size: 9px;
+}
+
+.cauldron-slots button,
+.forge-slots button {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cauldron-slots button b,
+.forge-slots button strong {
+  display: block;
+  font-size: 12px;
+}
+
+.cauldron-slots button small,
+.forge-slots button small {
+  display: block;
+  margin-top: 4px;
+  color: #7f715e;
+  font-size: 8px;
+}
+
+.alchemy-status,
+.forge-status {
+  display: grid;
+  width: min(100%, 580px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 auto 17px;
+  border-top: 1px solid rgba(110, 83, 48, 0.28);
+  border-left: 1px solid rgba(110, 83, 48, 0.28);
+}
+
+.alchemy-status p,
+.forge-status p {
+  display: grid;
+  min-height: 57px;
+  align-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 6px;
+  border-right: 1px solid rgba(110, 83, 48, 0.28);
+  border-bottom: 1px solid rgba(110, 83, 48, 0.28);
+}
+
+.alchemy-status span,
+.forge-status span {
+  color: #8a7a66;
+  font-size: 9px;
+}
+
+.alchemy-status b,
+.forge-status b {
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+
+.alchemy-status b.good,
+.forge-status b.good {
+  color: #4d784e;
+}
+
+.alchemy-status b.bad,
+.forge-status b.bad {
+  color: #a14f38;
+}
+
+.element-filters,
+.material-filters,
+.forge-segments,
+.forge-form-list,
+.forge-ranks {
+  display: flex;
+  gap: 4px;
+  padding: 7px;
+  border-bottom: 1px solid rgba(110, 84, 50, 0.25);
+}
+
+.element-filters button,
+.material-filters button,
+.forge-segments button,
+.forge-form-list button,
+.forge-ranks button {
+  min-width: 0;
+  flex: 1;
+  min-height: 29px;
+  border: 1px solid rgba(109, 84, 50, 0.33);
+  border-radius: 3px;
+  background: transparent;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.element-filters button.active,
+.material-filters button.active,
+.forge-segments button.active,
+.forge-form-list button.active,
+.forge-ranks button.active {
+  color: #fff8e8;
+  background: #68523a;
+}
+
+.forge-options-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow-y: auto;
+}
+
+.forge-options-panel > section {
+  padding: 12px;
+  border-bottom: 1px solid rgba(111, 85, 50, 0.24);
+}
+
+.forge-options-panel > .system-tabs {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background: #e9dfcc;
+}
+
+.forge-ranks button {
+  display: grid;
+  gap: 2px;
+  padding: 5px;
+}
+
+.forge-ranks small {
+  color: inherit;
+  font-size: 7px;
+}
+
+.equipment-select {
+  display: grid;
+  gap: 5px;
+}
+
+.equipment-select button {
+  width: 100%;
+  gap: 3px;
+  padding: 9px;
+}
+
+.equipment-select button span,
+.equipment-select button small {
+  color: #746652;
+  font-size: 9px;
+}
+
+.forge-slots {
+  position: relative;
+  flex-wrap: wrap;
+  padding-bottom: 22px;
+}
+
+.forge-fire {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  color: #fff1d5;
+  background: #9d4d2d;
+  box-shadow: 0 0 22px rgba(164, 76, 37, 0.34);
+}
+
+.forge-fire i {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 230, 181, 0.52);
+  border-radius: 50%;
+}
+
+.forge-fire b {
+  font: 700 17px "KaiTi", serif;
+}
+
+.material-list button > b {
+  display: grid;
+  justify-items: end;
+  font-size: 9px;
+}
+
+.material-list button em {
+  color: #8a5e20;
+  font-style: normal;
+}
+
+.profile-created-outfit {
+  object-fit: contain !important;
+  object-position: center bottom !important;
+}
+
+@media (max-width: 1180px), (max-height: 760px) {
+  .creation-header {
+    top: 22px;
+    right: 4%;
+    left: 4%;
+  }
+
+  .creation-header strong {
+    font-size: 27px;
+  }
+
+  .creation-steps {
+    top: 82px;
+    right: 6%;
+    left: 6%;
+  }
+
+  .creation-steps button {
+    height: 42px;
+    gap: 5px;
+    font-size: 15px;
+  }
+
+  .creation-steps button span {
+    width: 29px;
+    height: 29px;
+  }
+
+  .creation-body {
+    top: 137px;
+    right: 4%;
+    bottom: 67px;
+    left: 4%;
+    grid-template-columns: 185px minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .creation-preview {
+    padding-bottom: 5px;
+  }
+
+  .creation-preview img {
+    height: min(47vh, 340px);
+    min-height: 230px;
+  }
+
+  .creation-preview strong {
+    min-width: 170px;
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+
+  .creation-name-step {
+    grid-template-columns: minmax(260px, 1fr) 300px;
+    gap: 14px;
+  }
+
+  .creation-content h1 {
+    font-size: 21px;
+  }
+
+  .creation-content p {
+    margin: 5px 0;
+    font-size: 10px;
+  }
+
+  .name-inputs {
+    margin-top: 9px;
+    grid-template-columns: 80px minmax(130px, 1fr) 58px;
+  }
+
+  .name-inputs input,
+  .gender-segments button {
+    height: 38px;
+  }
+
+  .outfit-picker > div {
+    gap: 4px;
+  }
+
+  .outfit-picker button {
+    height: 230px;
+    padding: 6px 2px;
+  }
+
+  .outfit-picker img {
+    height: 172px;
+  }
+
+  .outfit-picker strong {
+    font-size: 13px;
+  }
+
+  .difficulty-grid button,
+  .fate-grid button {
+    min-height: 88px;
+    padding: 10px 12px;
+  }
+
+  .perk-grid button {
+    padding: 9px;
+  }
+
+  .perk-grid strong {
+    font-size: 15px;
+  }
+
+  .attribute-row {
+    padding: 5px 8px;
+    grid-template-columns: minmax(230px, 1fr) minmax(100px, 0.65fr) 110px;
+    gap: 9px;
+  }
+
+  .attribute-row > div:first-child {
+    grid-template-columns: 42px 70px 1fr;
+  }
+
+  .confirm-profile {
+    width: 470px;
+    margin-block: 7px;
+    grid-template-columns: 130px 1fr;
+  }
+
+  .confirm-profile img {
+    width: 125px;
+    height: 165px;
+  }
+
+  .creation-footer {
+    right: 8%;
+    bottom: 12px;
+    left: 8%;
+    grid-template-columns: 180px 1fr 180px;
+  }
+
+  .creation-footer button {
+    height: 42px;
+    font-size: 16px;
+  }
+
+  .major-system-screen {
+    grid-template-rows: 56px minmax(0, 1fr);
+  }
+
+  .major-system-header {
+    padding: 0 18px;
+  }
+
+  .major-system-header h1 {
+    font-size: 22px;
+  }
+
+  .major-system-body {
+    padding: 10px 12px 12px;
+  }
+
+  .quest-detail-panel {
+    padding: 18px 22px;
+  }
+
+  .quest-summary {
+    margin: 12px 0;
+    font-size: 15px;
+  }
+
+  .quest-detail-grid > div {
+    min-height: 62px;
+    padding: 8px 10px;
+  }
+
+  .garden-layout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 8px;
+  }
+
+  .garden-main {
+    padding: 9px;
+  }
+
+  .garden-plots {
+    gap: 5px;
+    padding: 6px 0;
+  }
+
+  .garden-plots article {
+    padding: 5px;
+  }
+
+  .garden-plots article > p {
+    display: none;
+  }
+
+  .alchemy-layout,
+  .forge-layout {
+    grid-template-columns: 220px minmax(320px, 1fr) 250px;
+    gap: 7px;
+  }
+
+  .alchemy-cauldron-panel,
+  .forge-center-panel {
+    padding: 14px;
+  }
+
+  .cauldron-slots,
+  .forge-slots {
+    gap: 6px;
+    margin: 14px auto 12px;
+  }
+
+  .cauldron-slots > div,
+  .forge-slots > div:not(.forge-fire) {
+    width: 84px;
+    height: 84px;
+  }
+
+  .alchemy-status,
+  .forge-status {
+    margin-bottom: 11px;
+  }
+
+  .alchemy-status p,
+  .forge-status p {
+    min-height: 48px;
+  }
+}

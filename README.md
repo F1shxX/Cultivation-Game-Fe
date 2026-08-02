@@ -1,14 +1,16 @@
-# 万化归途 Frontend
+# 万化仙途 Frontend
 
-Vite/React frontend for the 万化归途 demo. It talks to the backend API instead of connecting to Supabase with privileged keys.
+Vite/React frontend for the 万化仙途 demo. It talks to the backend API instead of connecting to Supabase with privileged keys.
 
 Current demo flow:
 
-- Opening story scene
-- Lushi Sect home scene
-- Cultivation, alchemy, planting, forging actions
-- Mouse cave battle stub
-- Supabase-backed demo save sync through the backend
+- Ink-painting title menu and six-step character creation
+- Entry CG and fixed horizontal Lushi Sect home scenes
+- Character, inventory, equipment, method, and spell panels
+- 29-event opportunity journal, including two complete dialogue/combat events
+- Full-screen planting, alchemy, equipment forging, and treasure tempering systems
+- Top-down bullet-hell combat with battle-locked method and spell loadouts
+- Supabase-backed profile, progression, inventory, garden, and equipment saves
 
 ## Setup
 
@@ -17,6 +19,8 @@ npm install
 copy .env.example .env
 npm run dev
 ```
+
+The local frontend runs at `http://localhost:5173/`. Production builds use the `/wanhua/` base path.
 
 ## Environment
 

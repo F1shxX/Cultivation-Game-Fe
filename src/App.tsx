@@ -1,4 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  CharacterCreation,
+  EntryCg,
+  MajorSystemScreen,
+  StartMenu,
+  getExpansion,
+  type ExpansionActivity,
+  type ExpansionState,
+  type PlayerProfile,
+  type SystemScreen,
+} from "./majorUpdate";
+import "./majorUpdate.css";
 
 type DemoLocation = "home" | "event" | "battle";
 
@@ -164,7 +176,7 @@ type DemoSaveState = {
   activeEvent?: DemoActiveEvent | null;
   completedEvents?: DemoEventId[];
   cultivation: {
-    level: "炼气";
+    level: "炼气" | "筑基";
     realmProgress: number;
     root: "万化道躯";
     learnedArts: string[];
@@ -197,6 +209,7 @@ type DemoSaveState = {
     title: string;
     text: string;
   }>;
+  expansion?: ExpansionState;
 };
 
 type DemoSave = {
@@ -281,6 +294,27 @@ const apiBaseUrl =
 function assetPath(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
 }
+
+const playerOutfitAssets: Record<PlayerProfile["outfit"], string> = {
+  qingshan: assetPath("assets/onboarding/outfit-qingshan.png"),
+  daopao: assetPath("assets/onboarding/outfit-daopao.png"),
+  jinzhuang: assetPath("assets/onboarding/outfit-jinzhuang.png"),
+  xianpao: assetPath("assets/onboarding/outfit-xianpao.png"),
+};
+
+const fateNames: Record<PlayerProfile["fate"], string> = {
+  genius: "天之骄子",
+  talented: "资质聪颖",
+  average: "天赋平平",
+  mortal: "凡人修仙",
+};
+
+const difficultyNames: Record<PlayerProfile["difficulty"], string> = {
+  easy: "和光同尘",
+  normal: "道法自然",
+  hard: "逆天改命",
+  extreme: "真实修仙",
+};
 
 const portraitAssets: Record<PortraitKey, Record<PortraitExpression, string>> = {
   player: {
@@ -779,23 +813,78 @@ const sectSettings = [
   "须弥山府：厚土镇守、坚甲御敌，不问根骨，只问是否走得上山，承担大陆赈济之责。",
 ];
 
-const timelineEntries = [
-  "第0年 · 序章：开局CG、穿越、被小张小娴救回鹿石宗，鹿真人看出万化道躯端倪。",
-  "第1-3年 · 鹿石宗启蒙：认识大厅、广场、宿舍、师姐居室、闭关室、炼器坊、炼丹房、灵植园和传送阵。",
-  "第5年 · 万化道躯初显：首次修炼即转换灵根成功，鹿真人远处若有所思。",
-  "第10年 · 山鼠洞寻宝：小张邀约探宝，青木门羊七、豆髯登场，当前 Demo 已做完整流程。",
-  "第12年 · 啖愿妖事件：断桥村委托，金灵宗雏雏、小鹿登场，当前 Demo 按事件脚本暂定第12年。",
-  "第15年 · 长安城初见闻：结识兔娘会长，见识以物置物的拍卖行体系。",
-  "第25-60年 · 筑基期：拜访五宗，五宗论道会与青年才俊比武大会展开世界观。",
-  "第60-100年 · 金丹期前半：长安城拍卖异变、忘川魔渊初现、金丹盛典，首发/Demo建议截止到第100年。",
-  "第150-500年 · 中后期：魔道渗透、鹿真人身世、飞升/轮回抉择与终局大战逐步揭开。",
+type StoryChapter = {
+  title: string;
+  realm: string;
+  startYear: number;
+  endYear: number;
+  theme: string;
+};
+
+type StoryMilestone = {
+  year: number;
+  chapter: string;
+  title: string;
+  category: string;
+  summary: string;
+  eventId?: DemoEventId;
+};
+
+const storyChapters: StoryChapter[] = [
+  { title: "序章", realm: "初入此界", startYear: 0, endYear: 0, theme: "穿越、救治与入鹿石宗" },
+  { title: "第一章", realm: "炼气期", startYear: 1, endYear: 25, theme: "初入修仙界，结识第一批伙伴" },
+  { title: "第二章", realm: "筑基期", startYear: 26, endYear: 60, theme: "拜访五宗，比武大会展开世界" },
+  { title: "第三章", realm: "金丹期", startYear: 61, endYear: 150, theme: "势力扎根，魔道初现真容" },
+  { title: "第四章", realm: "元婴期", startYear: 151, endYear: 280, theme: "魔道渗透与首次大战" },
+  { title: "第五章", realm: "化神期", startYear: 281, endYear: 420, theme: "真相浮现，全面战争前夜" },
+  { title: "第六章", realm: "飞升期", startYear: 421, endYear: 500, theme: "终战、了结尘缘、飞升成仙" },
 ];
+
+const storyMilestones: StoryMilestone[] = [
+  { year: 0, chapter: "序章", title: "穿越降临", category: "主线", summary: "小张与小娴将奄奄一息的主角带回鹿石宗，鹿真人看出万化道躯的端倪。" },
+  { year: 1, chapter: "第一章", title: "鹿石宗启蒙", category: "主线", summary: "认识宗门家园、基础修炼与传送阵，开始炼气期生活。" },
+  { year: 5, chapter: "第一章", title: "万化道躯初显", category: "体质", summary: "主角首次修炼便成功转换灵根，鹿真人在远处若有所思。" },
+  { year: 10, chapter: "第一章", title: "山鼠洞寻宝", category: "外出奇遇", summary: "小张邀约探宝，羊七道人与豆髯道人登场，初识青木门。", eventId: "mouse_cave_treasure" },
+  { year: 12, chapter: "第一章", title: "断桥村异闻", category: "外出奇遇", summary: "调查啖愿妖，结识金灵宗雏雏、小鹿，理解善意也需要辨别。", eventId: "wish_eater_bridge" },
+  { year: 15, chapter: "第一章", title: "长安城初见闻", category: "新势力", summary: "结识兔娘会长，见识以物易物的拍卖行体系。" },
+  { year: 22, chapter: "第一章", title: "失踪的采药人", category: "暗线", summary: "鹿石宗附近出现失踪案，主角第一次发现带有异常气息的灵髓残片。" },
+  { year: 25, chapter: "第一章", title: "筑基之劫", category: "境界突破", summary: "在心魔试炼中窥见模糊的仙魔大战残影。" },
+  { year: 28, chapter: "第二章", title: "寒妙观初访", category: "拜访宗门", summary: "结识春琼与云隽渺，初窥寒冰幻术与灵泉疗愈。" },
+  { year: 32, chapter: "第二章", title: "九阳炎天宗初访", category: "拜访宗门", summary: "卷入墨炎与林川的友谊竞赛，接触火系强攻流派。" },
+  { year: 38, chapter: "第二章", title: "须弥山府急救", category: "拜访宗门", summary: "协助黄垚苓与石岳疏散村民，见识厚土镇守之道。" },
+  { year: 45, chapter: "第二章", title: "五宗论道会", category: "群像", summary: "五宗年轻一辈首次聚首，为青年才俊比武大会预热。" },
+  { year: 50, chapter: "第二章", title: "青年才俊比武大会", category: "大事件", summary: "主角崭露头角，暗中有人试图窃取参赛者体内的灵髓。" },
+  { year: 55, chapter: "第二章", title: "张真人的独当一面", category: "羁绊", summary: "小张独自完成历练任务，证明自己不只是嘴上功夫。" },
+  { year: 58, chapter: "第二章", title: "金丹之劫", category: "境界突破", summary: "以力量与责任为题，迎来下一阶段的心魔试炼。" },
+  { year: 65, chapter: "第三章", title: "长安城拍卖异变", category: "暗线", summary: "缠绕黑气的上古法器流入拍卖行，兔娘展现出不同寻常的手段。" },
+  { year: 70, chapter: "第三章", title: "边境小镇沦陷", category: "暗线", summary: "首次遭遇成规模的忘川魔渊势力，五宗联合出击。" },
+  { year: 78, chapter: "第三章", title: "鹿真人欲言又止", category: "主线", summary: "鹿真人罕见现身，听闻忘川魔渊后只留下意味深长的警示。" },
+  { year: 85, chapter: "第三章", title: "五行秘境大典", category: "秘境", summary: "百年一开的五行秘境开启，跨门派合作与竞争并存。" },
+  { year: 92, chapter: "第三章", title: "情谊渐深", category: "群像", summary: "各宗同辈的羁绊事件并行展开，人物关系进入新阶段。" },
+  { year: 100, chapter: "第三章", title: "金丹盛典", category: "里程碑", summary: "主角于长安城正式立足，边境求援信揭开新的危机。" },
+  { year: 150, chapter: "第四章", title: "元婴期篇章", category: "后续", summary: "魔道渗透、上古遗迹与边疆大战将先后展开。" },
+  { year: 280, chapter: "第五章", title: "化神期篇章", category: "后续", summary: "忘川魔渊真面目逐步浮现，世界走向全面战争。" },
+  { year: 420, chapter: "第六章", title: "飞升期篇章", category: "后续", summary: "所有同伴齐聚终局，万化道躯的来历与轮回选择迎来收束。" },
+  { year: 500, chapter: "第六章", title: "飞升成仙", category: "终局", summary: "终战之后，主角面对飞升与下一周目的开放式选择。" },
+];
+
+const timelineEntries = storyMilestones.map(
+  (milestone) => `第${milestone.year}年 · ${milestone.title}：${milestone.summary}`,
+);
+
+function getStoryChapter(year: number) {
+  return (
+    storyChapters.find((chapter) => year >= chapter.startYear && year <= chapter.endYear) ??
+    storyChapters[storyChapters.length - 1]
+  );
+}
 
 const worldLore = [
   "万化道躯：玩家专属体质，本身没有固定灵根，修行何种功法，体内灵气便自动转化成对应属性根基。",
   "鹿花诀：鹿真人传给玩家的入门功法，表面普通，实则用于让万化道躯与魂魄绑定。",
-  "鹿真人/陆有道：剧情大纲中，鹿真人疑似上一位万化道躯宿主陆有道，曾在三百年前封魔之战后放弃飞升。",
-  "魔王暗线：魔宗残部暗中复活魔王，玩家一周目会被一条条线索引向魔宗腹地，最后意识到自己也在棋局之中。",
+  "灵髓之谜：表面是稀少的高级修炼资源，随着主线推进会逐渐显出不寻常的一面。",
+  "魔道暗线：忘川魔渊持续搜集灵髓、渗透五宗，玩家会在不同年份逐步发现线索。",
+  "鹿真人之谜：他与万化道躯及过往封魔之战存在关联，真相留待后续篇章揭开。",
   "飞升与轮回：飞升和轮回不分高下，只影响结局呈现，二者都能开启二周目。",
   "主题表达：修仙不是单纯追求长生，而是让玩家在小娴、小张、鹿石宗和五宗同辈的羁绊里感受取舍。",
 ];
@@ -1420,7 +1509,7 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
         <div className="temple temple-b" />
       </div>
       <div className="opening-copy">
-        <p>万化归途 · {current.speaker}</p>
+        <p>万化仙途 · {current.speaker}</p>
         <h1>{current.text}</h1>
       </div>
       <button
@@ -1442,16 +1531,18 @@ function TopHud({
   online,
   onOpenProfile,
   onOpenPanel,
+  onOpenSystem,
 }: {
   state: DemoSaveState;
   scene: DemoScene;
   online: boolean;
   onOpenProfile: () => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenSystem: (screen: SystemScreen) => void;
 }) {
   const loadout = getLoadout(state);
   const method = methodCatalog[loadout.methodId];
-  const maxHp = 100 + method.defense * 4 + method.shield;
+  const profile = getExpansion(state.expansion).profile;
 
   return (
     <header className="top-hud">
@@ -1463,26 +1554,12 @@ function TopHud({
           onOpenProfile();
         }}
       >
-        <div className="avatar">{method.element}</div>
+        <div className="avatar" aria-hidden="true">
+          <img src={playerOutfitAssets[profile.outfit]} alt="" />
+        </div>
         <div className="player-hud-info">
-          <strong>异世来客</strong>
-          <span>鹿石宗 · 新入门弟子 · 万化道躯</span>
-          <div className="hud-bars">
-            <label>
-              <b>生命</b>
-              <i>
-                <em style={{ width: "100%" }} />
-              </i>
-              <small>{maxHp}/{maxHp}</small>
-            </label>
-            <label>
-              <b>修为</b>
-              <i>
-                <em style={{ width: `${state.cultivation.realmProgress}%` }} />
-              </i>
-              <small>{state.cultivation.realmProgress}/100</small>
-            </label>
-          </div>
+          <strong>{profile.name} · 鹿石宗</strong>
+          <span>第 {state.year} 年 · {state.cultivation.level}期 · {method.name}</span>
         </div>
       </button>
       <div className="hud-right">
@@ -1495,7 +1572,7 @@ function TopHud({
             type="button"
             onClick={() => {
               playSceneClick();
-              onOpenPanel("事件");
+              onOpenSystem("quests");
             }}
           >
             任务
@@ -1533,24 +1610,30 @@ function SceneNavigator({
 
   return (
     <nav className="scene-nav" aria-label="从广场前往鹿石宗场景">
-      <span className="scene-nav-hub-marker" aria-current="location">
+      <div className="scene-nav-heading">
+        <span>鹿石宗</span>
         <strong>广场</strong>
-        <small>当前所在</small>
-      </span>
-      <span className="scene-nav-title">场景切换</span>
+        <small>选择去处</small>
+      </div>
       {destinations.map((scene) => (
         <button
+          className="scene-route-button"
           key={scene}
           disabled={busy}
+          title={`前往${sceneConfig[scene].label}`}
+          data-scene={scene}
           onClick={() => {
             playSceneClick();
             onAction(`change_scene:${scene}`);
           }}
         >
-          {sceneConfig[scene].label}
+          <img src={assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)} alt="" />
+          <span>
+            <strong>{sceneConfig[scene].label}</strong>
+            <small>{sceneConfig[scene].subtitle}</small>
+          </span>
         </button>
       ))}
-      <span className="scene-nav-hint">前往其他地点后，需返回广场再换场景</span>
     </nav>
   );
 }
@@ -1562,6 +1645,7 @@ function SceneActionPanel({
   busy,
   onAction,
   onOpenPanel,
+  onOpenSystem,
 }: {
   currentScene: DemoScene;
   state: DemoSaveState;
@@ -1569,6 +1653,7 @@ function SceneActionPanel({
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenSystem: (screen: SystemScreen) => void;
 }) {
   if (currentScene === "plaza") return null;
 
@@ -1580,50 +1665,55 @@ function SceneActionPanel({
     playSceneClick();
     onOpenPanel(panel, profileTab);
   };
+  const openSystem = (screen: SystemScreen) => {
+    playSceneClick();
+    onOpenSystem(screen);
+  };
 
-  const actions: Array<{ label: string; description: string; onClick: () => void }> = (() => {
+  const actions: Array<{ label: string; description: string; kind: string; onClick: () => void }> = (() => {
     switch (currentScene) {
       case "hall":
         return [
-          { label: "阅读门规", description: "查看宗门与世界资料", onClick: () => openPanel("世界") },
-          { label: "鹿真人手记", description: "查看鹿石宗人物资料", onClick: () => openPanel("人物") },
+          { label: "阅读门规", description: "查看宗门与世界资料", kind: "records", onClick: () => openPanel("世界") },
+          { label: "鹿真人手记", description: "查看鹿石宗人物资料", kind: "records", onClick: () => openPanel("人物") },
         ];
       case "dormitory":
         return [
-          { label: "休息", description: "恢复状态并推进时间", onClick: () => runAction("rest") },
-          { label: "仓库", description: "打开背包与物品栏", onClick: () => openPanel("我的", "背包") },
+          { label: "休息", description: "恢复状态并推进时间", kind: "rest", onClick: () => runAction("rest") },
+          { label: "仓库", description: "打开背包与物品栏", kind: "storage", onClick: () => openPanel("我的", "背包") },
         ];
       case "sister_room":
         return [
-          { label: "与师姐交谈", description: "饮茶并提升羁绊", onClick: () => runAction("talk_xiaoxian") },
+          { label: "与师姐交谈", description: "饮茶并提升羁绊", kind: "talk", onClick: () => runAction("talk_xiaoxian") },
         ];
       case "meditation_room":
         return [
-          { label: "练功", description: "查看当前主修功法", onClick: () => openPanel("我的", "功法") },
-          { label: "研习", description: "调整术法组合", onClick: () => openPanel("我的", "术法") },
-          { label: "闭修", description: "提升修为并推进时间", onClick: () => runAction("cultivate") },
+          { label: "练功", description: "查看当前主修功法", kind: "cultivate", onClick: () => openPanel("我的", "功法") },
+          { label: "研习", description: "调整术法组合", kind: "study", onClick: () => openPanel("我的", "术法") },
+          { label: "闭修", description: "提升修为并推进时间", kind: "cultivate", onClick: () => runAction("cultivate") },
         ];
       case "forge":
         return [
-          { label: "炼制装备", description: "消耗矿石进行炼制", onClick: () => runAction("forge") },
-          { label: "淬炼法宝", description: "查看装备与法宝槽位", onClick: () => openPanel("我的", "装备") },
+          { label: "炼制装备", description: "选材定型，炼制成长装备", kind: "forge", onClick: () => openSystem("forge") },
+          { label: "淬炼法宝", description: "投入灵材，提升法宝阶段", kind: "forge", onClick: () => openSystem("forge") },
         ];
       case "alchemy_room":
         return [
-          { label: "炼丹", description: "消耗草药炼制丹药", onClick: () => runAction("alchemy") },
+          { label: "炼丹", description: "配置五行药材并开炉", kind: "alchemy", onClick: () => openSystem("alchemy") },
         ];
       case "spirit_garden":
         return [
-          { label: "种植 / 收获", description: "照料灵植并获得草药", onClick: () => runAction("plant") },
+          { label: "进入灵田", description: "种植、分株并收获草药", kind: "plant", onClick: () => openSystem("garden") },
         ];
       case "teleport_array":
         return [
-          { label: "检查阵纹", description: "检查传送阵并准备外出", onClick: () => runAction("inspect_teleport") },
+          { label: "检查阵纹", description: "检查传送阵并准备外出", kind: "teleport", onClick: () => runAction("inspect_teleport") },
           ...getEventList(events).map((event) => {
             const completed = state.completedEvents?.includes(event.id) ?? false;
             return {
               label: `${completed ? "复盘" : "传送"} · ${event.title}`,
               description: `第${event.triggerYear}年 · ${event.location}`,
+              kind: "event",
               onClick: () => runAction(`start_event:${event.id}` as DemoAction),
             };
           }),
@@ -1633,22 +1723,38 @@ function SceneActionPanel({
 
   return (
     <section className="scene-actions" aria-label={`${sceneConfig[currentScene].label}场景功能`}>
-      <span className="scene-actions-title">场景功能</span>
-      <strong className="scene-actions-location">{sceneConfig[currentScene].label}</strong>
+      <div className="scene-action-heading">
+        <span>当前场景</span>
+        <strong>{sceneConfig[currentScene].label}</strong>
+        <small>{sceneConfig[currentScene].subtitle}</small>
+      </div>
       <div className="scene-actions-list">
         {actions.map((action) => (
           <button
+            className={`scene-action-button scene-action-${action.kind}`}
             key={action.label}
             disabled={busy}
+            title={action.description}
             onClick={action.onClick}
           >
-            <strong>{action.label}</strong>
-            <small>{action.description}</small>
+            <i aria-hidden="true" />
+            <span>
+              <strong>{action.label}</strong>
+              <small>{action.description}</small>
+            </span>
           </button>
         ))}
-        <button className="return-to-plaza" disabled={busy} onClick={() => runAction("change_scene:plaza")}>
-          <strong>返回广场</strong>
-          <small>回到主界面后再前往其他地点</small>
+        <button
+          className="return-to-plaza"
+          disabled={busy}
+          title="回到广场后可切换其他场景"
+          onClick={() => runAction("change_scene:plaza")}
+        >
+          <i aria-hidden="true" />
+          <span>
+            <strong>返回广场</strong>
+            <small>切换鹿石宗内的其他地点</small>
+          </span>
         </button>
       </div>
     </section>
@@ -1668,9 +1774,9 @@ function SceneNpcStrip({
 }) {
   return (
     <section className="scene-npc-strip" aria-label="场景人物">
-      <span className="scene-npc-title">场景人物</span>
       <button
         type="button"
+        title={`与${actorName}交互`}
         onClick={() => {
           playSceneClick();
           onInteract();
@@ -1679,8 +1785,9 @@ function SceneNpcStrip({
         <img src={portraitAssets[portrait.key][portrait.expression]} alt={actorName} />
         <span>
           <strong>{actorName}</strong>
-          <small>羁绊 {bond} · 点击交互</small>
+          <small>羁绊 {bond} · 交谈</small>
         </span>
+        <i aria-hidden="true" />
       </button>
     </section>
   );
@@ -1840,6 +1947,8 @@ function UtilityPanel({
   onToggleMusic: () => void;
   onReplayOpening: () => void;
 }) {
+  const expansion = getExpansion(state.expansion);
+  const playerProfile = expansion.profile;
   const inventory = state.inventory ?? {
     mouseDemonCore: 0,
     worryForgetRoot: 0,
@@ -1853,6 +1962,9 @@ function UtilityPanel({
     state.completedEvents && state.completedEvents.length > 0
       ? state.completedEvents.map((id) => events[id].title).join("、")
       : "暂无";
+  const completedEventIds = new Set(state.completedEvents ?? []);
+  const storyChapter = getStoryChapter(state.year);
+  const nextMilestone = storyMilestones.find((milestone) => milestone.year > state.year);
   const equipment = getEquipment(state);
   const loadout = getLoadout(state);
   const combatProfile = getCombatProfile(loadout);
@@ -1898,24 +2010,44 @@ function UtilityPanel({
     设置: ["可重开 Demo，也可重播开场。"],
   };
 
+  function getMilestoneStatus(milestone: StoryMilestone) {
+    if (milestone.eventId && completedEventIds.has(milestone.eventId)) {
+      return { key: "complete", label: "已完成" };
+    }
+
+    if (milestone.eventId && milestone.year <= state.year) {
+      return { key: "available", label: "可前往" };
+    }
+
+    if (milestone.year < state.year) {
+      return { key: "past", label: "历程已过" };
+    }
+
+    if (milestone.year === state.year) {
+      return { key: "current", label: "当前节点" };
+    }
+
+    return { key: "locked", label: "未解锁" };
+  }
+
   function renderPanelBody() {
     if (panel === "我的") {
       const maxHp = 100 + combatProfile.method.defense * 4 + combatProfile.method.shield;
       const identityRows = [
-        ["姓名", "异世来客"],
-        ["性别", "待玩家设定"],
+        ["姓名", playerProfile.name],
+        ["性别", playerProfile.gender === "male" ? "男修" : "女修"],
         ["宗门-职位", "鹿石宗 · 新入门弟子"],
-        ["称号", "万化道躯"],
-        ["俸禄", "10 灵石/月"],
+        ["命格", fateNames[playerProfile.fate]],
+        ["历练难度", difficultyNames[playerProfile.difficulty]],
       ];
       const statRows = [
         ["血气", `${maxHp}/${maxHp}`],
         ["灵气", "60/60"],
-        ["资质", "无灵根 · 万化可塑"],
-        ["悟性", "良"],
-        ["神识", "炼气初识"],
-        ["遁速", `${combatProfile.method.projectileSpeed}`],
-        ["福缘", `${state.resources.spiritMarrow + 1}`],
+        ["资质", `${playerProfile.attributes.aptitude}`],
+        ["悟性", `${playerProfile.attributes.comprehension}`],
+        ["神识", `${playerProfile.attributes.spirit}`],
+        ["遁速", `${playerProfile.attributes.speed}`],
+        ["福缘", `${playerProfile.attributes.fortune}`],
         ["寿元", "80/120"],
         ["境界", state.cultivation.level],
         ["修为", `${state.cultivation.realmProgress}/100`],
@@ -1925,6 +2057,40 @@ function UtilityPanel({
         ["防御", `${combatProfile.method.defense}`],
         ["回血", combatProfile.method.regen > 0 ? `${combatProfile.method.regen}/秒` : "无"],
       ];
+      const herbNames: Record<string, string> = {
+        juqi: "聚气草",
+        ningxue: "凝血花",
+        huoli: "火栗",
+        shizhi: "石芝",
+        wugen: "无根萍",
+        taojiao: "桃胶",
+        chiyan: "赤焰花",
+        chensha: "辰砂",
+      };
+      const pillNames: Record<string, string> = {
+        huayu: "化瘀丹",
+        huoxue: "活血丹",
+        xugu: "续骨丹",
+        juling: "聚灵散",
+        huiyuan: "回元散",
+        "juqi-pill": "聚气丹",
+        ningyuan: "凝元丹",
+        pozhang: "破障丹",
+        tiegu: "铁骨散",
+        qinghui: "清秽散",
+        yannian: "延年散",
+        tongmai: "通脉丹",
+      };
+      const materialNames: Record<string, string> = {
+        crudeIron: "粗铁矿",
+        mouseBone: "山鼠兽骨",
+        coldIron: "寒铁",
+        silver: "秘银",
+        flameIron: "炎铁",
+        spiritCrystal: "灵晶石",
+        resonanceCrystal: "灵韵结晶",
+        ember: "万炼余烬",
+      };
       const inventoryRows: BagItem[] = [
         {
           id: "spiritStones",
@@ -2019,6 +2185,38 @@ function UtilityPanel({
           description: "鹿石宗仓库里翻出的基础飞剑，承担当前 demo 的普攻演示。",
           useLabel: "查看装备",
         },
+        ...Object.entries(expansion.herbStock).map(([id, value]) => ({
+          id: `herb-${id}`,
+          category: "材料" as BagCategory,
+          name: herbNames[id] ?? id,
+          value,
+          description: "灵植园培育的五行草药，可按丹方要求投入炼丹炉。",
+          useLabel: "查看丹方",
+        })),
+        ...Object.entries(expansion.materialStock).map(([id, value]) => ({
+          id: `material-${id}`,
+          category: "材料" as BagCategory,
+          name: materialNames[id] ?? id,
+          value,
+          description: "炼器坊使用的灵材，灵韵与五行会共同决定装备品阶和特性。",
+          useLabel: "查看炼器",
+        })),
+        ...Object.entries(expansion.pillStock).map(([id, value]) => ({
+          id: `pill-${id}`,
+          category: "丹药" as BagCategory,
+          name: pillNames[id] ?? id,
+          value,
+          description: "炼丹房产出的丹药，数量已经与云存档同步。",
+          useLabel: "查看药效",
+        })),
+        ...expansion.craftedEquipment.map((item) => ({
+          id: `crafted-${item.id}`,
+          category: "装备" as BagCategory,
+          name: item.name,
+          value: 1,
+          description: `${item.rank}阶 · ${item.form} · 灵韵${item.lingyun} · ${item.effect}`,
+          useLabel: item.stage < 4 ? "继续淬炼" : "查看法宝",
+        })),
       ];
       const visibleBagItems = inventoryRows.filter((item) => item.category === bagCategory);
       const selectedBagItem = inventoryRows.find((item) => item.id === selectedBagItemId) ?? inventoryRows[0];
@@ -2079,17 +2277,17 @@ function UtilityPanel({
           {profileTab === "属性" && (
           <section className="profile-identity profile-identity-fixed">
             <div className="profile-portrait">
-              <img src={portraitAssets.player.normal} alt="主角半身像" />
-              <span className="profile-portrait-realm">炼气境</span>
+              <img className="profile-created-outfit" src={playerOutfitAssets[playerProfile.outfit]} alt={`${playerProfile.name}立绘`} />
+              <span className="profile-portrait-realm">{state.cultivation.level}境</span>
               <div className="profile-portrait-nameplate">
                 <small>万化道躯</small>
-                <strong>异世来客</strong>
+                <strong>{playerProfile.name}</strong>
               </div>
             </div>
             <div className="profile-summary">
               <span>主角 · 鹿石宗弟子</span>
-              <h3>异世来客</h3>
-              <p>身无灵根，身怀先天万化道躯。当前功法会决定战斗普攻形态，法术位决定空格主动技能。</p>
+              <h3>{playerProfile.name}</h3>
+              <p>身无灵根，身怀先天万化道躯。{fateNames[playerProfile.fate]}，携带 {playerProfile.perks.length} 项前世天赋踏入仙途。</p>
               <div className="profile-vitals" aria-label="核心战斗状态">
                 <div>
                   <span>气血</span>
@@ -2210,7 +2408,7 @@ function UtilityPanel({
 
             <div className="equipment-panel-layout">
               <div className="equipment-body">
-                <img src={portraitAssets.player.normal} alt="" aria-hidden="true" />
+                <img className="profile-created-outfit" src={playerOutfitAssets[playerProfile.outfit]} alt="" aria-hidden="true" />
                 <div className="equipment-slot-grid">
                   {equipmentSlots.map((slot, index) => (
                     <button
@@ -2253,7 +2451,7 @@ function UtilityPanel({
                       className="inventory-cell"
                       onClick={() => {
                         playSceneClick();
-                        setBagNotice(`${item.name}已放入${equipmentView}候选栏；正式替换待接装备系统。`);
+                        setBagNotice(`${item.name}已选中；可前往炼器坊继续炼制或淬炼。`);
                       }}
                     >
                       {item.icon ? <img src={item.icon} alt="" aria-hidden="true" /> : <b>{item.name.slice(0, 1)}</b>}
@@ -2601,6 +2799,18 @@ function UtilityPanel({
             ))}
           </div>
           <div className="panel-section">
+            <h3>篇章结构</h3>
+            <div className="story-chapter-grid">
+              {storyChapters.map((chapter) => (
+                <article key={chapter.title} className={chapter.title === storyChapter.title ? "active" : ""}>
+                  <span>第{chapter.startYear}-{chapter.endYear}年</span>
+                  <strong>{chapter.title} · {chapter.realm}</strong>
+                  <small>{chapter.theme}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="panel-section">
             <h3>1-500年节奏</h3>
             {timelineEntries.map((line) => (
               <p key={line}>{line}</p>
@@ -2613,6 +2823,54 @@ function UtilityPanel({
             ))}
           </div>
         </>
+      );
+    }
+
+    if (panel === "事件") {
+      return (
+        <section className="event-journal">
+          <div className="event-journal-summary">
+            <div>
+              <span>修仙历程</span>
+              <h3>{storyChapter.title} · {storyChapter.realm}</h3>
+              <p>第{state.year}年{nextMilestone ? ` · 下个节点：第${nextMilestone.year}年 ${nextMilestone.title}` : " · 已抵达终局"}</p>
+            </div>
+            <button
+              type="button"
+              className="event-travel-button"
+              disabled={Boolean(busyAction)}
+              onClick={() => {
+                playSceneClick();
+                onAction("change_scene:teleport_array");
+                onClose();
+              }}
+            >
+              前往传送阵
+            </button>
+          </div>
+
+          <div className="event-journal-meta">
+            <span>已完成事件：{completedText}</span>
+            <span>当前主线：{storyChapter.theme}</span>
+          </div>
+
+          <ol className="story-timeline" aria-label="第0年至第100年大事记">
+            {storyMilestones.filter((milestone) => milestone.year <= 100).map((milestone) => {
+              const status = getMilestoneStatus(milestone);
+              return (
+                <li key={`${milestone.year}-${milestone.title}`} data-state={status.key}>
+                  <span className="story-timeline-year">第{milestone.year}年</span>
+                  <div className="story-timeline-content">
+                    <span>{milestone.chapter} · {milestone.category}</span>
+                    <strong>{milestone.title}</strong>
+                    <p>{milestone.summary}</p>
+                  </div>
+                  <em>{status.label}</em>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
       );
     }
 
@@ -4114,6 +4372,7 @@ function HomeScene({
   onAction,
   onReset,
   onOpenPanel,
+  onOpenSystem,
   onClosePanel,
   onCloseSceneFeedback,
   onToggleMusic,
@@ -4130,6 +4389,7 @@ function HomeScene({
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onReset: () => void;
   onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenSystem: (screen: SystemScreen) => void;
   onClosePanel: () => void;
   onCloseSceneFeedback: () => void;
   onToggleMusic: () => void;
@@ -4204,6 +4464,7 @@ function HomeScene({
           online={online}
           onOpenProfile={() => onOpenPanel("我的", "属性")}
           onOpenPanel={onOpenPanel}
+          onOpenSystem={onOpenSystem}
         />
       )}
       <section
@@ -4229,6 +4490,7 @@ function HomeScene({
               busy={busy}
               onAction={onAction}
               onOpenPanel={onOpenPanel}
+              onOpenSystem={onOpenSystem}
             />
             <SceneNavigator
               currentScene={scene}
@@ -4289,24 +4551,30 @@ function HomeScene({
   );
 }
 
+type GameFlow = "menu" | "creation" | "cg" | "game";
+
 function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [health, setHealth] = useState<ApiHealth | null>(null);
   const [busyAction, setBusyAction] = useState<DemoAction | "reset" | null>(null);
+  const [expansionBusy, setExpansionBusy] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [systemScreen, setSystemScreen] = useState<SystemScreen | null>(null);
+  const [flow, setFlow] = useState<GameFlow>("menu");
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
   const [sceneFeedback, setSceneFeedback] = useState<SceneActionFeedback | null>(null);
-  const [showOpening, setShowOpening] = useState(() => !localStorage.getItem("cultivation-opening-seen"));
   const [musicEnabled, setMusicEnabled] = useState(
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
   );
+  const entryCgFinishingRef = useRef(false);
 
   const ambientMusicEnabled = useMemo(() => {
     if (!musicEnabled) return false;
-    if (showOpening) return true;
     if (loadState.status !== "ready") return false;
+    if (flow === "menu" || flow === "creation") return true;
+    if (flow !== "game") return false;
     return loadState.save.state.location === "home" && !loadState.save.state.activeEvent;
-  }, [loadState, musicEnabled, showOpening]);
+  }, [flow, loadState, musicEnabled]);
 
   useAmbientMusic(ambientMusicEnabled);
 
@@ -4370,7 +4638,33 @@ function App() {
     }
   }
 
-  async function reset() {
+  async function saveExpansion(
+    expansion: ExpansionState,
+    options?: { elapsedMonths?: number; activity?: ExpansionActivity },
+  ) {
+    setExpansionBusy(true);
+    try {
+      const payload = await fetchJson<SaveResponse>("/demo/expansion", {
+        method: "PUT",
+        body: JSON.stringify({
+          expansion,
+          elapsedMonths: options?.elapsedMonths,
+          activity: options?.activity,
+        }),
+      });
+      replaceSave(payload.save);
+    } catch (error) {
+      setLoadState({
+        status: "error",
+        message: error instanceof Error ? error.message : "扩展存档同步失败",
+      });
+      throw error;
+    } finally {
+      setExpansionBusy(false);
+    }
+  }
+
+  async function reset(): Promise<DemoSave | null> {
     setBusyAction("reset");
     try {
       const payload = await fetchJson<SaveResponse>("/demo/reset", {
@@ -4378,14 +4672,47 @@ function App() {
       });
       replaceSave(payload.save);
       setPanel(null);
+      setSystemScreen(null);
       setSceneFeedback(null);
+      return payload.save;
     } catch (error) {
       setLoadState({
         status: "error",
         message: error instanceof Error ? error.message : "重置失败",
       });
+      return null;
     } finally {
       setBusyAction(null);
+    }
+  }
+
+  async function startNewGame() {
+    const save = await reset();
+    if (save) setFlow("creation");
+  }
+
+  async function finishCharacterCreation(profile: PlayerProfile) {
+    if (loadState.status !== "ready") return;
+    const expansion = getExpansion(loadState.save.state.expansion);
+    await saveExpansion({ ...expansion, profile });
+    setFlow("cg");
+  }
+
+  async function finishEntryCg() {
+    if (loadState.status !== "ready" || entryCgFinishingRef.current) return;
+    entryCgFinishingRef.current = true;
+    try {
+      const expansion = getExpansion(loadState.save.state.expansion);
+      if (!expansion.story.completed.includes(1)) {
+        await saveExpansion(
+          { ...expansion, story: { completed: [1], tracked: 2 } },
+          { activity: { title: "初入鹿石宗", text: "鹿真人留下鹿花诀，你在鹿石宗安顿下来。因缘进度 1/29。" } },
+        );
+      }
+      await perform("change_scene:dormitory");
+      setFlow("game");
+    } finally {
+      entryCgFinishingRef.current = false;
     }
   }
 
@@ -4395,17 +4722,6 @@ function App() {
       localStorage.setItem("wanhua-ambient-music-muted", next ? "0" : "1");
       return next;
     });
-  }
-
-  if (showOpening) {
-    return (
-      <OpeningScene
-        onDone={() => {
-          localStorage.setItem("cultivation-opening-seen", "1");
-          setShowOpening(false);
-        }}
-      />
-    );
   }
 
   if (loadState.status === "loading") {
@@ -4425,6 +4741,59 @@ function App() {
     );
   }
 
+  const state = loadState.save.state;
+  const expansion = getExpansion(state.expansion);
+
+  if (systemScreen) {
+    return (
+      <MajorSystemScreen
+        screen={systemScreen}
+        expansion={expansion}
+        year={state.year}
+        month={state.month}
+        realm={state.cultivation.level}
+        busy={expansionBusy || Boolean(busyAction)}
+        readOnly={flow === "menu"}
+        onClose={() => setSystemScreen(null)}
+        onSave={saveExpansion}
+        onStartLegacyEvent={(eventId) => {
+          setSystemScreen(null);
+          setFlow("game");
+          void perform(`start_event:${eventId === 10 ? "mouse_cave_treasure" : "wish_eater_bridge"}`);
+        }}
+      />
+    );
+  }
+
+  if (flow === "menu") {
+    return (
+      <StartMenu
+        hasSave={expansion.profile.created}
+        musicEnabled={musicEnabled}
+        completedCount={expansion.story.completed.length}
+        onNewGame={() => void startNewGame()}
+        onContinue={() => setFlow(expansion.profile.created ? "game" : "creation")}
+        onArchive={() => setSystemScreen("quests")}
+        onToggleMusic={toggleAmbientMusic}
+      />
+    );
+  }
+
+  if (flow === "creation") {
+    return (
+      <CharacterCreation
+        initialProfile={expansion.profile}
+        busy={expansionBusy || Boolean(busyAction)}
+        onBackToMenu={() => setFlow("menu")}
+        onComplete={(profile) => void finishCharacterCreation(profile)}
+      />
+    );
+  }
+
+  if (flow === "cg") {
+    return <EntryCg onDone={() => void finishEntryCg()} />;
+  }
+
   return (
     <HomeScene
       save={loadState.save}
@@ -4438,13 +4807,16 @@ function App() {
       onAction={(action, payload) => void perform(action, payload)}
       onReset={() => void reset()}
       onOpenPanel={openPanel}
+      onOpenSystem={(screen) => {
+        setPanel(null);
+        setSystemScreen(screen);
+      }}
       onClosePanel={() => setPanel(null)}
       onCloseSceneFeedback={() => setSceneFeedback(null)}
       onToggleMusic={toggleAmbientMusic}
       onReplayOpening={() => {
-        localStorage.removeItem("cultivation-opening-seen");
         setPanel(null);
-        setShowOpening(true);
+        setFlow("cg");
       }}
     />
   );
