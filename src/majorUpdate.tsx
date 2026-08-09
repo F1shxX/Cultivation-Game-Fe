@@ -47,6 +47,28 @@ export type CraftedEquipment = {
 export type ExpansionState = {
   profile: PlayerProfile;
   story: { completed: number[]; tracked: number | null };
+  handnotes: {
+    lastRefreshYear: number;
+    entries: Array<{
+      id: string;
+      npcId: "lu-zhenren" | "xiao-zhang" | "xiaoxian";
+      title: string;
+      text: string;
+      flavorOnly: boolean;
+      reward:
+        | {
+            type: "herb";
+            herbId: GardenHerbId;
+            amount: number;
+          }
+        | { type: "pill"; pillId: string; amount: number }
+        | { type: "material"; materialId: string; amount: number }
+        | null;
+      claimed: boolean;
+      createdAt: { year: number; month: number };
+      expiresAt: { year: number; month: number };
+    }>;
+  };
   garden: {
     fieldLevel: 1 | 2;
     formationLevel: 0 | 1;
@@ -96,6 +118,7 @@ const defaultProfile: PlayerProfile = {
 export const defaultExpansion: ExpansionState = {
   profile: defaultProfile,
   story: { completed: [], tracked: 1 },
+  handnotes: { lastRefreshYear: 1, entries: [] },
   garden: {
     fieldLevel: 1,
     formationLevel: 0,
@@ -152,6 +175,7 @@ export function getExpansion(value: Partial<ExpansionState> | undefined): Expans
       perks: value?.profile?.perks ?? [],
     },
     story: { ...defaultExpansion.story, ...value?.story },
+    handnotes: { ...defaultExpansion.handnotes, ...value?.handnotes },
     garden: { ...defaultExpansion.garden, ...value?.garden, plots: gardenPlots },
     herbStock: { ...defaultExpansion.herbStock, ...value?.herbStock },
     pillStock: { ...defaultExpansion.pillStock, ...value?.pillStock },

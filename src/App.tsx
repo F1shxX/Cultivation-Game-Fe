@@ -25,7 +25,7 @@ type DemoScene =
   | "spirit_garden"
   | "teleport_array";
 
-type DemoEventId = "mouse_cave_treasure" | "wish_eater_bridge";
+type DemoEventId = "intro_lushi" | "mouse_cave_treasure" | "wish_eater_bridge";
 
 type DemoEventChoiceAction =
   | "event_choice:mouse_joke"
@@ -36,6 +36,10 @@ type DemoEventChoiceAction =
   | "event_choice:trust_jinling";
 
 type DemoEventVisualStage =
+  | "intro_dormitory"
+  | "intro_plaza"
+  | "intro_hall"
+  | "intro_reward"
   | "teleport_departure"
   | "mouse_cave"
   | "mouse_skirmish"
@@ -133,6 +137,7 @@ type DemoEventNode = {
   text: string;
   mode: "dialogue" | "choice" | "battle" | "reward";
   visualStage: DemoEventVisualStage;
+  scene?: DemoScene;
   choices?: DemoEventChoice[];
 };
 
@@ -248,8 +253,44 @@ type LoadState =
   | { status: "ready"; save: DemoSave; events: Record<DemoEventId, DemoEventDefinition> }
   | { status: "error"; message: string };
 
-type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置";
+type Panel = "我的" | "日志" | "世界" | "事件" | "关系" | "人物" | "功法" | "设置" | "门规" | "手记";
 type ProfileTab = "属性" | "背包" | "装备" | "功法" | "术法";
+type HandnoteTab = "鹿真人" | "小张" | "小娴";
+
+const recordAssets: {
+  ruleBoardSmall: string;
+  ruleBoardLarge: string;
+  handnotes: Record<
+    HandnoteTab,
+    {
+      cover: string;
+      subtitle: string;
+      summary: string;
+    }
+  >;
+} = {
+  ruleBoardSmall: assetPath("assets/tapflow/records/rule-board-small.webp"),
+  ruleBoardLarge: assetPath("assets/tapflow/records/rule-board-large.webp"),
+  handnotes: {
+    "鹿真人": {
+      cover: assetPath("assets/tapflow/records/handnote-lavender-vertical.webp"),
+      subtitle: "淡紫藤环竖翻",
+      summary: "鹿真人云游时随手记下的行笔，像旧稿，也像线索。",
+    },
+    "小张": {
+      cover: assetPath("assets/tapflow/records/handnote-blue-horizontal.webp"),
+      subtitle: "蓝皮线装横翻",
+      summary: "小张的字和人一样横冲直撞，内容却都挺实用。",
+    },
+    "小娴": {
+      cover: assetPath("assets/tapflow/records/handnote-gray-white.webp"),
+      subtitle: "灰皮线装白纸",
+      summary: "小娴的手记更像备忘录，轻巧，但总藏着一点真东西。",
+    },
+  },
+};
+
+type HandnoteEntry = ExpansionState["handnotes"]["entries"][number];
 type BagCategory = "装备" | "丹药" | "秘籍" | "任务" | "材料" | "其他";
 type EquipmentView = "武器" | "服饰" | "法宝" | "丹药";
 type MethodNode = "method" | "attack" | "root" | "passive";
@@ -1312,6 +1353,10 @@ function getActiveEvent(
 
 function getVisualStageTitle(visualStage: DemoEventVisualStage) {
   const titles: Record<DemoEventVisualStage, string> = {
+    intro_dormitory: "宿舍醒来",
+    intro_plaza: "广场认路",
+    intro_hall: "大殿初见",
+    intro_reward: "入门功法",
     teleport_departure: "鹿石宗传送阵",
     mouse_cave: "后山山鼠洞",
     mouse_skirmish: "山鼠洞战斗",
@@ -1331,6 +1376,10 @@ function getVisualStageTitle(visualStage: DemoEventVisualStage) {
 
 function getVisualBackground(visualStage: DemoEventVisualStage) {
   const backgrounds: Record<DemoEventVisualStage, string> = {
+    intro_dormitory: "assets/tapflow/scenes/dormitory.webp",
+    intro_plaza: "assets/tapflow/scenes/plaza.webp",
+    intro_hall: "assets/tapflow/scenes/hall.webp",
+    intro_reward: "assets/tapflow/scenes/hall.webp",
     teleport_departure: "assets/tapflow/scenes/teleport-array.webp",
     mouse_cave: "assets/tapflow/events/mouse-cave-mouth.webp",
     mouse_skirmish: "assets/tapflow/events/mouse-cave-battle.webp",
@@ -1537,7 +1586,7 @@ function TopHud({
   scene: DemoScene;
   online: boolean;
   onOpenProfile: () => void;
-  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
   onOpenSystem: (screen: SystemScreen) => void;
 }) {
   const loadout = getLoadout(state);
@@ -1652,7 +1701,7 @@ function SceneActionPanel({
   events: Record<DemoEventId, DemoEventDefinition>;
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
-  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
   onOpenSystem: (screen: SystemScreen) => void;
 }) {
   if (currentScene === "plaza") return null;
@@ -1661,9 +1710,9 @@ function SceneActionPanel({
     playSceneClick();
     onAction(action);
   };
-  const openPanel = (panel: Panel, profileTab?: ProfileTab) => {
+  const openPanel = (panel: Panel, target?: ProfileTab | HandnoteTab) => {
     playSceneClick();
-    onOpenPanel(panel, profileTab);
+    onOpenPanel(panel, target);
   };
   const openSystem = (screen: SystemScreen) => {
     playSceneClick();
@@ -1674,8 +1723,10 @@ function SceneActionPanel({
     switch (currentScene) {
       case "hall":
         return [
-          { label: "阅读门规", description: "查看宗门与世界资料", kind: "records", onClick: () => openPanel("世界") },
-          { label: "鹿真人手记", description: "查看鹿石宗人物资料", kind: "records", onClick: () => openPanel("人物") },
+          { label: "门规书卷", description: "查看鹿石宗门规", kind: "records", onClick: () => openPanel("门规") },
+          { label: "鹿真人手记", description: "查看鹿真人的手记", kind: "records", onClick: () => openPanel("手记", "鹿真人") },
+          { label: "小张手记", description: "查看小张的手记", kind: "records", onClick: () => openPanel("手记", "小张") },
+          { label: "小娴手记", description: "查看小娴的手记", kind: "records", onClick: () => openPanel("手记", "小娴") },
         ];
       case "dormitory":
         return [
@@ -1928,8 +1979,11 @@ function UtilityPanel({
   events,
   busyAction,
   initialProfileTab,
+  initialHandnoteTab,
+  expansionBusy,
   musicEnabled,
   onAction,
+  onSaveExpansion,
   onClose,
   onReset,
   onToggleMusic,
@@ -1940,8 +1994,11 @@ function UtilityPanel({
   events: Record<DemoEventId, DemoEventDefinition>;
   busyAction: DemoAction | "reset" | null;
   initialProfileTab: ProfileTab;
+  initialHandnoteTab: HandnoteTab;
+  expansionBusy: boolean;
   musicEnabled: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+  onSaveExpansion: (expansion: ExpansionState, options?: { elapsedMonths?: number; activity?: ExpansionActivity }) => Promise<void>;
   onClose: () => void;
   onReset: () => void;
   onToggleMusic: () => void;
@@ -1971,6 +2028,7 @@ function UtilityPanel({
   const lockLoadout = state.location === "battle" || Boolean(state.activeEvent);
   const equipBusy = Boolean(busyAction);
   const [profileTab, setProfileTab] = useState<ProfileTab>("属性");
+  const [handnoteTab, setHandnoteTab] = useState<HandnoteTab>(initialHandnoteTab);
   const [bagCategory, setBagCategory] = useState<BagCategory>("材料");
   const [selectedBagItemId, setSelectedBagItemId] = useState<string>("spiritStones");
   const [bagNotice, setBagNotice] = useState("点击物品查看说明。");
@@ -1982,10 +2040,73 @@ function UtilityPanel({
     if (panel === "我的") setProfileTab(initialProfileTab);
   }, [initialProfileTab, panel]);
 
+  useEffect(() => {
+    if (panel === "手记") setHandnoteTab(initialHandnoteTab);
+  }, [initialHandnoteTab, panel]);
+
+  function isHandnoteExpired(entry: HandnoteEntry) {
+    return (
+      entry.expiresAt.year < state.year ||
+      (entry.expiresAt.year === state.year && entry.expiresAt.month < state.month)
+    );
+  }
+
+  function describeHandnoteReward(reward: HandnoteEntry["reward"]) {
+    if (!reward) return "无奖励";
+    if (reward.type === "herb") return `${reward.herbId} ×${reward.amount}`;
+    if (reward.type === "pill") return `${reward.pillId} ×${reward.amount}`;
+    return `${reward.materialId} ×${reward.amount}`;
+  }
+
+  async function claimHandnote(entry: HandnoteEntry) {
+    if (!entry.reward || entry.claimed || isHandnoteExpired(entry) || expansionBusy || Boolean(busyAction)) {
+      return;
+    }
+
+    const nextHandnotes = {
+      ...expansion.handnotes,
+      entries: expansion.handnotes.entries.map((item) =>
+        item.id === entry.id ? { ...item, claimed: true } : item,
+      ),
+    };
+
+    const nextExpansion = { ...expansion, handnotes: nextHandnotes };
+    if (entry.reward.type === "herb") {
+      nextExpansion.herbStock = {
+        ...nextExpansion.herbStock,
+        [entry.reward.herbId]: (nextExpansion.herbStock[entry.reward.herbId] ?? 0) + entry.reward.amount,
+      };
+    } else if (entry.reward.type === "pill") {
+      nextExpansion.pillStock = {
+        ...nextExpansion.pillStock,
+        [entry.reward.pillId]: (nextExpansion.pillStock[entry.reward.pillId] ?? 0) + entry.reward.amount,
+      };
+    } else {
+      nextExpansion.materialStock = {
+        ...nextExpansion.materialStock,
+        [entry.reward.materialId]:
+          (nextExpansion.materialStock[entry.reward.materialId] ?? 0) + entry.reward.amount,
+      };
+    }
+
+    const npcName =
+      entry.npcId === "lu-zhenren" ? "鹿真人" : entry.npcId === "xiao-zhang" ? "小张" : "小娴";
+    await onSaveExpansion(nextExpansion, {
+      activity: {
+        title: `${npcName}手记领取`,
+        text: entry.reward
+          ? `${entry.title}奖励：${describeHandnoteReward(entry.reward)}`
+          : `${entry.title}没有额外奖励，但值得再看一遍。`,
+      },
+    });
+  }
+
   const content: Record<Panel, string[]> = {
     我的: [],
     日志: state.eventLog.slice(0, 8).map((event) => `${event.year}年${event.month}月 · ${event.title}：${event.text}`),
     世界: [...worldLore, ...timelineEntries, ...sectSettings],
+    门规: [],
+    手记: [],
     事件: [
       `已完成：${completedText}`,
       ...getEventList(events).map(
@@ -2031,6 +2152,144 @@ function UtilityPanel({
   }
 
   function renderPanelBody() {
+    if (panel === "门规") {
+      const rules = [
+        "不盗不劫",
+        "不伤无辜",
+        "同门相护",
+        "道在自身",
+        "出门前记得熄炉火",
+      ];
+      return (
+        <section className="record-view record-rule-view">
+          <aside className="record-sidecard">
+            <img src={recordAssets.ruleBoardSmall} alt="" aria-hidden="true" />
+            <div>
+              <span>门规原稿</span>
+              <strong>鹿石宗规矩牌</strong>
+              <p>给新人的第一眼提醒。别急着出去惹事，先把这几条记牢。</p>
+            </div>
+          </aside>
+          <div className="record-mainframe record-rule-board">
+            <img className="record-art" src={recordAssets.ruleBoardLarge} alt="" aria-hidden="true" />
+            <div className="record-copy">
+              <header className="scroll-panel-header record-heading">
+                <span>鹿石宗门规书卷</span>
+                <h3>入宗先看规矩</h3>
+                <small>书卷可在大厅随时翻看，内容不会变化，但会提醒你该注意什么。</small>
+              </header>
+              <ol className="rule-scroll-list">
+                {rules.map((rule, index) => (
+                  <li key={rule}>
+                    <strong>{String(index + 1).padStart(2, "0")}</strong>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (panel === "手记") {
+      const tabs: Array<{ id: HandnoteTab; npcId: HandnoteEntry["npcId"]; note: string }> = [
+        { id: "鹿真人", npcId: "lu-zhenren", note: "云游，偶尔出现" },
+        { id: "小张", npcId: "xiao-zhang", note: "嘴硬，爱装" },
+        { id: "小娴", npcId: "xiaoxian", note: "温和，管事" },
+      ];
+      const currentTab = tabs.find((item) => item.id === handnoteTab) ?? tabs[0];
+      const currentTheme = recordAssets.handnotes[currentTab.id];
+      const entries = expansion.handnotes.entries
+        .filter((entry) => entry.npcId === currentTab.npcId)
+        .slice()
+        .sort((left, right) => Number(left.claimed) - Number(right.claimed) || right.createdAt.year - left.createdAt.year || right.createdAt.month - left.createdAt.month);
+
+      return (
+        <section className="record-view record-handnote-view">
+          <aside className="record-sidecard handnote-sidecard">
+            <img src={currentTheme.cover} alt="" aria-hidden="true" />
+            <div>
+              <span>手记封面</span>
+              <strong>{currentTab.id}</strong>
+              <p>{currentTheme.summary}</p>
+            </div>
+          </aside>
+          <div className="record-mainframe handnote-reader">
+            <img className="record-art" src={currentTheme.cover} alt="" aria-hidden="true" />
+            <div className="record-copy handnote-copy">
+              <header className="scroll-panel-header record-heading">
+                <span>三位手记</span>
+                <h3>{currentTheme.subtitle}</h3>
+                <small>每年会刷新 1 到 2 条，奖励保留 6 个月，情感条目不会给奖励。</small>
+              </header>
+              <div className="handnote-tabs">
+                {tabs.map((tab) => {
+                  const theme = recordAssets.handnotes[tab.id];
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={handnoteTab === tab.id ? "active" : ""}
+                      onClick={() => {
+                        playSceneClick();
+                        setHandnoteTab(tab.id);
+                      }}
+                    >
+                      <img src={theme.cover} alt="" aria-hidden="true" />
+                      <span>
+                        <strong>{tab.id}</strong>
+                        <small>{tab.note}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="handnote-list">
+                {entries.length === 0 ? (
+                  <p className="empty-note">当前没有可阅读的手记，等等下一次刷新。</p>
+                ) : (
+                  entries.map((entry) => {
+                    const expired = isHandnoteExpired(entry);
+                    const status = entry.claimed ? "已领取" : expired ? "已过期" : entry.reward ? "可领取" : "情感条目";
+                    return (
+                      <article
+                        key={entry.id}
+                        className={`handnote-entry ${entry.claimed ? "claimed" : ""} ${expired ? "expired" : ""}`}
+                      >
+                        <div className="handnote-entry-header">
+                          <strong>{entry.title}</strong>
+                          <span>{status}</span>
+                        </div>
+                        <p>{entry.text}</p>
+                        <footer>
+                          <small>奖励：{describeHandnoteReward(entry.reward)}</small>
+                          {entry.reward ? (
+                            <button
+                              type="button"
+                              disabled={entry.claimed || expired || expansionBusy || Boolean(busyAction)}
+                              onClick={() => {
+                                playSceneClick();
+                                void claimHandnote(entry);
+                              }}
+                            >
+                              {entry.claimed ? "已领取" : expired ? "已过期" : "领取奖励"}
+                            </button>
+                          ) : (
+                            <span>无可领取奖励</span>
+                          )}
+                        </footer>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     if (panel === "我的") {
       const maxHp = 100 + combatProfile.method.defense * 4 + combatProfile.method.shield;
       const identityRows = [
@@ -2932,7 +3191,9 @@ function UtilityPanel({
         className={
           panel === "我的"
             ? `utility-panel profile-utility ${profileTab === "功法" || profileTab === "术法" ? "loadout-art-utility" : ""}`
-            : "utility-panel"
+            : panel === "门规" || panel === "手记"
+              ? "utility-panel record-utility"
+              : "utility-panel"
         }
       >
         <header>
@@ -2957,7 +3218,17 @@ function UtilityPanel({
             )}
           </button>
         </header>
-        <div className={panel === "我的" ? "panel-body profile-body" : "panel-body"}>{renderPanelBody()}</div>
+        <div
+          className={
+            panel === "我的"
+              ? "panel-body profile-body"
+              : panel === "门规" || panel === "手记"
+                ? "panel-body record-body"
+                : "panel-body"
+          }
+        >
+          {renderPanelBody()}
+        </div>
         {panel === "设置" && (
           <footer>
             <button onClick={onToggleMusic}>背景音乐：{musicEnabled ? "开启" : "关闭"}</button>
@@ -4367,9 +4638,12 @@ function HomeScene({
   busyAction,
   panel,
   profileInitialTab,
+  handnoteInitialTab,
+  expansionBusy,
   musicEnabled,
   sceneFeedback,
   onAction,
+  onSaveExpansion,
   onReset,
   onOpenPanel,
   onOpenSystem,
@@ -4384,11 +4658,14 @@ function HomeScene({
   busyAction: DemoAction | "reset" | null;
   panel: Panel | null;
   profileInitialTab: ProfileTab;
+  handnoteInitialTab: HandnoteTab;
+  expansionBusy: boolean;
   musicEnabled: boolean;
   sceneFeedback: SceneActionFeedback | null;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
+  onSaveExpansion: (expansion: ExpansionState, options?: { elapsedMonths?: number; activity?: ExpansionActivity }) => Promise<void>;
   onReset: () => void;
-  onOpenPanel: (panel: Panel, profileTab?: ProfileTab) => void;
+  onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
   onOpenSystem: (screen: SystemScreen) => void;
   onClosePanel: () => void;
   onCloseSceneFeedback: () => void;
@@ -4539,8 +4816,11 @@ function HomeScene({
           events={events}
           busyAction={busyAction}
           initialProfileTab={profileInitialTab}
+          initialHandnoteTab={handnoteInitialTab}
+          expansionBusy={expansionBusy}
           musicEnabled={musicEnabled}
           onAction={onAction}
+          onSaveExpansion={onSaveExpansion}
           onClose={onClosePanel}
           onReset={onReset}
           onToggleMusic={onToggleMusic}
@@ -4562,6 +4842,7 @@ function App() {
   const [systemScreen, setSystemScreen] = useState<SystemScreen | null>(null);
   const [flow, setFlow] = useState<GameFlow>("menu");
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
+  const [handnoteInitialTab, setHandnoteInitialTab] = useState<HandnoteTab>("鹿真人");
   const [sceneFeedback, setSceneFeedback] = useState<SceneActionFeedback | null>(null);
   const [musicEnabled, setMusicEnabled] = useState(
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
@@ -4611,8 +4892,9 @@ function App() {
     setLoadState((current) => (current.status === "ready" ? { ...current, save } : current));
   }
 
-  function openPanel(nextPanel: Panel, profileTab: ProfileTab = "属性") {
-    if (nextPanel === "我的") setProfileInitialTab(profileTab);
+  function openPanel(nextPanel: Panel, target?: ProfileTab | HandnoteTab) {
+    if (nextPanel === "我的") setProfileInitialTab((target as ProfileTab) ?? "属性");
+    if (nextPanel === "手记") setHandnoteInitialTab((target as HandnoteTab) ?? "鹿真人");
     setPanel(nextPanel);
   }
 
@@ -4702,14 +4984,7 @@ function App() {
     if (loadState.status !== "ready" || entryCgFinishingRef.current) return;
     entryCgFinishingRef.current = true;
     try {
-      const expansion = getExpansion(loadState.save.state.expansion);
-      if (!expansion.story.completed.includes(1)) {
-        await saveExpansion(
-          { ...expansion, story: { completed: [1], tracked: 2 } },
-          { activity: { title: "初入鹿石宗", text: "鹿真人留下鹿花诀，你在鹿石宗安顿下来。因缘进度 1/29。" } },
-        );
-      }
-      await perform("change_scene:dormitory");
+      await perform("start_event:intro_lushi");
       setFlow("game");
     } finally {
       entryCgFinishingRef.current = false;
@@ -4794,22 +5069,25 @@ function App() {
     return <EntryCg onDone={() => void finishEntryCg()} />;
   }
 
-  return (
-    <HomeScene
-      save={loadState.save}
-      events={loadState.events}
-      online={health?.supabase?.configured ?? false}
-      busyAction={busyAction}
-      panel={panel}
-      profileInitialTab={profileInitialTab}
-      musicEnabled={musicEnabled}
-      sceneFeedback={sceneFeedback}
-      onAction={(action, payload) => void perform(action, payload)}
-      onReset={() => void reset()}
-      onOpenPanel={openPanel}
-      onOpenSystem={(screen) => {
-        setPanel(null);
-        setSystemScreen(screen);
+    return (
+      <HomeScene
+        save={loadState.save}
+        events={loadState.events}
+        online={health?.supabase?.configured ?? false}
+        busyAction={busyAction}
+        panel={panel}
+        profileInitialTab={profileInitialTab}
+        handnoteInitialTab={handnoteInitialTab}
+        expansionBusy={expansionBusy}
+        musicEnabled={musicEnabled}
+        sceneFeedback={sceneFeedback}
+        onAction={(action, payload) => void perform(action, payload)}
+        onSaveExpansion={saveExpansion}
+        onReset={() => void reset()}
+        onOpenPanel={openPanel}
+        onOpenSystem={(screen) => {
+          setPanel(null);
+          setSystemScreen(screen);
       }}
       onClosePanel={() => setPanel(null)}
       onCloseSceneFeedback={() => setSceneFeedback(null)}

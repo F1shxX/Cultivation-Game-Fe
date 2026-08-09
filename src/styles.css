@@ -3468,6 +3468,326 @@ button:focus-visible {
   transform: translateY(-1px);
 }
 
+.record-utility {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(246, 227, 173, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(28, 22, 17, 0.98), rgba(12, 11, 10, 0.99));
+}
+
+.record-utility > header {
+  min-height: 58px;
+  padding: 14px 18px;
+  background: linear-gradient(90deg, rgba(75, 54, 32, 0.52), rgba(18, 15, 12, 0.18));
+}
+
+.record-utility h2 {
+  color: #f3d89a;
+}
+
+.record-utility > header button {
+  border-color: rgba(245, 215, 126, 0.36);
+  background: rgba(62, 43, 25, 0.9);
+}
+
+.record-body {
+  display: grid;
+  min-height: 0;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.record-view {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.record-sidecard {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 239, 204, 0.18);
+  border-radius: 12px;
+  color: #36281d;
+  background:
+    linear-gradient(180deg, rgba(251, 242, 223, 0.95), rgba(232, 217, 191, 0.92)),
+    rgba(255, 255, 255, 0.36);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.record-sidecard img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 22px rgba(69, 47, 28, 0.14));
+}
+
+.record-sidecard span,
+.record-sidecard p {
+  color: #7b6855;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.record-sidecard strong {
+  display: block;
+  color: #4d3624;
+  font: 700 22px "STKaiti", "KaiTi", serif;
+}
+
+.record-mainframe {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 239, 204, 0.16);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 251, 239, 0.2), transparent 44%),
+    rgba(255, 248, 234, 0.08);
+}
+
+.record-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.98;
+}
+
+.record-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 20px 22px 18px;
+}
+
+.scroll-panel-header {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.scroll-panel-header span {
+  color: #8b7150;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.scroll-panel-header h3 {
+  margin: 0;
+  color: #3f2c20;
+  font: 700 26px "STKaiti", "KaiTi", serif;
+  line-height: 1.1;
+}
+
+.scroll-panel-header small {
+  color: #6c5c4d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.record-heading {
+  padding: 6px 10px 0;
+}
+
+.rule-scroll-list {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 8px 0 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.rule-scroll-list li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1px solid rgba(111, 85, 56, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 251, 241, 0.76);
+}
+
+.rule-scroll-list strong {
+  color: #9f7423;
+  font: 700 20px "Georgia", serif;
+  text-align: center;
+}
+
+.rule-scroll-list span {
+  color: #4a3d31;
+  font: 700 19px "STKaiti", "KaiTi", serif;
+}
+
+.handnote-sidecard img {
+  max-height: 280px;
+}
+
+.handnote-copy {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.handnote-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.handnote-tabs button {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 92px;
+  padding: 10px 12px;
+  border: 1px solid rgba(114, 88, 58, 0.2);
+  border-radius: 12px;
+  color: #4b3a2a;
+  background: rgba(255, 250, 241, 0.78);
+  text-align: left;
+  cursor: pointer;
+}
+
+.handnote-tabs button img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(67, 46, 27, 0.14));
+}
+
+.handnote-tabs button span {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.handnote-tabs button strong {
+  overflow: hidden;
+  color: #38281d;
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handnote-tabs button small {
+  color: #85715f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.handnote-tabs button.active {
+  border-color: rgba(169, 116, 40, 0.8);
+  background: rgba(248, 236, 210, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+}
+
+.handnote-list {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.handnote-entry {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(103, 82, 55, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 252, 244, 0.82);
+  box-shadow: 0 8px 18px rgba(41, 28, 17, 0.06);
+}
+
+.handnote-entry.claimed {
+  border-color: rgba(89, 132, 96, 0.28);
+  background: rgba(243, 250, 242, 0.88);
+}
+
+.handnote-entry.expired {
+  opacity: 0.72;
+  filter: grayscale(0.16);
+}
+
+.handnote-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.handnote-entry-header strong {
+  color: #39281d;
+  font: 700 18px "STKaiti", "KaiTi", serif;
+}
+
+.handnote-entry-header span {
+  color: #9a7741;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.handnote-entry p {
+  margin: 0;
+  color: #4f4134;
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.handnote-entry footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(120, 93, 60, 0.14);
+}
+
+.handnote-entry footer small,
+.handnote-entry footer span {
+  color: #7d6858;
+  font-size: 12px;
+}
+
+.handnote-entry footer button {
+  min-width: 110px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(126, 91, 46, 0.34);
+  border-radius: 999px;
+  color: #fff7ea;
+  background: linear-gradient(180deg, rgba(120, 86, 50, 0.96), rgba(67, 47, 30, 0.96));
+}
+
+.handnote-entry footer button:disabled {
+  opacity: 0.5;
+}
+
+.handnote-entry footer button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
 .panel-body p {
   margin: 0;
   line-height: 1.65;
@@ -5968,5 +6288,71 @@ button:focus-visible {
   .profile-content-shell .spell-builder .slot-option {
     min-height: 66px;
     padding: 6px 8px;
+  }
+
+  .record-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .record-sidecard {
+    grid-template-columns: 140px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .record-sidecard img {
+    max-height: 180px;
+  }
+
+  .record-copy {
+    gap: 10px;
+    padding: 14px 16px 14px;
+  }
+
+  .scroll-panel-header h3 {
+    font-size: 22px;
+  }
+
+  .rule-scroll-list {
+    gap: 8px;
+  }
+
+  .rule-scroll-list li {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px;
+    padding: 9px 12px;
+  }
+
+  .rule-scroll-list strong {
+    font-size: 16px;
+  }
+
+  .rule-scroll-list span {
+    font-size: 15px;
+  }
+
+  .handnote-tabs button {
+    min-height: 78px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .handnote-tabs button img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .handnote-tabs button strong {
+    font-size: 17px;
+  }
+
+  .handnote-entry {
+    padding: 10px 12px;
+  }
+
+  .handnote-entry p {
+    font-size: 13px;
   }
 }
