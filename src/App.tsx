@@ -1558,7 +1558,7 @@ function OpeningScene({ onDone }: { onDone: () => void }) {
         <div className="temple temple-b" />
       </div>
       <div className="opening-copy">
-        <p>万化仙途 · {current.speaker}</p>
+        <p>万化归途 · {current.speaker}</p>
         <h1>{current.text}</h1>
       </div>
       <button

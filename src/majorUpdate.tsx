@@ -305,7 +305,7 @@ export function StartMenu({
   return (
     <main className="start-menu-screen">
       <div className="start-menu-bg" />
-      <img className="start-menu-logo" src={asset("assets/onboarding/logo.png")} alt="万化仙途" />
+      <img className="start-menu-logo" src={asset("assets/onboarding/logo.png")} alt="万化归途" />
       <nav className="start-menu-actions" aria-label="游戏开始菜单">
         <button type="button" onClick={onNewGame}>踏入仙途</button>
         <button type="button" onClick={hasSave ? onContinue : onNewGame}>
@@ -412,7 +412,7 @@ export function CharacterCreation({
     <main className="creation-screen">
       <div className="creation-scroll-bg" />
       <header className="creation-header">
-        <div><strong>创建角色</strong><span>万化仙途</span></div>
+        <div><strong>创建角色</strong><span>万化归途</span></div>
         <p>踏仙途 · 择天命</p>
       </header>
       <nav className="creation-steps" aria-label="角色创建步骤">
