@@ -6,5 +6,15 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   server: {
     port: 5173,
+    proxy: {
+      "/health": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+      "/demo": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
 }));

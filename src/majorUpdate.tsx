@@ -52,6 +52,7 @@ export type ExpansionState = {
     entries: Array<{
       id: string;
       npcId: "lu-zhenren" | "xiao-zhang" | "xiaoxian";
+      scene?: string;
       title: string;
       text: string;
       flavorOnly: boolean;

@@ -2575,6 +2575,7 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.28fr);
   gap: 16px;
   min-height: 122px;
+  max-height: min(44vh, 330px);
   padding: 16px;
   border: 1px solid rgba(255, 239, 204, 0.14);
   border-radius: 8px;
@@ -2587,8 +2588,9 @@ button:focus-visible {
   display: grid;
   grid-template-columns: minmax(150px, 0.22fr) minmax(0, 1fr);
   gap: 16px;
-  align-items: center;
+  align-items: start;
   min-width: 0;
+  min-height: 0;
 }
 
 .event-story-speaker {
@@ -2621,11 +2623,15 @@ button:focus-visible {
 
 .event-story-main p {
   min-width: 0;
+  min-height: 0;
+  max-height: min(34vh, 250px);
   margin: 0;
+  overflow: auto;
   color: #fffdf2;
   font-size: clamp(18px, 1.5vw, 25px);
   font-weight: 900;
   line-height: 1.42;
+  white-space: pre-line;
   text-shadow: 0 2px 0 #000;
 }
 

@@ -28,6 +28,8 @@ type DemoScene =
 type DemoEventId = "intro_lushi" | "mouse_cave_treasure" | "wish_eater_bridge";
 
 type DemoEventChoiceAction =
+  | "event_choice:intro_ok"
+  | "event_choice:intro_where"
   | "event_choice:mouse_joke"
   | "event_choice:mouse_careful"
   | "event_choice:qingmu_trust"
@@ -138,6 +140,8 @@ type DemoEventNode = {
   mode: "dialogue" | "choice" | "battle" | "reward";
   visualStage: DemoEventVisualStage;
   scene?: DemoScene;
+  continueScene?: DemoScene | null;
+  continueLabel?: string;
   choices?: DemoEventChoice[];
 };
 
@@ -158,6 +162,7 @@ type DemoActiveEvent = {
   nodeIndex: number;
   selectedChoices: Record<string, string>;
   replay: boolean;
+  awaitingScene?: DemoScene | null;
   startedAt: {
     year: number;
     month: number;
@@ -270,7 +275,7 @@ const recordAssets: {
   >;
 } = {
   ruleBoardSmall: assetPath("assets/tapflow/records/rule-board-small.webp"),
-  ruleBoardLarge: assetPath("assets/tapflow/records/rule-board-large.webp"),
+  ruleBoardLarge: assetPath("assets/tapflow/records/source/翻开本子3_灰皮线装白纸.png"),
   handnotes: {
     "鹿真人": {
       cover: assetPath("assets/tapflow/records/handnote-lavender-vertical.webp"),
@@ -1339,6 +1344,27 @@ function getEventList(events: Record<DemoEventId, DemoEventDefinition>) {
   return Object.values(events).sort((left, right) => left.triggerYear - right.triggerYear);
 }
 
+const sceneHandnoteTargets: Record<
+  DemoScene,
+  { tab: HandnoteTab; label: string } | null
+> = {
+  hall: { tab: "鹿真人", label: "鹿真人手记" },
+  plaza: null,
+  dormitory: { tab: "小张", label: "小张手记" },
+  sister_room: { tab: "小娴", label: "小娴手记" },
+  meditation_room: null,
+  forge: null,
+  alchemy_room: null,
+  spirit_garden: null,
+  teleport_array: null,
+};
+
+const handnoteTabMeta: Record<HandnoteTab, { npcId: HandnoteEntry["npcId"]; note: string }> = {
+  "鹿真人": { npcId: "lu-zhenren", note: "云游，偶尔出现" },
+  "小张": { npcId: "xiao-zhang", note: "嘴硬，爱装" },
+  "小娴": { npcId: "xiaoxian", note: "温和，管事" },
+};
+
 function getActiveEvent(
   state: DemoSaveState,
   events: Record<DemoEventId, DemoEventDefinition>,
@@ -1405,8 +1431,11 @@ function getEventButtonLabel(node: DemoEventNode, busy: boolean) {
     return "推进中";
   }
 
-  if (node.mode === "reward") return "领取结算";
-  if (node.mode !== "battle") return "继续剧情";
+  if (node.mode === "reward") return node.continueLabel ?? "领取结算";
+  if (node.continueScene) {
+    return node.continueLabel ?? `前往${sceneConfig[node.continueScene].label}继续`;
+  }
+  if (node.mode !== "battle") return node.continueLabel ?? "继续剧情";
 
   const labels: Record<string, string> = {
     "small-rats": "清掉山鼠仔",
@@ -1718,24 +1747,25 @@ function SceneActionPanel({
     playSceneClick();
     onOpenSystem(screen);
   };
+  const handnoteTarget = sceneHandnoteTargets[currentScene];
 
   const actions: Array<{ label: string; description: string; kind: string; onClick: () => void }> = (() => {
     switch (currentScene) {
       case "hall":
         return [
           { label: "门规书卷", description: "查看鹿石宗门规", kind: "records", onClick: () => openPanel("门规") },
-          { label: "鹿真人手记", description: "查看鹿真人的手记", kind: "records", onClick: () => openPanel("手记", "鹿真人") },
-          { label: "小张手记", description: "查看小张的手记", kind: "records", onClick: () => openPanel("手记", "小张") },
-          { label: "小娴手记", description: "查看小娴的手记", kind: "records", onClick: () => openPanel("手记", "小娴") },
+          ...(handnoteTarget ? [{ label: handnoteTarget.label, description: `查看${handnoteTarget.label}`, kind: "records", onClick: () => openPanel("手记", handnoteTarget.tab) }] : []),
         ];
       case "dormitory":
         return [
           { label: "休息", description: "恢复状态并推进时间", kind: "rest", onClick: () => runAction("rest") },
           { label: "仓库", description: "打开背包与物品栏", kind: "storage", onClick: () => openPanel("我的", "背包") },
+          ...(handnoteTarget ? [{ label: handnoteTarget.label, description: `查看${handnoteTarget.label}`, kind: "records", onClick: () => openPanel("手记", handnoteTarget.tab) }] : []),
         ];
       case "sister_room":
         return [
           { label: "与师姐交谈", description: "饮茶并提升羁绊", kind: "talk", onClick: () => runAction("talk_xiaoxian") },
+          ...(handnoteTarget ? [{ label: handnoteTarget.label, description: `查看${handnoteTarget.label}`, kind: "records", onClick: () => openPanel("手记", handnoteTarget.tab) }] : []),
         ];
       case "meditation_room":
         return [
@@ -1975,6 +2005,7 @@ function SceneActionFeedbackModal({
 
 function UtilityPanel({
   panel,
+  currentScene,
   state,
   events,
   busyAction,
@@ -1990,6 +2021,7 @@ function UtilityPanel({
   onReplayOpening,
 }: {
   panel: Panel;
+  currentScene: DemoScene;
   state: DemoSaveState;
   events: Record<DemoEventId, DemoEventDefinition>;
   busyAction: DemoAction | "reset" | null;
@@ -2035,6 +2067,15 @@ function UtilityPanel({
   const [equipmentView, setEquipmentView] = useState<EquipmentView>("武器");
   const [methodNode, setMethodNode] = useState<MethodNode>("method");
   const [spellBuilderSlot, setSpellBuilderSlot] = useState<SpellBuilderSlot>("spell");
+  const handnoteScope = sceneHandnoteTargets[currentScene];
+  const handnoteTabs: Array<{ id: HandnoteTab; npcId: HandnoteEntry["npcId"]; note: string }> =
+    handnoteScope
+      ? [{ id: handnoteScope.tab, ...handnoteTabMeta[handnoteScope.tab] }]
+      : Object.entries(handnoteTabMeta).map(([id, meta]) => ({
+          id: id as HandnoteTab,
+          npcId: meta.npcId,
+          note: meta.note,
+        }));
 
   useEffect(() => {
     if (panel === "我的") setProfileTab(initialProfileTab);
@@ -2193,12 +2234,7 @@ function UtilityPanel({
     }
 
     if (panel === "手记") {
-      const tabs: Array<{ id: HandnoteTab; npcId: HandnoteEntry["npcId"]; note: string }> = [
-        { id: "鹿真人", npcId: "lu-zhenren", note: "云游，偶尔出现" },
-        { id: "小张", npcId: "xiao-zhang", note: "嘴硬，爱装" },
-        { id: "小娴", npcId: "xiaoxian", note: "温和，管事" },
-      ];
-      const currentTab = tabs.find((item) => item.id === handnoteTab) ?? tabs[0];
+      const currentTab = handnoteTabs.find((item) => item.id === handnoteTab) ?? handnoteTabs[0];
       const currentTheme = recordAssets.handnotes[currentTab.id];
       const entries = expansion.handnotes.entries
         .filter((entry) => entry.npcId === currentTab.npcId)
@@ -2219,12 +2255,12 @@ function UtilityPanel({
             <img className="record-art" src={currentTheme.cover} alt="" aria-hidden="true" />
             <div className="record-copy handnote-copy">
               <header className="scroll-panel-header record-heading">
-                <span>三位手记</span>
+                <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
                 <h3>{currentTheme.subtitle}</h3>
                 <small>每年会刷新 1 到 2 条，奖励保留 6 个月，情感条目不会给奖励。</small>
               </header>
               <div className="handnote-tabs">
-                {tabs.map((tab) => {
+                {handnoteTabs.map((tab) => {
                   const theme = recordAssets.handnotes[tab.id];
                   return (
                     <button
@@ -4558,6 +4594,7 @@ function ActiveEventOverlay({
   const { active, definition, node } = activeEvent;
   const busy = Boolean(busyAction);
   const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
+  const primaryAction = node.continueScene ? (`change_scene:${node.continueScene}` as DemoAction) : "advance_event";
   const modeText: Record<DemoEventNode["mode"], string> = {
     dialogue: "剧情",
     choice: "抉择",
@@ -4619,10 +4656,10 @@ function ActiveEventOverlay({
               disabled={busy}
               onClick={() => {
                 playSceneClick();
-                onAction("advance_event");
+                onAction(primaryAction);
               }}
             >
-              {getEventButtonLabel(node, busyAction === "battle_victory" || busyAction === "advance_event")}
+              {getEventButtonLabel(node, busy)}
             </button>
           )}
         </div>
@@ -4817,6 +4854,7 @@ function HomeScene({
           busyAction={busyAction}
           initialProfileTab={profileInitialTab}
           initialHandnoteTab={handnoteInitialTab}
+          currentScene={scene}
           expansionBusy={expansionBusy}
           musicEnabled={musicEnabled}
           onAction={onAction}
@@ -4894,7 +4932,13 @@ function App() {
 
   function openPanel(nextPanel: Panel, target?: ProfileTab | HandnoteTab) {
     if (nextPanel === "我的") setProfileInitialTab((target as ProfileTab) ?? "属性");
-    if (nextPanel === "手记") setHandnoteInitialTab((target as HandnoteTab) ?? "鹿真人");
+    if (nextPanel === "手记") {
+      const scene: DemoScene =
+        loadState.status === "ready" ? loadState.save.state.scene ?? "plaza" : "plaza";
+      setHandnoteInitialTab(
+        (target as HandnoteTab) ?? sceneHandnoteTargets[scene]?.tab ?? "鹿真人",
+      );
+    }
     setPanel(nextPanel);
   }
 
