@@ -1492,9 +1492,9 @@ function getSpeakerPortrait(
   if (speakerName === "小张" || speakerName === "张真人") {
     const expression: PortraitExpression = seriousNode
       ? "serious"
-      : node?.id === "invite"
+      : node?.id === "invite" || node?.id === "wake-up" || node?.id === "plaza-boast"
         ? "happy"
-        : node?.id === "rat-king"
+        : node?.id === "rat-king" || node?.id === "wake-up-joke"
           ? "snark"
           : "normal";
     return {
@@ -1507,7 +1507,7 @@ function getSpeakerPortrait(
   if (speakerName === "小娴") {
     return {
       key: "xiaoxian",
-      expression: "happy",
+      expression: node?.id === "xiaoxian-check" ? "normal" : "happy",
       name: "小娴",
     };
   }
@@ -1515,7 +1515,7 @@ function getSpeakerPortrait(
   if (speakerName === "鹿真人") {
     return {
       key: "lu",
-      expression: node?.text.includes("哈哈") ? "happy" : "normal",
+      expression: node?.id === "hall-meeting" ? "serious" : node?.text.includes("哈哈") ? "happy" : "normal",
       name: "鹿真人",
     };
   }
@@ -4786,24 +4786,48 @@ function ActiveEventOverlay({
   const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
   const primaryAction = node.continueScene ? (`change_scene:${node.continueScene}` as DemoAction) : "advance_event";
   const speakerLabel = getDialogueSpeakerName(node.speaker);
+  const canClickToAdvance = !busy && node.mode !== "choice" && node.mode !== "battle";
   const modeText: Record<DemoEventNode["mode"], string> = {
     dialogue: "剧情",
     choice: "抉择",
     battle: "战斗",
     reward: "结算",
   };
+  const continueText =
+    node.mode === "choice"
+      ? "选择回应"
+      : node.mode === "battle"
+        ? "进入战斗"
+        : getEventButtonLabel(node, busy);
+
+  function advancePrimary() {
+    if (!canClickToAdvance) return;
+    playSceneClick();
+    onAction(primaryAction);
+  }
 
   return (
     <>
-      <section className="event-brief" aria-label="当前事件">
+      <section className="event-brief vn-event-brief" aria-label="当前事件">
         <span>{definition.category}</span>
         <strong>{definition.title}</strong>
-        <small>
-          {getVisualStageTitle(node.visualStage)} · {progress}%
-        </small>
+        <small>{getVisualStageTitle(node.visualStage)}</small>
       </section>
 
-      <section className="event-story-panel" aria-label="事件剧情">
+      <section
+        className={`event-story-panel vn-dialogue-panel mode-${node.mode}`}
+        aria-label="事件剧情"
+        role={canClickToAdvance ? "button" : undefined}
+        tabIndex={canClickToAdvance ? 0 : undefined}
+        onClick={advancePrimary}
+        onKeyDown={(event) => {
+          if (!canClickToAdvance) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            advancePrimary();
+          }
+        }}
+      >
         <div className="event-story-main">
           <div className="event-story-speaker">
             <strong>{speakerLabel}</strong>
@@ -4854,6 +4878,7 @@ function ActiveEventOverlay({
             </button>
           )}
         </div>
+        <span className="vn-continue-hint">{busy ? "处理中" : `......${continueText}`}</span>
       </section>
     </>
   );
@@ -4927,6 +4952,7 @@ function HomeScene({
 
   const stageStyle = {
     "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
+    "--visual-bg": activeEvent ? getVisualBackground(activeEvent.node.visualStage) : undefined,
     "--avatar-frame": `url("${assetPath("assets/tapflow/ui/avatar-frame.webp")}")`,
     "--scene-button": `url("${assetPath("assets/tapflow/ui/scene-button.webp")}")`,
     "--dialogue-box": `url("${assetPath("assets/tapflow/ui/dialogue-box.webp")}")`,
@@ -4976,7 +5002,6 @@ function HomeScene({
         className={`stage scene-${scene} accent-${config.accent} ${
           inBattle ? "battle-stage" : ""
         } ${visualStage ? `event-stage visual-${visualStage}` : ""}`}
-        style={visualStage ? ({ "--visual-bg": getVisualBackground(visualStage) } as CSSProperties) : undefined}
       >
         <div className="stage-bg">
           {activeEvent ? (

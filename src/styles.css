@@ -2727,6 +2727,197 @@ button:focus-visible {
   transform: none;
 }
 
+.visual-intro_dormitory .stage-bg,
+.visual-intro_plaza .stage-bg,
+.visual-intro_hall .stage-bg,
+.visual-intro_reward .stage-bg {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 230, 0.04), rgba(20, 12, 8, 0.2) 58%, rgba(0, 0, 0, 0.52)),
+    var(--visual-bg),
+    var(--scene-bg);
+  background-position: center;
+  background-size: cover;
+  filter: saturate(1.06) contrast(1.02);
+}
+
+.visual-intro_dormitory .stage-bg::before,
+.visual-intro_plaza .stage-bg::before,
+.visual-intro_hall .stage-bg::before,
+.visual-intro_reward .stage-bg::before {
+  display: none;
+}
+
+.vn-event-brief {
+  top: 20px;
+  left: 24px;
+  min-width: min(430px, 44vw);
+  padding: 15px 24px 16px 92px;
+  border: 2px solid rgba(28, 24, 20, 0.72);
+  border-radius: 34px 12px 12px 34px;
+  background:
+    radial-gradient(circle at 42px 50%, rgba(255, 255, 255, 0.5) 0 24px, rgba(20, 20, 20, 0.82) 25px 36px, transparent 37px),
+    linear-gradient(90deg, rgba(248, 246, 235, 0.94), rgba(236, 230, 210, 0.86));
+  color: #241b13;
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.vn-event-brief span {
+  color: #5d4031;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.vn-event-brief strong {
+  color: #15100d;
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(24px, 2.1vw, 34px);
+  line-height: 1.08;
+}
+
+.vn-event-brief small {
+  color: #3f3327;
+  font-size: clamp(15px, 1.3vw, 21px);
+}
+
+.event-shell .portrait-image {
+  z-index: 25;
+  left: clamp(24px, 5.2vw, 92px);
+  bottom: 6px;
+  width: min(410px, 31vw);
+  height: min(690px, 72vh);
+  opacity: 1;
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.48));
+}
+
+.event-shell .portrait-lu.portrait-image {
+  width: min(390px, 29vw);
+}
+
+.vn-dialogue-panel {
+  left: clamp(360px, 29vw, 520px);
+  right: clamp(34px, 4vw, 74px);
+  bottom: clamp(20px, 3vh, 36px);
+  grid-template-columns: minmax(0, 1fr);
+  min-height: clamp(250px, 30vh, 310px);
+  max-height: 36vh;
+  padding: 0;
+  cursor: pointer;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.34)),
+    var(--dialogue-box) center / 100% 100% no-repeat;
+}
+
+.vn-dialogue-panel:focus-visible {
+  outline: 2px solid rgba(246, 205, 110, 0.9);
+  outline-offset: -10px;
+}
+
+.vn-dialogue-panel.mode-choice {
+  cursor: default;
+}
+
+.vn-dialogue-panel .event-story-main {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-height: 100%;
+}
+
+.vn-dialogue-panel .event-story-speaker {
+  position: absolute;
+  left: 38px;
+  top: 104px;
+  z-index: 2;
+  min-width: 184px;
+  min-height: 44px;
+  padding: 8px 26px 9px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.92), rgba(5, 5, 5, 0.72)),
+    var(--nameplate) center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+
+.vn-dialogue-panel .event-story-speaker strong {
+  color: #fff6e0;
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(22px, 2vw, 31px);
+  line-height: 1;
+}
+
+.vn-dialogue-panel .event-story-speaker small {
+  display: none;
+}
+
+.vn-dialogue-panel .event-story-main p {
+  align-self: end;
+  max-height: none;
+  overflow: hidden;
+  padding: 145px 78px 60px 78px;
+  color: #fffdf4;
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(24px, 2.35vw, 36px);
+  font-weight: 900;
+  line-height: 1.36;
+  letter-spacing: 0;
+}
+
+.vn-dialogue-panel .event-story-actions {
+  position: absolute;
+  right: 48px;
+  bottom: 34px;
+  display: flex;
+  align-items: end;
+  justify-content: end;
+  width: min(290px, 26vw);
+  pointer-events: none;
+}
+
+.vn-dialogue-panel .event-story-progress,
+.vn-dialogue-panel .event-story-primary,
+.vn-dialogue-panel .event-story-status {
+  display: none;
+}
+
+.vn-dialogue-panel.mode-choice .event-story-actions {
+  left: auto;
+  right: 42px;
+  bottom: 30px;
+  width: min(360px, 30vw);
+  pointer-events: auto;
+}
+
+.vn-dialogue-panel.mode-choice .event-story-choices {
+  width: 100%;
+  gap: 9px;
+}
+
+.vn-dialogue-panel.mode-choice .event-story-choices button {
+  min-height: 44px;
+  border-radius: 4px;
+  background: rgba(32, 24, 16, 0.86);
+}
+
+.vn-continue-hint {
+  position: absolute;
+  right: 62px;
+  bottom: 36px;
+  color: #fff8e7;
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(20px, 1.7vw, 28px);
+  font-weight: 900;
+  text-shadow: 0 2px 0 #000;
+  pointer-events: none;
+}
+
+.vn-dialogue-panel.mode-choice .vn-continue-hint {
+  display: none;
+}
+
 .scene-npc-strip {
   position: absolute;
   z-index: 32;
