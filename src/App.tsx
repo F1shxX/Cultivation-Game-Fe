@@ -1466,13 +1466,22 @@ function getActorPortrait(actor: "xiaozhang" | "xiaoxian" | "lu") {
   };
 }
 
+function getDialogueSpeakerName(speaker: string) {
+  const candidates = speaker
+    .split(/[\/、，,|｜]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return candidates.find((item) => item !== "系统" && item !== "旁白") ?? candidates[0] ?? speaker;
+}
+
 function getSpeakerPortrait(
   speaker: string,
   node?: DemoEventNode,
 ): { key: PortraitKey; expression: PortraitExpression; name: string } | null {
   const seriousNode = node?.mode === "battle" || node?.id.includes("boss") || node?.id.includes("rat-king");
+  const speakerName = getDialogueSpeakerName(speaker);
 
-  if (speaker === "主角") {
+  if (speakerName === "主角" || speakerName === "玩家") {
     return {
       key: "player",
       expression: node?.mode === "choice" ? "serious" : "normal",
@@ -1480,7 +1489,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "小张" || speaker === "张真人") {
+  if (speakerName === "小张" || speakerName === "张真人") {
     const expression: PortraitExpression = seriousNode
       ? "serious"
       : node?.id === "invite"
@@ -1491,11 +1500,11 @@ function getSpeakerPortrait(
     return {
       key: "xiaozhang",
       expression,
-      name: speaker,
+      name: speakerName,
     };
   }
 
-  if (speaker === "小娴") {
+  if (speakerName === "小娴") {
     return {
       key: "xiaoxian",
       expression: "happy",
@@ -1503,7 +1512,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "鹿真人") {
+  if (speakerName === "鹿真人") {
     return {
       key: "lu",
       expression: node?.text.includes("哈哈") ? "happy" : "normal",
@@ -1511,7 +1520,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "羊七道人") {
+  if (speakerName === "羊七道人") {
     return {
       key: "yangqi",
       expression: seriousNode ? "serious" : "happy",
@@ -1519,7 +1528,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "豆髯道人") {
+  if (speakerName === "豆髯道人") {
     return {
       key: "douran",
       expression: node?.text.includes("哈哈") ? "happy" : "normal",
@@ -1527,7 +1536,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "雏雏") {
+  if (speakerName === "雏雏") {
     return {
       key: "chuchu",
       expression: seriousNode ? "serious" : "normal",
@@ -1535,7 +1544,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "小鹿") {
+  if (speakerName === "小鹿") {
     return {
       key: "xiaolu",
       expression: node?.text.includes("送他一程") ? "snark" : "serious",
@@ -1543,7 +1552,7 @@ function getSpeakerPortrait(
     };
   }
 
-  if (speaker === "啖愿妖") {
+  if (speakerName === "啖愿妖") {
     return null;
   }
 
@@ -3573,6 +3582,9 @@ type CombatProjectile = {
   critChance?: number;
   armorPierce?: number;
   kind: "auto" | "manual" | "enemy" | "skill";
+  visual: "orb" | "fireball" | "goldSlash";
+  angle: number;
+  scale: number;
 };
 
 type CombatParticle = {
@@ -3583,6 +3595,8 @@ type CombatParticle = {
   life: number;
   maxLife: number;
   color: string;
+  visual: "ring" | "fireBurst" | "fireDrop" | "hitFire" | "flash" | "goldSlash";
+  angle: number;
 };
 
 type CombatRuntime = {
@@ -3813,8 +3827,14 @@ function pushCombatProjectile(
   damageValue: number,
   radius: number,
   life: number,
-  options: Partial<Pick<CombatProjectile, "range" | "pierce" | "color" | "methodId" | "spellId" | "critChance" | "armorPierce">> = {},
+  options: Partial<
+    Pick<
+      CombatProjectile,
+      "range" | "pierce" | "color" | "methodId" | "spellId" | "critChance" | "armorPierce" | "visual" | "scale"
+    >
+  > = {},
 ) {
+  const speed = Math.hypot(vx, vy) || 1;
   runtime.projectiles.push({
     id: runtime.nextId++,
     x,
@@ -3834,10 +3854,22 @@ function pushCombatProjectile(
     critChance: options.critChance,
     armorPierce: options.armorPierce,
     kind,
+    visual: options.visual ?? "orb",
+    angle: Math.atan2(vy / speed, vx / speed),
+    scale: options.scale ?? 1,
   });
 }
 
-function pushCombatParticle(runtime: CombatRuntime, x: number, y: number, r: number, color: string, life = 0.45) {
+function pushCombatParticle(
+  runtime: CombatRuntime,
+  x: number,
+  y: number,
+  r: number,
+  color: string,
+  life = 0.45,
+  visual: CombatParticle["visual"] = "ring",
+  angle = 0,
+) {
   runtime.particles.push({
     id: runtime.nextId++,
     x,
@@ -3846,6 +3878,8 @@ function pushCombatParticle(runtime: CombatRuntime, x: number, y: number, r: num
     life,
     maxLife: life,
     color,
+    visual,
+    angle,
   });
 }
 
@@ -3894,6 +3928,8 @@ function firePlayerShot(
       methodId: profile.loadout.methodId,
       pierce: isGoldMethod && kind !== "manual" ? 1 : 0,
       range: kind === "manual" ? 680 : 740,
+      visual: isFireMethod ? "fireball" : isGoldMethod ? "goldSlash" : "orb",
+      scale: kind === "manual" ? 0.76 : 0.66,
     },
   );
 }
@@ -3940,7 +3976,14 @@ function applyEnemySkillHit(
         ? "rgba(128, 216, 255, 0.56)"
         : "rgba(255, 231, 143, 0.52)",
     0.3,
+    spellId === "huodan" ? "fireBurst" : spellId === "jinmang" ? "flash" : "ring",
   );
+  if (spellId === "jinmang") {
+    pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 20, "rgba(255, 231, 143, 0.58)", 0.18, "goldSlash", Math.random() * Math.PI);
+  }
+  if (spellId === "huodan" && enemy.burnTimer > 0) {
+    pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 22, "rgba(255, 119, 55, 0.5)", 0.24, "hitFire");
+  }
 }
 
 function setCombatNotice(runtime: CombatRuntime, notice: string) {
@@ -3961,7 +4004,15 @@ function castActiveSkill(runtime: CombatRuntime, profile: CombatProfile) {
 
   if (profile.loadout.spellSlot.techniqueId === "ring") {
     const radius = profile.range;
-    pushCombatParticle(runtime, runtime.player.x, runtime.player.y, radius, `${profile.spell.color}88`, 0.42);
+    pushCombatParticle(
+      runtime,
+      runtime.player.x,
+      runtime.player.y,
+      radius,
+      `${profile.spell.color}88`,
+      0.42,
+      profile.loadout.spellSlot.spellId === "huodan" ? "fireBurst" : "ring",
+    );
     for (const enemy of runtime.enemies) {
       const hitDistance = distance(runtime.player.x, runtime.player.y, enemy.x, enemy.y);
       if (hitDistance <= radius + enemy.r) {
@@ -3984,7 +4035,15 @@ function castActiveSkill(runtime: CombatRuntime, profile: CombatProfile) {
   const targetY = target?.y ?? runtime.pointer.y;
 
   if (profile.loadout.spellSlot.techniqueId === "drop") {
-    pushCombatParticle(runtime, targetX, targetY, 112, `${profile.spell.color}aa`, 0.42);
+    pushCombatParticle(
+      runtime,
+      targetX,
+      targetY,
+      112,
+      `${profile.spell.color}aa`,
+      0.42,
+      profile.loadout.spellSlot.spellId === "huodan" ? "fireDrop" : "ring",
+    );
     for (const enemy of runtime.enemies) {
       if (distance(targetX, targetY, enemy.x, enemy.y) <= 112 + enemy.r) {
         applyEnemySkillHit(
@@ -4021,15 +4080,40 @@ function castActiveSkill(runtime: CombatRuntime, profile: CombatProfile) {
       spellId: profile.loadout.spellSlot.spellId,
       critChance: profile.critChance,
       armorPierce: profile.armorPierce,
+      visual:
+        profile.loadout.spellSlot.spellId === "huodan"
+          ? "fireball"
+          : profile.loadout.spellSlot.spellId === "jinmang"
+            ? "goldSlash"
+            : "orb",
+      scale: profile.loadout.spellSlot.spellId === "huodan" ? 0.9 : 0.8,
     },
   );
 }
 
+const combatFxAssetGroups = {
+  fireball: ["fireball-00.png", "fireball-01.png", "fireball-02.png", "fireball-03.png", "fireball-04.png"],
+  fireBurst: [
+    "fire-burst-00.png",
+    "fire-burst-01.png",
+    "fire-burst-02.png",
+    "fire-burst-03.png",
+    "fire-burst-04.png",
+    "fire-burst-05.png",
+    "fire-burst-06.png",
+  ],
+  fireDrop: ["fire-drop-00.png", "fire-drop-01.png", "fire-drop-02.png", "fire-drop-03.png"],
+  hitFire: ["hit-fire-00.png", "hit-fire-01.png", "hit-fire-02.png", "hit-fire-03.png", "hit-fire-04.png"],
+  utility: ["impact-flash.png", "gold-slash.png", "dash-flash.png"],
+} as const;
+
+type CombatImageCache = Record<string, HTMLImageElement>;
+
 function useCombatImages(config: CombatConfig) {
-  const imagesRef = useRef<Record<string, HTMLImageElement>>({});
+  const imagesRef = useRef<CombatImageCache>({});
 
   useEffect(() => {
-    const sources = {
+    const sources: Record<string, string> = {
       player: assetPath("assets/tapflow/portraits/player-combat.webp"),
       minion:
         config.theme === "mouse"
@@ -4040,6 +4124,11 @@ function useCombatImages(config: CombatConfig) {
           ? assetPath("assets/tapflow/monsters/mouse-king.webp")
           : assetPath("assets/tapflow/monsters/wish-eater.webp"),
     };
+    for (const [group, files] of Object.entries(combatFxAssetGroups)) {
+      files.forEach((file, index) => {
+        sources[`${group}-${index}`] = assetPath(`assets/tapflow/combat/${file}`);
+      });
+    }
 
     for (const [key, src] of Object.entries(sources)) {
       const image = new Image();
@@ -4049,6 +4138,39 @@ function useCombatImages(config: CombatConfig) {
   }, [config.theme]);
 
   return imagesRef;
+}
+
+function imageReady(image: HTMLImageElement | undefined) {
+  return Boolean(image?.complete && image.naturalWidth > 0);
+}
+
+function animatedCombatImage(
+  images: CombatImageCache,
+  group: keyof typeof combatFxAssetGroups,
+  elapsed: number,
+  fps: number,
+) {
+  const count = combatFxAssetGroups[group].length;
+  const frame = Math.floor(elapsed * fps) % count;
+  return images[`${group}-${frame}`];
+}
+
+function drawCenteredImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  angle = 0,
+  alpha = 1,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(image, -width / 2, -height / 2, width, height);
+  ctx.restore();
 }
 
 function BulletHellCombat({
@@ -4306,7 +4428,7 @@ function BulletHellCombat({
                   applyEnemySkillHit(runtime, nearbyEnemy, splashDamage, undefined);
                 }
               }
-              pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 34, "rgba(255, 119, 55, 0.58)", 0.32);
+              pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 34, "rgba(255, 119, 55, 0.58)", 0.32, "hitFire");
             }
             if (projectile.pierce > 0) {
               projectile.pierce -= 1;
@@ -4382,7 +4504,26 @@ function BulletHellCombat({
       }
       ctx.restore();
 
+      const images = imagesRef.current;
       for (const projectile of runtime.projectiles) {
+        const alpha = clampNumber(projectile.life / 0.18, 0.15, 1);
+        if (projectile.visual === "fireball") {
+          const image = animatedCombatImage(images, "fireball", runtime.elapsed + projectile.id * 0.017, 18);
+          if (imageReady(image)) {
+            const size = projectile.kind === "skill" ? 86 * projectile.scale : 70 * projectile.scale;
+            drawCenteredImage(ctx, image, projectile.x, projectile.y, size * 2.23, size, projectile.angle, alpha);
+            continue;
+          }
+        }
+        if (projectile.visual === "goldSlash") {
+          const image = images["utility-1"];
+          if (imageReady(image)) {
+            const width = projectile.kind === "skill" ? 96 : 76;
+            drawCenteredImage(ctx, image, projectile.x, projectile.y, width, width * 0.32, projectile.angle, alpha);
+            continue;
+          }
+        }
+
         ctx.beginPath();
         ctx.fillStyle = projectile.kind === "enemy" ? "rgba(255, 86, 83, 0.9)" : projectile.color;
         ctx.shadowColor = ctx.fillStyle;
@@ -4392,7 +4533,6 @@ function BulletHellCombat({
         ctx.shadowBlur = 0;
       }
 
-      const images = imagesRef.current;
       for (const enemy of runtime.enemies) {
         const image = enemy.kind === "boss" ? images.boss : images.minion;
         if (image?.complete && image.naturalWidth > 0) {
@@ -4433,6 +4573,56 @@ function BulletHellCombat({
 
       for (const particle of runtime.particles) {
         const alpha = Math.max(0, particle.life / particle.maxLife);
+        const age = Math.max(0, particle.maxLife - particle.life);
+        if (particle.visual === "fireBurst") {
+          const image = animatedCombatImage(images, "fireBurst", age, 18);
+          if (imageReady(image)) {
+            const size = particle.r * (1.35 - alpha * 0.1);
+            drawCenteredImage(ctx, image, particle.x, particle.y, size, size, particle.angle, Math.min(0.9, alpha + 0.18));
+            continue;
+          }
+        }
+        if (particle.visual === "fireDrop") {
+          const image = animatedCombatImage(images, "fireDrop", age, 14);
+          if (imageReady(image)) {
+            const width = particle.r * 0.96;
+            drawCenteredImage(
+              ctx,
+              image,
+              particle.x,
+              particle.y - particle.r * 0.12,
+              width,
+              width * 1.67,
+              particle.angle,
+              Math.min(0.86, alpha + 0.12),
+            );
+            continue;
+          }
+        }
+        if (particle.visual === "hitFire") {
+          const image = animatedCombatImage(images, "hitFire", age, 16);
+          if (imageReady(image)) {
+            const width = particle.r * 0.9;
+            drawCenteredImage(ctx, image, particle.x, particle.y - particle.r * 0.25, width, width * 1.36, particle.angle, alpha);
+            continue;
+          }
+        }
+        if (particle.visual === "flash") {
+          const image = images["utility-0"];
+          if (imageReady(image)) {
+            const size = particle.r * (1.1 - alpha * 0.18);
+            drawCenteredImage(ctx, image, particle.x, particle.y, size, size, particle.angle, alpha);
+            continue;
+          }
+        }
+        if (particle.visual === "goldSlash") {
+          const image = images["utility-1"];
+          if (imageReady(image)) {
+            const width = particle.r * 1.5;
+            drawCenteredImage(ctx, image, particle.x, particle.y, width, width * 0.32, particle.angle, alpha);
+            continue;
+          }
+        }
         ctx.beginPath();
         ctx.globalAlpha = alpha;
         ctx.strokeStyle = particle.color;
@@ -4595,6 +4785,7 @@ function ActiveEventOverlay({
   const busy = Boolean(busyAction);
   const progress = Math.round(((active.nodeIndex + 1) / definition.nodes.length) * 100);
   const primaryAction = node.continueScene ? (`change_scene:${node.continueScene}` as DemoAction) : "advance_event";
+  const speakerLabel = getDialogueSpeakerName(node.speaker);
   const modeText: Record<DemoEventNode["mode"], string> = {
     dialogue: "剧情",
     choice: "抉择",
@@ -4615,7 +4806,7 @@ function ActiveEventOverlay({
       <section className="event-story-panel" aria-label="事件剧情">
         <div className="event-story-main">
           <div className="event-story-speaker">
-            <strong>{node.speaker}</strong>
+            <strong>{speakerLabel}</strong>
             <small>{node.title}</small>
           </div>
           <p>{node.text}</p>

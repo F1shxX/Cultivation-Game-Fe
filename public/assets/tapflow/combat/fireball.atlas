@@ -1,0 +1,41 @@
+
+buff_fire.png
+size: 378,322
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+000
+  rotate: true
+  xy: 92, 97
+  size: 223, 100
+  orig: 223, 100
+  offset: 0, 0
+  index: -1
+001
+  rotate: false
+  xy: 2, 2
+  size: 221, 92
+  orig: 221, 92
+  offset: 0, 0
+  index: -1
+002
+  rotate: true
+  xy: 194, 98
+  size: 222, 90
+  orig: 222, 90
+  offset: 0, 0
+  index: -1
+003
+  rotate: true
+  xy: 286, 99
+  size: 221, 90
+  orig: 221, 90
+  offset: 0, 0
+  index: -1
+004
+  rotate: true
+  xy: 2, 96
+  size: 224, 88
+  orig: 224, 88
+  offset: 0, 0
+  index: -1
