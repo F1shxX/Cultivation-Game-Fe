@@ -2237,14 +2237,19 @@ function UtilityPanel({
                 ))}
               </ol>
             </div>
-          </div>
-        </section>
+            </div>
+          </section>
       );
     }
 
     if (panel === "手记") {
       const currentTab = handnoteTabs.find((item) => item.id === handnoteTab) ?? handnoteTabs[0];
       const currentTheme = recordAssets.handnotes[currentTab.id];
+      const handnoteThemeClass: Record<HandnoteTab, string> = {
+        "鹿真人": "theme-lu",
+        "小张": "theme-zhang",
+        "小娴": "theme-xian",
+      };
       const entries = expansion.handnotes.entries
         .filter((entry) => entry.npcId === currentTab.npcId)
         .slice()
@@ -2253,21 +2258,12 @@ function UtilityPanel({
       return (
         <section className="record-view record-handnote-view">
           <aside className="record-sidecard handnote-sidecard">
-            <img src={currentTheme.cover} alt="" aria-hidden="true" />
-            <div>
-              <span>手记封面</span>
-              <strong>{currentTab.id}</strong>
-              <p>{currentTheme.summary}</p>
-            </div>
-          </aside>
-          <div className="record-mainframe handnote-reader">
-            <img className="record-art" src={currentTheme.cover} alt="" aria-hidden="true" />
-            <div className="record-copy handnote-copy">
-              <header className="scroll-panel-header record-heading">
-                <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
-                <h3>{currentTheme.subtitle}</h3>
-                <small>每年会刷新 1 到 2 条，奖励保留 6 个月，情感条目不会给奖励。</small>
-              </header>
+            <header className="scroll-panel-header record-heading">
+              <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
+              <h3>{currentTab.id}手记</h3>
+              <small>{currentTheme.summary}</small>
+            </header>
+            {handnoteTabs.length > 1 && (
               <div className="handnote-tabs">
                 {handnoteTabs.map((tab) => {
                   const theme = recordAssets.handnotes[tab.id];
@@ -2289,6 +2285,19 @@ function UtilityPanel({
                     </button>
                   );
                 })}
+              </div>
+            )}
+            <p className="handnote-refresh-note">每年刷新 1 到 2 条，奖励保留 6 个月，情感条目不会给奖励。</p>
+          </aside>
+          <div
+            className={`record-mainframe handnote-reader ${handnoteThemeClass[currentTab.id]}`}
+            style={{ "--handnote-book": `url("${currentTheme.cover}")` } as CSSProperties}
+          >
+            <div className="handnote-book-surface" aria-hidden="true" />
+            <div className="record-copy handnote-copy">
+              <div className="handnote-book-meta">
+                <span>{currentTheme.subtitle}</span>
+                <strong>{currentTab.id}</strong>
               </div>
               <div className="handnote-list">
                 {entries.length === 0 ? (

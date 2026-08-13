@@ -3805,6 +3805,15 @@ button:focus-visible {
   padding: 6px 10px 0;
 }
 
+.utility-panel .record-heading {
+  display: grid;
+  align-items: start;
+  justify-content: stretch;
+  gap: 4px;
+  padding: 6px 10px 0;
+  border-bottom: 0;
+}
+
 .rule-scroll-list {
   display: grid;
   gap: 10px;
@@ -3838,146 +3847,262 @@ button:focus-visible {
   font: 700 19px "STKaiti", "KaiTi", serif;
 }
 
-.handnote-sidecard img {
-  max-height: 280px;
+.record-handnote-view {
+  grid-template-columns: minmax(220px, 274px) minmax(0, 1fr);
+  align-items: stretch;
 }
 
-.handnote-copy {
-  grid-template-rows: auto auto minmax(0, 1fr);
+.handnote-sidecard {
+  align-content: start;
+  border-color: rgba(207, 174, 112, 0.22);
+  background:
+    linear-gradient(180deg, rgba(246, 235, 214, 0.94), rgba(217, 197, 164, 0.9)),
+    rgba(255, 251, 242, 0.52);
+}
+
+.handnote-sidecard .record-heading {
+  padding: 0;
+}
+
+.handnote-refresh-note {
+  padding: 10px 12px;
+  border: 1px solid rgba(112, 83, 47, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 250, 238, 0.5);
 }
 
 .handnote-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
   min-width: 0;
 }
 
 .handnote-tabs button {
   display: grid;
   min-width: 0;
-  grid-template-columns: 74px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  min-height: 92px;
-  padding: 10px 12px;
-  border: 1px solid rgba(114, 88, 58, 0.2);
-  border-radius: 12px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border: 1px solid rgba(111, 83, 48, 0.18);
+  border-radius: 8px;
   color: #4b3a2a;
-  background: rgba(255, 250, 241, 0.78);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.74), rgba(235, 219, 190, 0.64));
   text-align: left;
   cursor: pointer;
 }
 
 .handnote-tabs button img {
-  width: 74px;
-  height: 74px;
+  width: 58px;
+  height: 58px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 12px rgba(67, 46, 27, 0.14));
+  filter: drop-shadow(0 8px 10px rgba(67, 46, 27, 0.14));
 }
 
 .handnote-tabs button span {
   display: grid;
   min-width: 0;
-  gap: 6px;
+  gap: 4px;
 }
 
 .handnote-tabs button strong {
   overflow: hidden;
   color: #38281d;
-  font-size: 20px;
+  font-size: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .handnote-tabs button small {
-  color: #85715f;
+  color: #7a6653;
   font-size: 12px;
   line-height: 1.45;
 }
 
 .handnote-tabs button.active {
-  border-color: rgba(169, 116, 40, 0.8);
-  background: rgba(248, 236, 210, 0.96);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+  border-color: rgba(147, 91, 34, 0.72);
+  background:
+    linear-gradient(180deg, rgba(251, 237, 204, 0.96), rgba(226, 199, 150, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48), 0 8px 18px rgba(71, 48, 25, 0.12);
+}
+
+.handnote-reader {
+  align-self: center;
+  justify-self: center;
+  width: min(100%, calc(100vh - 150px));
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  isolation: isolate;
+}
+
+.handnote-book-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--handnote-book) center / contain no-repeat;
+  filter: drop-shadow(0 22px 26px rgba(0, 0, 0, 0.28));
+  pointer-events: none;
+  user-select: none;
+}
+
+.handnote-copy {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  gap: 0;
+  padding: 0;
+  grid-template-rows: minmax(0, 1fr);
+  color: #402c1f;
+  text-shadow: 0 1px 0 rgba(255, 248, 226, 0.34);
+}
+
+.theme-zhang .handnote-copy,
+.theme-xian .handnote-copy {
+  inset: 25.5% 10.5% 21.5% 11.8%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12.5%;
+}
+
+.theme-lu .handnote-copy {
+  inset: 10.5% 18% 11.5% 20%;
+  grid-template-rows: 37% minmax(0, 1fr);
+  row-gap: 17%;
+}
+
+.handnote-book-meta {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 2px 8px 0;
+}
+
+.handnote-book-meta span {
+  color: rgba(118, 85, 50, 0.78);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.handnote-book-meta strong {
+  color: #3b2719;
+  font: 700 32px "STKaiti", "KaiTi", serif;
+  line-height: 1.05;
+}
+
+.handnote-book-meta::after {
+  content: "阅后可取其灵材，也可只当故人闲话。";
+  max-width: 15em;
+  color: rgba(76, 56, 38, 0.76);
+  font: 700 17px "STKaiti", "KaiTi", serif;
+  line-height: 1.72;
 }
 
 .handnote-list {
   display: grid;
+  align-content: start;
   gap: 10px;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding-right: 2px;
+  padding: 2px 10px 4px 2px;
+  scrollbar-color: rgba(101, 75, 45, 0.36) transparent;
+}
+
+.theme-lu .handnote-list {
+  padding: 0 16px 4px 8px;
+}
+
+.handnote-list .empty-note {
+  color: #5f4935;
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 18px;
 }
 
 .handnote-entry {
   display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid rgba(103, 82, 55, 0.16);
-  border-radius: 12px;
-  background: rgba(255, 252, 244, 0.82);
-  box-shadow: 0 8px 18px rgba(41, 28, 17, 0.06);
+  gap: 7px;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(91, 67, 39, 0.18);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .handnote-entry.claimed {
-  border-color: rgba(89, 132, 96, 0.28);
-  background: rgba(243, 250, 242, 0.88);
+  border-color: rgba(89, 117, 74, 0.26);
+  background: transparent;
 }
 
 .handnote-entry.expired {
-  opacity: 0.72;
-  filter: grayscale(0.16);
+  opacity: 0.62;
+  filter: grayscale(0.12);
 }
 
 .handnote-entry-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .handnote-entry-header strong {
-  color: #39281d;
-  font: 700 18px "STKaiti", "KaiTi", serif;
+  min-width: 0;
+  color: #382719;
+  font: 700 19px "STKaiti", "KaiTi", serif;
+  line-height: 1.25;
 }
 
 .handnote-entry-header span {
-  color: #9a7741;
+  flex: 0 0 auto;
+  color: #9d6733;
   font-size: 12px;
+  font-weight: 900;
   white-space: nowrap;
 }
 
 .handnote-entry p {
   margin: 0;
-  color: #4f4134;
-  font-size: 14px;
-  line-height: 1.72;
+  color: #4b3828;
+  font: 700 15px "STKaiti", "KaiTi", serif;
+  line-height: 1.78;
 }
 
 .handnote-entry footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(120, 93, 60, 0.14);
+  display: grid;
+  align-items: start;
+  justify-content: start;
+  gap: 3px;
+  padding-top: 2px;
+  border-top: 0;
 }
 
 .handnote-entry footer small,
 .handnote-entry footer span {
-  color: #7d6858;
+  color: rgba(88, 66, 46, 0.78);
   font-size: 12px;
+  font-weight: 800;
 }
 
 .handnote-entry footer button {
-  min-width: 110px;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid rgba(126, 91, 46, 0.34);
-  border-radius: 999px;
-  color: #fff7ea;
-  background: linear-gradient(180deg, rgba(120, 86, 50, 0.96), rgba(67, 47, 30, 0.96));
+  min-width: 78px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(126, 69, 42, 0.42);
+  border-radius: 5px;
+  color: #fff5df;
+  background: linear-gradient(180deg, rgba(139, 78, 50, 0.92), rgba(92, 51, 36, 0.94));
+  box-shadow: 0 4px 8px rgba(64, 33, 19, 0.14);
 }
 
 .handnote-entry footer button:disabled {
@@ -6495,6 +6620,11 @@ button:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .record-handnote-view {
+    grid-template-columns: minmax(200px, 252px) minmax(0, 1fr);
+    gap: 12px;
+  }
+
   .record-sidecard {
     grid-template-columns: 140px minmax(0, 1fr);
     align-items: center;
@@ -6502,11 +6632,35 @@ button:focus-visible {
     padding: 12px;
   }
 
+  .handnote-sidecard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+  }
+
+  .handnote-refresh-note {
+    padding: 8px 10px;
+  }
+
+  .handnote-reader {
+    width: min(100%, calc(100vh - 214px));
+    max-height: calc(100vh - 214px);
+  }
+
+  .handnote-book-meta strong {
+    font-size: 28px;
+  }
+
+  .handnote-book-meta::after {
+    font-size: 15px;
+  }
+
   .record-sidecard img {
     max-height: 180px;
   }
 
-  .record-copy {
+  .record-mainframe:not(.handnote-reader) .record-copy {
     gap: 10px;
     padding: 14px 16px 14px;
   }
@@ -6550,7 +6704,7 @@ button:focus-visible {
   }
 
   .handnote-entry {
-    padding: 10px 12px;
+    padding: 0 0 10px;
   }
 
   .handnote-entry p {
