@@ -239,6 +239,14 @@ type SceneActionFeedback = {
   details: string[];
 };
 
+type SystemPrompt = {
+  id: number;
+  title: string;
+  text: string;
+  details: string[];
+  variant: "reward" | "notice";
+};
+
 type EventsResponse = {
   ok: boolean;
   events: Record<DemoEventId, DemoEventDefinition>;
@@ -319,6 +327,58 @@ const profileTabItems: { id: ProfileTab; note: string }[] = [
 
 const bagCategories: BagCategory[] = ["装备", "丹药", "秘籍", "任务", "材料", "其他"];
 const equipmentViews: EquipmentView[] = ["武器", "服饰", "法宝", "丹药"];
+
+const resourceRewardLabels: Record<keyof DemoSaveState["resources"], string> = {
+  spiritStones: "灵石",
+  spiritMarrow: "灵髓",
+  herbs: "草药",
+  ore: "矿石",
+  pills: "回气丹",
+};
+
+const inventoryRewardLabels: Record<keyof NonNullable<DemoSaveState["inventory"]>, string> = {
+  mouseDemonCore: "山鼠妖丹",
+  worryForgetRoot: "忘忧根",
+  qingmuHealingPills: "青木疗伤丹",
+  jinlingToken: "金灵宗信物",
+};
+
+const handnoteHerbNames: Record<string, string> = {
+  juqi: "聚气草",
+  ningxue: "凝血花",
+  huoli: "火栗",
+  shizhi: "石芝",
+  wugen: "无根萍",
+  taojiao: "桃胶",
+  chiyan: "赤焰花",
+  chensha: "辰砂",
+};
+
+const handnotePillNames: Record<string, string> = {
+  huayu: "化瘀丹",
+  huoxue: "活血丹",
+  xugu: "续骨丹",
+  juling: "聚灵散",
+  huiyuan: "回元散",
+  "juqi-pill": "聚气丹",
+  ningyuan: "凝元丹",
+  pozhang: "破障丹",
+  tiegu: "铁骨散",
+  qinghui: "清秽散",
+  yannian: "延年散",
+  tongmai: "通脉丹",
+};
+
+const handnoteMaterialNames: Record<string, string> = {
+  crudeIron: "粗铁矿",
+  mouseBone: "山鼠兽骨",
+  coldIron: "寒铁",
+  silver: "秘银",
+  flameIron: "炎铁",
+  spiritCrystal: "灵晶石",
+  resonanceCrystal: "灵韵结晶",
+  ember: "万炼余烬",
+};
 
 type PortraitKey =
   | "player"
@@ -1246,6 +1306,93 @@ function createSceneActionFeedback(
   };
 }
 
+function getPromptInventory(state: DemoSaveState) {
+  return {
+    mouseDemonCore: state.inventory?.mouseDemonCore ?? 0,
+    worryForgetRoot: state.inventory?.worryForgetRoot ?? 0,
+    qingmuHealingPills: state.inventory?.qingmuHealingPills ?? 0,
+    jinlingToken: state.inventory?.jinlingToken ?? 0,
+  };
+}
+
+function formatGain(label: string, amount: number) {
+  return `${label} +${amount}`;
+}
+
+function collectRewardDetails(before: DemoSaveState | null, after: DemoSaveState) {
+  if (!before) return [];
+
+  const details: string[] = [];
+
+  (Object.entries(resourceRewardLabels) as Array<[keyof DemoSaveState["resources"], string]>).forEach(
+    ([key, label]) => {
+      const delta = after.resources[key] - before.resources[key];
+      if (delta > 0) details.push(formatGain(label, delta));
+    },
+  );
+
+  const beforeInventory = getPromptInventory(before);
+  const afterInventory = getPromptInventory(after);
+  (Object.entries(inventoryRewardLabels) as Array<[keyof typeof afterInventory, string]>).forEach(
+    ([key, label]) => {
+      const delta = afterInventory[key] - beforeInventory[key];
+      if (delta > 0) details.push(formatGain(label, delta));
+    },
+  );
+
+  const beforeExpansion = getExpansion(before.expansion);
+  const afterExpansion = getExpansion(after.expansion);
+
+  Object.entries(afterExpansion.herbStock).forEach(([id, value]) => {
+    const delta = value - (beforeExpansion.herbStock[id as keyof typeof beforeExpansion.herbStock] ?? 0);
+    if (delta > 0) details.push(formatGain(handnoteHerbNames[id] ?? id, delta));
+  });
+
+  Object.entries(afterExpansion.materialStock).forEach(([id, value]) => {
+    const delta = value - (beforeExpansion.materialStock[id] ?? 0);
+    if (delta > 0) details.push(formatGain(handnoteMaterialNames[id] ?? id, delta));
+  });
+
+  Object.entries(afterExpansion.pillStock).forEach(([id, value]) => {
+    const delta = value - (beforeExpansion.pillStock[id] ?? 0);
+    if (delta > 0) details.push(formatGain(handnotePillNames[id] ?? id, delta));
+  });
+
+  const knownEquipmentIds = new Set(beforeExpansion.craftedEquipment.map((item) => item.id));
+  afterExpansion.craftedEquipment.forEach((item) => {
+    if (!knownEquipmentIds.has(item.id)) details.push(`装备「${item.name}」`);
+  });
+
+  const knownArts = new Set(before.cultivation.learnedArts);
+  after.cultivation.learnedArts.forEach((art) => {
+    if (!knownArts.has(art)) details.push(`习得功法「${art}」`);
+  });
+
+  after.relationships.forEach((relationship) => {
+    const previous = before.relationships.find((item) => item.characterId === relationship.characterId);
+    const delta = relationship.bond - (previous?.bond ?? relationship.bond);
+    if (delta > 0) details.push(`${relationship.name}羁绊 +${delta}`);
+  });
+
+  return details;
+}
+
+function createRewardPrompt(
+  before: DemoSaveState | null,
+  after: DemoSaveState,
+  title = "获得奖励",
+): SystemPrompt | null {
+  const details = collectRewardDetails(before, after);
+  if (details.length === 0) return null;
+  return {
+    id: Date.now(),
+    title,
+    text: "奖励已同步到人物面板、背包、功法栏或关系记录。",
+    details,
+    variant: "reward",
+  };
+}
+
 function getScene(state: DemoSaveState): DemoScene {
   return state.scene ?? "plaza";
 }
@@ -2012,6 +2159,37 @@ function SceneActionFeedbackModal({
   );
 }
 
+function SystemPromptModal({
+  prompt,
+  onClose,
+}: {
+  prompt: SystemPrompt;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const timer = window.setTimeout(onClose, 2800);
+    return () => window.clearTimeout(timer);
+  }, [onClose, prompt.id]);
+
+  return (
+    <div className={`system-prompt-layer ${prompt.variant}`} role="status" aria-live="polite">
+      <section className="system-prompt-card">
+        <button type="button" aria-label="关闭系统提示" onClick={onClose}>
+          ×
+        </button>
+        <span>系统提示</span>
+        <h2>{prompt.title}</h2>
+        <p>{prompt.text}</p>
+        <ul>
+          {prompt.details.map((detail) => (
+            <li key={detail}>{detail}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function UtilityPanel({
   panel,
   currentScene,
@@ -2103,9 +2281,9 @@ function UtilityPanel({
 
   function describeHandnoteReward(reward: HandnoteEntry["reward"]) {
     if (!reward) return "无奖励";
-    if (reward.type === "herb") return `${reward.herbId} ×${reward.amount}`;
-    if (reward.type === "pill") return `${reward.pillId} ×${reward.amount}`;
-    return `${reward.materialId} ×${reward.amount}`;
+    if (reward.type === "herb") return `${handnoteHerbNames[reward.herbId] ?? reward.herbId} ×${reward.amount}`;
+    if (reward.type === "pill") return `${handnotePillNames[reward.pillId] ?? reward.pillId} ×${reward.amount}`;
+    return `${handnoteMaterialNames[reward.materialId] ?? reward.materialId} ×${reward.amount}`;
   }
 
   async function claimHandnote(entry: HandnoteEntry) {
@@ -2145,7 +2323,7 @@ function UtilityPanel({
       activity: {
         title: `${npcName}手记领取`,
         text: entry.reward
-          ? `${entry.title}奖励：${describeHandnoteReward(entry.reward)}`
+          ? `${entry.title}奖励已入包。`
           : `${entry.title}没有额外奖励，但值得再看一遍。`,
       },
     });
@@ -2315,9 +2493,15 @@ function UtilityPanel({
                           <strong>{entry.title}</strong>
                           <span>{status}</span>
                         </div>
-                        <p>{entry.text}</p>
+                        <p>
+                          {entry.text}
+                          {entry.reward && (
+                            <span className="handnote-reward-inline">
+                              （奖励：{describeHandnoteReward(entry.reward)}）
+                            </span>
+                          )}
+                        </p>
                         <footer>
-                          <small>奖励：{describeHandnoteReward(entry.reward)}</small>
                           {entry.reward ? (
                             <button
                               type="button"
@@ -3240,7 +3424,13 @@ function UtilityPanel({
   }
 
   return (
-    <div className={panel === "我的" ? "panel-backdrop profile-backdrop" : "panel-backdrop"}>
+    <div
+      className={panel === "我的" ? "panel-backdrop profile-backdrop" : "panel-backdrop"}
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <section
         className={
           panel === "我的"
@@ -4904,6 +5094,7 @@ function HomeScene({
   expansionBusy,
   musicEnabled,
   sceneFeedback,
+  systemPrompt,
   onAction,
   onSaveExpansion,
   onReset,
@@ -4911,6 +5102,7 @@ function HomeScene({
   onOpenSystem,
   onClosePanel,
   onCloseSceneFeedback,
+  onCloseSystemPrompt,
   onToggleMusic,
   onReplayOpening,
 }: {
@@ -4924,6 +5116,7 @@ function HomeScene({
   expansionBusy: boolean;
   musicEnabled: boolean;
   sceneFeedback: SceneActionFeedback | null;
+  systemPrompt: SystemPrompt | null;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onSaveExpansion: (expansion: ExpansionState, options?: { elapsedMonths?: number; activity?: ExpansionActivity }) => Promise<void>;
   onReset: () => void;
@@ -4931,6 +5124,7 @@ function HomeScene({
   onOpenSystem: (screen: SystemScreen) => void;
   onClosePanel: () => void;
   onCloseSceneFeedback: () => void;
+  onCloseSystemPrompt: () => void;
   onToggleMusic: () => void;
   onReplayOpening: () => void;
 }) {
@@ -4947,6 +5141,9 @@ function HomeScene({
   const actorBond = config.actor === "xiaoxian" ? xiaoxianBond : config.actor === "xiaozhang" ? zhangBond : luBond;
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
   const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
+  const transitionSignature = activeEvent ? `${activeEvent.node.visualStage}:${activeEvent.node.id}` : scene;
+  const previousTransitionSignature = useRef(transitionSignature);
+  const [transitionPulse, setTransitionPulse] = useState(0);
   const currentPortrait =
     activeEvent && activeEvent.node.mode !== "battle"
       ? getSpeakerPortrait(dialogueSpeaker, activeEvent.node)
@@ -4958,6 +5155,12 @@ function HomeScene({
   useEffect(() => {
     setNpcInteractionOpen(false);
   }, [scene]);
+
+  useEffect(() => {
+    if (previousTransitionSignature.current === transitionSignature) return;
+    previousTransitionSignature.current = transitionSignature;
+    setTransitionPulse((value) => value + 1);
+  }, [transitionSignature]);
 
   const stageStyle = {
     "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
@@ -4984,6 +5187,11 @@ function HomeScene({
           <div className="stage-bg">
             <EventStageObjects node={activeEvent.node} />
           </div>
+          {transitionPulse > 0 && (
+            <div key={transitionPulse} className="scene-transition-flash" aria-hidden="true">
+              <i />
+            </div>
+          )}
           <BulletHellCombat
             node={activeEvent.node}
             loadout={getLoadout(state)}
@@ -5019,6 +5227,11 @@ function HomeScene({
             <SceneObjects scene={scene} inBattle={inBattle} />
           )}
         </div>
+        {transitionPulse > 0 && (
+          <div key={transitionPulse} className="scene-transition-flash" aria-hidden="true">
+            <i />
+          </div>
+        )}
 
         {!activeEvent && (
           <aside className="scene-left-rail" aria-label="场景操作">
@@ -5090,6 +5303,13 @@ function HomeScene({
           onReplayOpening={onReplayOpening}
         />
       )}
+
+      {systemPrompt && (
+        <SystemPromptModal
+          prompt={systemPrompt}
+          onClose={onCloseSystemPrompt}
+        />
+      )}
     </main>
   );
 }
@@ -5107,6 +5327,7 @@ function App() {
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
   const [handnoteInitialTab, setHandnoteInitialTab] = useState<HandnoteTab>("鹿真人");
   const [sceneFeedback, setSceneFeedback] = useState<SceneActionFeedback | null>(null);
+  const [systemPrompt, setSystemPrompt] = useState<SystemPrompt | null>(null);
   const [musicEnabled, setMusicEnabled] = useState(
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
   );
@@ -5176,7 +5397,15 @@ function App() {
         body: JSON.stringify({ action, ...requestPayload }),
       });
       replaceSave(responsePayload.save);
-      if (feedbackActions.includes(action)) {
+      const rewardPrompt = createRewardPrompt(
+        beforeState,
+        responsePayload.save.state,
+        feedbackActions.includes(action) ? "获得物品" : "获得奖励",
+      );
+      if (rewardPrompt) {
+        setSceneFeedback(null);
+        setSystemPrompt(rewardPrompt);
+      } else if (feedbackActions.includes(action)) {
         setSceneFeedback(createSceneActionFeedback(beforeState, responsePayload.save.state));
       }
     } catch (error) {
@@ -5193,6 +5422,7 @@ function App() {
     expansion: ExpansionState,
     options?: { elapsedMonths?: number; activity?: ExpansionActivity },
   ) {
+    const beforeState = loadState.status === "ready" ? loadState.save.state : null;
     setExpansionBusy(true);
     try {
       const payload = await fetchJson<SaveResponse>("/demo/expansion", {
@@ -5204,6 +5434,11 @@ function App() {
         }),
       });
       replaceSave(payload.save);
+      const rewardPrompt = createRewardPrompt(beforeState, payload.save.state, "获得物品");
+      if (rewardPrompt) {
+        setSceneFeedback(null);
+        setSystemPrompt(rewardPrompt);
+      }
     } catch (error) {
       setLoadState({
         status: "error",
@@ -5225,6 +5460,7 @@ function App() {
       setPanel(null);
       setSystemScreen(null);
       setSceneFeedback(null);
+      setSystemPrompt(null);
       return payload.save;
     } catch (error) {
       setLoadState({
@@ -5350,6 +5586,7 @@ function App() {
         expansionBusy={expansionBusy}
         musicEnabled={musicEnabled}
         sceneFeedback={sceneFeedback}
+        systemPrompt={systemPrompt}
         onAction={(action, payload) => void perform(action, payload)}
         onSaveExpansion={saveExpansion}
         onReset={() => void reset()}
@@ -5360,6 +5597,7 @@ function App() {
       }}
       onClosePanel={() => setPanel(null)}
       onCloseSceneFeedback={() => setSceneFeedback(null)}
+      onCloseSystemPrompt={() => setSystemPrompt(null)}
       onToggleMusic={toggleAmbientMusic}
       onReplayOpening={() => {
         setPanel(null);
