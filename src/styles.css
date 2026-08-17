@@ -598,6 +598,20 @@ button:focus-visible {
     var(--scene-bg);
 }
 
+.scene-hall .stage-bg,
+.scene-plaza .stage-bg,
+.scene-dormitory .stage-bg,
+.scene-sister_room .stage-bg,
+.scene-meditation_room .stage-bg,
+.scene-forge .stage-bg,
+.scene-alchemy_room .stage-bg,
+.scene-spirit_garden .stage-bg,
+.scene-teleport_array .stage-bg {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .event-stage .stage-bg {
   background-position: center;
   background-size: cover;
