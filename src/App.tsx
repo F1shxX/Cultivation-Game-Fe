@@ -1571,6 +1571,12 @@ function getVisualBackground(visualStage: DemoEventVisualStage) {
   return `url("${assetPath(backgrounds[visualStage])}")`;
 }
 
+function getSceneTransitionSignature(scene: DemoScene, activeEvent: ReturnType<typeof getActiveEvent>) {
+  if (!activeEvent) return scene;
+  if (activeEvent.node.scene) return scene;
+  return `${scene}:${activeEvent.node.visualStage}`;
+}
+
 function getEventButtonLabel(node: DemoEventNode, busy: boolean) {
   if (busy) {
     if (node.mode === "battle") return "战斗中";
@@ -2390,14 +2396,6 @@ function UtilityPanel({
       ];
       return (
         <section className="record-view record-rule-view">
-          <aside className="record-sidecard">
-            <img src={recordAssets.ruleBoardSmall} alt="" aria-hidden="true" />
-            <div>
-              <span>门规原稿</span>
-              <strong>鹿石宗规矩牌</strong>
-              <p>给新人的第一眼提醒。别急着出去惹事，先把这几条记牢。</p>
-            </div>
-          </aside>
           <div className="record-mainframe record-rule-board">
             <img className="record-art" src={recordAssets.ruleBoardLarge} alt="" aria-hidden="true" />
             <div className="record-copy">
@@ -2415,8 +2413,8 @@ function UtilityPanel({
                 ))}
               </ol>
             </div>
-            </div>
-          </section>
+          </div>
+        </section>
       );
     }
 
@@ -2435,44 +2433,41 @@ function UtilityPanel({
 
       return (
         <section className="record-view record-handnote-view">
-          <aside className="record-sidecard handnote-sidecard">
-            <header className="scroll-panel-header record-heading">
-              <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
-              <h3>{currentTab.id}手记</h3>
-              <small>{currentTheme.summary}</small>
-            </header>
-            {handnoteTabs.length > 1 && (
-              <div className="handnote-tabs">
-                {handnoteTabs.map((tab) => {
-                  const theme = recordAssets.handnotes[tab.id];
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      className={handnoteTab === tab.id ? "active" : ""}
-                      onClick={() => {
-                        playSceneClick();
-                        setHandnoteTab(tab.id);
-                      }}
-                    >
-                      <img src={theme.cover} alt="" aria-hidden="true" />
-                      <span>
-                        <strong>{tab.id}</strong>
-                        <small>{tab.note}</small>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <p className="handnote-refresh-note">每年刷新 1 到 2 条，奖励保留 6 个月，情感条目不会给奖励。</p>
-          </aside>
           <div
             className={`record-mainframe handnote-reader ${handnoteThemeClass[currentTab.id]}`}
             style={{ "--handnote-book": `url("${currentTheme.cover}")` } as CSSProperties}
           >
             <div className="handnote-book-surface" aria-hidden="true" />
             <div className="record-copy handnote-copy">
+              <header className="scroll-panel-header record-heading handnote-heading">
+                <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
+                <h3>{currentTab.id}手记</h3>
+                <small>{currentTheme.summary}</small>
+              </header>
+              {handnoteTabs.length > 1 && (
+                <div className="handnote-tabs handnote-tabs-inline">
+                  {handnoteTabs.map((tab) => {
+                    const theme = recordAssets.handnotes[tab.id];
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        className={handnoteTab === tab.id ? "active" : ""}
+                        onClick={() => {
+                          playSceneClick();
+                          setHandnoteTab(tab.id);
+                        }}
+                      >
+                        <img src={theme.cover} alt="" aria-hidden="true" />
+                        <span>
+                          <strong>{tab.id}</strong>
+                          <small>{tab.note}</small>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <div className="handnote-book-meta">
                 <span>{currentTheme.subtitle}</span>
                 <strong>{currentTab.id}</strong>
@@ -5141,7 +5136,7 @@ function HomeScene({
   const actorBond = config.actor === "xiaoxian" ? xiaoxianBond : config.actor === "xiaozhang" ? zhangBond : luBond;
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
   const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
-  const transitionSignature = activeEvent ? `${activeEvent.node.visualStage}:${activeEvent.node.id}` : scene;
+  const transitionSignature = getSceneTransitionSignature(scene, activeEvent);
   const previousTransitionSignature = useRef(transitionSignature);
   const [transitionPulse, setTransitionPulse] = useState(0);
   const currentPortrait =
