@@ -283,7 +283,7 @@ const recordAssets: {
   >;
 } = {
   ruleBoardSmall: assetPath("assets/tapflow/records/rule-board-small.webp"),
-  ruleBoardLarge: assetPath("assets/tapflow/records/source/翻开本子3_灰皮线装白纸.png"),
+  ruleBoardLarge: assetPath("assets/tapflow/records/rule-board-large.webp"),
   handnotes: {
     "鹿真人": {
       cover: assetPath("assets/tapflow/records/handnote-lavender-vertical.webp"),
@@ -4993,11 +4993,45 @@ function ActiveEventOverlay({
       : node.mode === "battle"
         ? "进入战斗"
         : getEventButtonLabel(node, busy);
+  const rewardItems = node.mode === "reward" ? Array.from(node.text.matchAll(/「([^」]+)」/g)).map((match) => match[1]) : [];
 
   function advancePrimary() {
     if (!canClickToAdvance) return;
     playSceneClick();
     onAction(primaryAction);
+  }
+
+  if (node.mode === "reward") {
+    return (
+      <>
+        <section className="event-brief vn-event-brief" aria-label="当前事件">
+          <span>{definition.category}</span>
+          <strong>{definition.title}</strong>
+          <small>{getVisualStageTitle(node.visualStage)}</small>
+        </section>
+
+        <section className="event-reward-panel" aria-label="系统获得提示" role="status">
+          <span>系统提示</span>
+          <h2>获得功法</h2>
+          <p>{node.text}</p>
+          <div className="event-reward-items">
+            {(rewardItems.length > 0 ? rewardItems : [definition.rewardText]).map((item) => (
+              <strong key={item}>{item}</strong>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              playSceneClick();
+              onAction(primaryAction);
+            }}
+          >
+            {getEventButtonLabel(node, busy)}
+          </button>
+        </section>
+      </>
+    );
   }
 
   return (

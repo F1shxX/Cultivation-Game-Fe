@@ -439,7 +439,7 @@ button:focus-visible {
   background:
     linear-gradient(90deg, rgba(5, 7, 8, 0.72), rgba(5, 7, 8, 0.18) 46%, rgba(5, 7, 8, 0.72)),
     rgba(0, 0, 0, 0.18);
-  animation: scene-fade-cover 620ms ease-out both;
+  animation: scene-fade-cover 1150ms ease-out both;
 }
 
 .scene-transition-flash i {
@@ -453,7 +453,7 @@ button:focus-visible {
   box-shadow:
     0 0 18px rgba(255, 234, 168, 0.62),
     0 0 46px rgba(116, 206, 255, 0.38);
-  animation: scene-sword-glint 620ms ease-out both;
+  animation: scene-sword-glint 1150ms ease-out both;
 }
 
 @keyframes scene-fade-cover {
@@ -461,6 +461,9 @@ button:focus-visible {
     opacity: 0;
   }
   24% {
+    opacity: 1;
+  }
+  64% {
     opacity: 1;
   }
   100% {
@@ -474,6 +477,9 @@ button:focus-visible {
     transform: translateX(-10%) rotate(-11deg);
   }
   34% {
+    opacity: 1;
+  }
+  68% {
     opacity: 1;
   }
   100% {
@@ -2862,12 +2868,12 @@ button:focus-visible {
 }
 
 .vn-dialogue-panel {
-  left: clamp(350px, 30vw, 520px);
-  right: clamp(34px, 4vw, 74px);
+  left: clamp(220px, 18vw, 320px);
+  right: clamp(20px, 3vw, 54px);
   bottom: clamp(20px, 3vh, 36px);
   grid-template-columns: minmax(0, 1fr);
-  min-height: clamp(250px, 30vh, 310px);
-  max-height: 36vh;
+  min-height: clamp(230px, 28vh, 300px);
+  max-height: 35vh;
   padding: 0;
   cursor: pointer;
   background:
@@ -2893,8 +2899,8 @@ button:focus-visible {
 
 .vn-dialogue-panel .event-story-speaker {
   position: absolute;
-  left: 38px;
-  top: 104px;
+  left: 42px;
+  top: 92px;
   z-index: 2;
   min-width: 184px;
   min-height: 44px;
@@ -2922,10 +2928,10 @@ button:focus-visible {
   align-self: end;
   max-height: none;
   overflow: hidden;
-  padding: 145px 78px 60px 78px;
+  padding: 132px 82px 58px 78px;
   color: #fffdf4;
   font-family: "STKaiti", "KaiTi", "FangSong", serif;
-  font-size: clamp(24px, 2.35vw, 36px);
+  font-size: clamp(22px, 2.05vw, 32px);
   font-weight: 900;
   line-height: 1.36;
   letter-spacing: 0;
@@ -2949,22 +2955,33 @@ button:focus-visible {
 }
 
 .vn-dialogue-panel.mode-choice .event-story-actions {
-  left: auto;
-  right: 42px;
-  bottom: 30px;
-  width: min(360px, 30vw);
+  position: fixed;
+  z-index: 82;
+  top: 50vh;
+  left: 50vw;
+  right: auto;
+  bottom: auto;
+  width: min(560px, 46vw);
+  transform: translate(-50%, -42%);
   pointer-events: auto;
 }
 
 .vn-dialogue-panel.mode-choice .event-story-choices {
   width: 100%;
-  gap: 9px;
+  gap: 12px;
 }
 
 .vn-dialogue-panel.mode-choice .event-story-choices button {
-  min-height: 44px;
-  border-radius: 4px;
-  background: rgba(32, 24, 16, 0.86);
+  min-height: 58px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  border-color: rgba(255, 238, 190, 0.48);
+  background:
+    linear-gradient(180deg, rgba(45, 33, 22, 0.94), rgba(13, 11, 10, 0.96));
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 248, 224, 0.08);
+  font-size: clamp(18px, 1.45vw, 24px);
 }
 
 .vn-continue-hint {
@@ -2981,6 +2998,106 @@ button:focus-visible {
 
 .vn-dialogue-panel.mode-choice .vn-continue-hint {
   display: none;
+}
+
+.event-reward-panel {
+  position: absolute;
+  z-index: 84;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: min(560px, 46vw);
+  gap: 12px;
+  padding: 28px 32px 26px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 232, 171, 0.58);
+  border-radius: 8px;
+  color: #fff8e7;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(248, 221, 137, 0.22), transparent 36%),
+    linear-gradient(180deg, rgba(38, 30, 22, 0.96), rgba(12, 10, 9, 0.98));
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.56),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.event-reward-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 18%;
+  left: 18%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #f4d784, #9bd6ff, transparent);
+}
+
+.event-reward-panel span {
+  color: #9bd6ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.event-reward-panel h2,
+.event-reward-panel p {
+  margin: 0;
+}
+
+.event-reward-panel h2 {
+  color: #fff1bd;
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(30px, 2.8vw, 42px);
+  line-height: 1.1;
+}
+
+.event-reward-panel p {
+  color: #f1e4c8;
+  font-size: clamp(15px, 1.1vw, 18px);
+  line-height: 1.65;
+}
+
+.event-reward-items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.event-reward-items strong {
+  display: grid;
+  min-height: 52px;
+  place-items: center;
+  padding: 8px 10px;
+  border: 1px solid rgba(245, 215, 126, 0.34);
+  border-radius: 6px;
+  color: #fff4ce;
+  background: rgba(121, 81, 35, 0.36);
+  font-family: "STKaiti", "KaiTi", "FangSong", serif;
+  font-size: clamp(17px, 1.35vw, 22px);
+  line-height: 1.2;
+}
+
+.event-reward-panel button {
+  justify-self: center;
+  min-width: 168px;
+  min-height: 44px;
+  margin-top: 4px;
+  border: 1px solid rgba(255, 238, 181, 0.6);
+  border-radius: 6px;
+  color: #fff8e7;
+  background: linear-gradient(180deg, rgba(124, 84, 39, 0.96), rgba(51, 37, 24, 0.98));
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.event-reward-panel button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.event-reward-panel button:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .scene-npc-strip {
@@ -3846,30 +3963,45 @@ button:focus-visible {
 }
 
 .record-utility {
-  background:
-    radial-gradient(circle at 50% 12%, rgba(246, 227, 173, 0.14), transparent 28%),
-    linear-gradient(180deg, rgba(28, 22, 17, 0.98), rgba(12, 11, 10, 0.99));
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .record-utility > header {
-  min-height: 58px;
-  padding: 14px 18px;
-  background: linear-gradient(90deg, rgba(75, 54, 32, 0.52), rgba(18, 15, 12, 0.18));
+  position: absolute;
+  z-index: 4;
+  top: 14px;
+  right: 16px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .record-utility h2 {
-  color: #f3d89a;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .record-utility > header button {
+  min-width: 78px;
   border-color: rgba(245, 215, 126, 0.36);
-  background: rgba(62, 43, 25, 0.9);
+  background: rgba(24, 18, 13, 0.66);
+  backdrop-filter: blur(6px);
 }
 
 .record-body {
   display: grid;
   min-height: 0;
-  padding: 14px;
+  height: 100%;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -3921,11 +4053,9 @@ button:focus-visible {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 239, 204, 0.16);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(255, 251, 239, 0.2), transparent 44%),
-    rgba(255, 248, 234, 0.08);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .record-art {
@@ -4029,9 +4159,10 @@ button:focus-visible {
 }
 
 .record-rule-view .record-rule-board {
-  width: min(720px, 78vw);
-  height: min(100%, 620px);
-  min-height: 460px;
+  width: min(780px, 78vw);
+  height: min(100%, 650px);
+  min-height: 480px;
+  filter: drop-shadow(0 26px 36px rgba(0, 0, 0, 0.32));
 }
 
 .record-rule-board .record-copy {
@@ -4152,7 +4283,7 @@ button:focus-visible {
 .handnote-reader {
   align-self: center;
   justify-self: center;
-  width: min(100%, calc(100vh - 112px), 760px);
+  width: min(100%, calc(100vh - 76px), 800px);
   aspect-ratio: 1 / 1;
   min-height: 0;
   overflow: visible;
@@ -4181,7 +4312,7 @@ button:focus-visible {
   height: auto;
   gap: 0;
   padding: 0;
-  grid-template-rows: auto auto minmax(0, 0.34fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   color: #402c1f;
   text-shadow: 0 1px 0 rgba(255, 248, 226, 0.34);
 }
@@ -4204,8 +4335,14 @@ button:focus-visible {
   padding: 0 8px;
 }
 
+.handnote-heading span,
+.handnote-heading small,
+.handnote-book-meta {
+  display: none;
+}
+
 .handnote-heading h3 {
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .handnote-heading small {
