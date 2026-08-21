@@ -4309,102 +4309,123 @@ button:focus-visible {
   display: grid;
   min-width: 0;
   min-height: 0;
-  height: auto;
   gap: 0;
   padding: 0;
-  grid-template-rows: auto minmax(0, 1fr);
   color: #402c1f;
   text-shadow: 0 1px 0 rgba(255, 248, 226, 0.34);
 }
 
-.theme-zhang .handnote-copy,
-.theme-xian .handnote-copy {
-  inset: 18% 10.5% 18.5% 11.8%;
-  grid-template-columns: minmax(0, 1fr);
-  row-gap: 6px;
+.handnote-page {
+  min-width: 0;
+  min-height: 0;
 }
 
-.theme-lu .handnote-copy {
-  inset: 9.5% 18% 11.5% 20%;
+.handnote-intro {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.handnote-entries {
+  min-height: 0;
+}
+
+.theme-lu .handnote-copy,
+.theme-zhang .handnote-copy {
+  inset: 18% 10.5% 18.5% 11.8%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: 7%;
+}
+
+.theme-xian .handnote-copy {
+  inset: 8% 18.5% 8% 19%;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 7px;
+  grid-template-rows: minmax(0, 0.44fr) minmax(0, 0.56fr);
+  row-gap: 7%;
 }
 
 .handnote-heading {
-  gap: 2px;
-  padding: 0 8px;
+  gap: 7px;
+  padding: 6px 7px 0;
 }
 
-.handnote-heading span,
-.handnote-heading small,
-.handnote-book-meta {
-  display: none;
+.handnote-heading span {
+  color: rgba(119, 84, 51, 0.84);
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 .handnote-heading h3 {
-  font-size: 24px;
+  color: #3a2518;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .handnote-heading small {
-  max-width: 36em;
-  color: rgba(78, 59, 41, 0.78);
+  display: block;
+  max-width: 16em;
+  color: rgba(75, 56, 39, 0.86);
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.8;
 }
 
-.handnote-book-meta {
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  min-width: 0;
-  padding: 2px 8px 0;
-}
-
-.handnote-book-meta span {
-  color: rgba(118, 85, 50, 0.78);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.handnote-book-meta strong {
-  color: #3b2719;
-  font: 700 32px "STKaiti", "KaiTi", serif;
-  line-height: 1.05;
-}
-
-.handnote-book-meta::after {
-  content: "阅后可取其灵材，也可只当故人闲话。";
-  max-width: 15em;
-  color: rgba(76, 56, 38, 0.76);
-  font: 700 17px "STKaiti", "KaiTi", serif;
-  line-height: 1.72;
+.handnote-intro::after {
+  width: 54px;
+  height: 1px;
+  border-top: 1px solid rgba(90, 62, 34, 0.32);
+  content: "";
 }
 
 .handnote-list {
   display: grid;
   align-content: start;
-  gap: 10px;
+  height: 100%;
+  gap: 14px;
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding: 2px 10px 4px 2px;
+  padding: 6px 8px 4px 4px;
   scrollbar-color: rgba(101, 75, 45, 0.36) transparent;
 }
 
-.theme-lu .handnote-list {
-  padding: 0 16px 4px 8px;
+.theme-xian .handnote-intro {
+  padding: 1% 2% 0;
+}
+
+.theme-xian .handnote-heading {
+  gap: 6px;
+  padding: 0;
+}
+
+.theme-xian .handnote-heading h3 {
+  font-size: 27px;
+}
+
+.theme-xian .handnote-list {
+  padding: 4px 12px 4px 4px;
 }
 
 .handnote-list .empty-note {
   color: #5f4935;
-  font-family: "STKaiti", "KaiTi", serif;
-  font-size: 18px;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.8;
 }
 
 .handnote-entry {
   display: grid;
-  gap: 7px;
-  padding: 0 0 12px;
+  gap: 10px;
+  padding: 5px 3px 15px;
   border: 0;
-  border-bottom: 1px solid rgba(91, 67, 39, 0.18);
+  border-bottom: 1px solid rgba(91, 67, 39, 0.26);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -4422,7 +4443,7 @@ button:focus-visible {
 
 .handnote-entry-header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
@@ -4430,23 +4451,41 @@ button:focus-visible {
 .handnote-entry-header strong {
   min-width: 0;
   color: #382719;
-  font: 700 19px "STKaiti", "KaiTi", serif;
-  line-height: 1.25;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
-.handnote-entry-header span {
+.handnote-entry-meta {
+  display: grid;
   flex: 0 0 auto;
-  color: #9d6733;
+  justify-items: end;
+  gap: 3px;
+  color: #8f633c;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: right;
   white-space: nowrap;
+}
+
+.handnote-entry-meta time {
+  color: rgba(95, 72, 50, 0.78);
+}
+
+.handnote-entry-meta span {
+  color: #9d6733;
 }
 
 .handnote-entry p {
   margin: 0;
   color: #4b3828;
-  font: 700 15px "STKaiti", "KaiTi", serif;
-  line-height: 1.78;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.95;
 }
 
 .handnote-reward-inline {
@@ -4466,8 +4505,9 @@ button:focus-visible {
 .handnote-entry footer small,
 .handnote-entry footer span {
   color: rgba(88, 66, 46, 0.78);
-  font-size: 12px;
-  font-weight: 800;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .handnote-entry footer button {

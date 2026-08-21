@@ -286,8 +286,8 @@ const recordAssets: {
   ruleBoardLarge: assetPath("assets/tapflow/records/rule-board-large.webp"),
   handnotes: {
     "鹿真人": {
-      cover: assetPath("assets/tapflow/records/handnote-lavender-vertical.webp"),
-      subtitle: "淡紫藤环竖翻",
+      cover: assetPath("assets/tapflow/records/handnote-gray-white.webp"),
+      subtitle: "灰皮线装白纸",
       summary: "鹿真人云游时随手记下的行笔，像旧稿，也像线索。",
     },
     "小张": {
@@ -296,8 +296,8 @@ const recordAssets: {
       summary: "小张的字和人一样横冲直撞，内容却都挺实用。",
     },
     "小娴": {
-      cover: assetPath("assets/tapflow/records/handnote-gray-white.webp"),
-      subtitle: "灰皮线装白纸",
+      cover: assetPath("assets/tapflow/records/handnote-lavender-vertical.webp"),
+      subtitle: "淡紫藤环竖翻",
       summary: "小娴的手记更像备忘录，轻巧，但总藏着一点真东西。",
     },
   },
@@ -2417,84 +2417,87 @@ function UtilityPanel({
           >
             <div className="handnote-book-surface" aria-hidden="true" />
             <div className="record-copy handnote-copy">
-              <header className="scroll-panel-header record-heading handnote-heading">
-                <span>{handnoteTabs.length === 1 ? "场景手记" : "三位手记"}</span>
-                <h3>{currentTab.id}手记</h3>
-                <small>{currentTheme.summary}</small>
-              </header>
-              {handnoteTabs.length > 1 && (
-                <div className="handnote-tabs handnote-tabs-inline">
-                  {handnoteTabs.map((tab) => {
-                    const theme = recordAssets.handnotes[tab.id];
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        className={handnoteTab === tab.id ? "active" : ""}
-                        onClick={() => {
-                          playSceneClick();
-                          setHandnoteTab(tab.id);
-                        }}
-                      >
-                        <img src={theme.cover} alt="" aria-hidden="true" />
-                        <span>
-                          <strong>{tab.id}</strong>
-                          <small>{tab.note}</small>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="handnote-book-meta">
-                <span>{currentTheme.subtitle}</span>
-                <strong>{currentTab.id}</strong>
-              </div>
-              <div className="handnote-list">
-                {entries.length === 0 ? (
-                  <p className="empty-note">当前没有可阅读的手记，等等下一次刷新。</p>
-                ) : (
-                  entries.map((entry) => {
-                    const expired = isHandnoteExpired(entry);
-                    const status = entry.claimed ? "已领取" : expired ? "已过期" : entry.reward ? "可领取" : "情感条目";
-                    return (
-                      <article
-                        key={entry.id}
-                        className={`handnote-entry ${entry.claimed ? "claimed" : ""} ${expired ? "expired" : ""}`}
-                      >
-                        <div className="handnote-entry-header">
-                          <strong>{entry.title}</strong>
-                          <span>{status}</span>
-                        </div>
-                        <p>
-                          {entry.text}
-                          {entry.reward && (
-                            <span className="handnote-reward-inline">
-                              （奖励：{describeHandnoteReward(entry.reward)}）
-                            </span>
-                          )}
-                        </p>
-                        <footer>
-                          {entry.reward ? (
-                            <button
-                              type="button"
-                              disabled={entry.claimed || expired || expansionBusy || Boolean(busyAction)}
-                              onClick={() => {
-                                playSceneClick();
-                                void claimHandnote(entry);
-                              }}
-                            >
-                              {entry.claimed ? "已领取" : expired ? "已过期" : "领取奖励"}
-                            </button>
-                          ) : (
-                            <span>无可领取奖励</span>
-                          )}
-                        </footer>
-                      </article>
-                    );
-                  })
+              <section className="handnote-page handnote-intro">
+                <header className="scroll-panel-header record-heading handnote-heading">
+                  <span>{currentTab.note}</span>
+                  <h3>{currentTab.id}手记</h3>
+                  <small>{currentTheme.summary}</small>
+                </header>
+                {handnoteTabs.length > 1 && (
+                  <div className="handnote-tabs handnote-tabs-inline">
+                    {handnoteTabs.map((tab) => {
+                      const theme = recordAssets.handnotes[tab.id];
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          className={handnoteTab === tab.id ? "active" : ""}
+                          onClick={() => {
+                            playSceneClick();
+                            setHandnoteTab(tab.id);
+                          }}
+                        >
+                          <img src={theme.cover} alt="" aria-hidden="true" />
+                          <span>
+                            <strong>{tab.id}</strong>
+                            <small>{tab.note}</small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-              </div>
+              </section>
+              <section className="handnote-page handnote-entries">
+                <div className="handnote-list">
+                  {entries.length === 0 ? (
+                    <p className="empty-note">当前没有可阅读的手记，等等下一次刷新。</p>
+                  ) : (
+                    entries.map((entry) => {
+                      const expired = isHandnoteExpired(entry);
+                      const status = entry.claimed ? "已领取" : expired ? "已过期" : entry.reward ? "可领取" : "情感条目";
+                      return (
+                        <article
+                          key={entry.id}
+                          className={`handnote-entry ${entry.claimed ? "claimed" : ""} ${expired ? "expired" : ""}`}
+                        >
+                          <div className="handnote-entry-header">
+                            <strong>{entry.title}</strong>
+                            <div className="handnote-entry-meta">
+                              <time>第{entry.createdAt.year}年{entry.createdAt.month}月</time>
+                              <span>{status}</span>
+                            </div>
+                          </div>
+                          <p>
+                            {entry.text}
+                            {entry.reward && (
+                              <span className="handnote-reward-inline">
+                                （奖励：{describeHandnoteReward(entry.reward)}）
+                              </span>
+                            )}
+                          </p>
+                          <footer>
+                            {entry.reward ? (
+                              <button
+                                type="button"
+                                disabled={entry.claimed || expired || expansionBusy || Boolean(busyAction)}
+                                onClick={() => {
+                                  playSceneClick();
+                                  void claimHandnote(entry);
+                                }}
+                              >
+                                {entry.claimed ? "已领取" : expired ? "已过期" : "领取奖励"}
+                              </button>
+                            ) : (
+                              <span>无可领取奖励</span>
+                            )}
+                          </footer>
+                        </article>
+                      );
+                    })
+                  )}
+                </div>
+              </section>
             </div>
           </div>
         </section>
