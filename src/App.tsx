@@ -5157,8 +5157,6 @@ function HomeScene({
   const actorName = config.actor === "xiaoxian" ? "小娴" : config.actor === "xiaozhang" ? "小张" : "鹿真人";
   const dialogueSpeaker = activeEvent?.node.speaker ?? (inBattle ? "张真人" : actorName);
   const transitionSignature = getSceneTransitionSignature(scene, activeEvent);
-  const previousTransitionSignature = useRef(transitionSignature);
-  const [transitionPulse, setTransitionPulse] = useState(0);
   const currentPortrait =
     activeEvent && activeEvent.node.mode !== "battle"
       ? getSpeakerPortrait(dialogueSpeaker, activeEvent.node)
@@ -5170,12 +5168,6 @@ function HomeScene({
   useEffect(() => {
     setNpcInteractionOpen(false);
   }, [scene]);
-
-  useEffect(() => {
-    if (previousTransitionSignature.current === transitionSignature) return;
-    previousTransitionSignature.current = transitionSignature;
-    setTransitionPulse((value) => value + 1);
-  }, [transitionSignature]);
 
   const stageStyle = {
     "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
@@ -5199,14 +5191,9 @@ function HomeScene({
           className={`stage scene-${scene} accent-${config.accent} battle-stage event-stage visual-${activeEvent.node.visualStage}`}
           style={battleStyle}
         >
-          <div className="stage-bg">
+          <div key={transitionSignature} className="stage-bg scene-background-enter">
             <EventStageObjects node={activeEvent.node} />
           </div>
-          {transitionPulse > 0 && (
-            <div key={transitionPulse} className="scene-transition-flash" aria-hidden="true">
-              <i />
-            </div>
-          )}
           <BulletHellCombat
             node={activeEvent.node}
             loadout={getLoadout(state)}
@@ -5235,18 +5222,13 @@ function HomeScene({
           inBattle ? "battle-stage" : ""
         } ${visualStage ? `event-stage visual-${visualStage}` : ""}`}
       >
-        <div className="stage-bg">
+        <div key={transitionSignature} className="stage-bg scene-background-enter">
           {activeEvent ? (
             <EventStageObjects node={activeEvent.node} />
           ) : (
             <SceneObjects scene={scene} inBattle={inBattle} />
           )}
         </div>
-        {transitionPulse > 0 && (
-          <div key={transitionPulse} className="scene-transition-flash" aria-hidden="true">
-            <i />
-          </div>
-        )}
 
         {!activeEvent && (
           <aside className="scene-left-rail" aria-label="场景操作">
