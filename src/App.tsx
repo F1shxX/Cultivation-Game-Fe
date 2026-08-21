@@ -395,7 +395,7 @@ type PortraitExpression = "normal" | "happy" | "serious" | "snark";
 
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.PROD ? `${window.location.origin}/wanhua-api` : "http://localhost:3001");
+  (import.meta.env.PROD ? `${window.location.origin}/wanhua-api` : window.location.origin);
 
 function assetPath(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
@@ -3717,6 +3717,7 @@ type CombatConfig = {
   bossHp: number;
   enemyHp: number;
   enemySpeed: number;
+  enemyDamage: number;
   spawnEvery: number;
   maxEnemies: number;
   rewardBase: number;
@@ -3852,6 +3853,7 @@ function getCombatConfig(node: DemoEventNode): CombatConfig {
       bossHp: 680,
       enemyHp: 26,
       enemySpeed: 92,
+      enemyDamage: 7,
       spawnEvery: 1.35,
       maxEnemies: 16,
       rewardBase: 18,
@@ -3871,6 +3873,7 @@ function getCombatConfig(node: DemoEventNode): CombatConfig {
       bossHp: 560,
       enemyHp: 24,
       enemySpeed: 98,
+      enemyDamage: 8,
       spawnEvery: 1.45,
       maxEnemies: 14,
       rewardBase: 36,
@@ -3890,6 +3893,7 @@ function getCombatConfig(node: DemoEventNode): CombatConfig {
       bossHp: 620,
       enemyHp: 28,
       enemySpeed: 108,
+      enemyDamage: 9,
       spawnEvery: 1.55,
       maxEnemies: 14,
       rewardBase: 40,
@@ -3901,15 +3905,16 @@ function getCombatConfig(node: DemoEventNode): CombatConfig {
     id: node.id,
     title: node.title,
     objective: node.id === "minions" ? "清除邪祟爪牙" : "清掉山鼠仔",
-    targetKills: node.id === "minions" ? 22 : 24,
+    targetKills: node.id === "minions" ? 22 : 12,
     surviveSeconds: 0,
     boss: false,
     bossName: "",
     bossHp: 0,
-    enemyHp: node.id === "minions" ? 28 : 22,
-    enemySpeed: node.id === "minions" ? 112 : 104,
-    spawnEvery: 0.7,
-    maxEnemies: node.id === "minions" ? 20 : 22,
+    enemyHp: node.id === "minions" ? 28 : 16,
+    enemySpeed: node.id === "minions" ? 112 : 72,
+    enemyDamage: node.id === "minions" ? 8 : 5,
+    spawnEvery: node.id === "minions" ? 0.7 : 1.45,
+    maxEnemies: node.id === "minions" ? 20 : 3,
     rewardBase: node.id === "minions" ? 28 : 24,
     theme: node.id === "minions" ? "wish" : "mouse",
   };
@@ -4002,7 +4007,7 @@ function spawnCombatEnemy(runtime: CombatRuntime, config: CombatConfig, kind: "m
     hp,
     maxHp: hp,
     speed: kind === "boss" ? 58 : config.enemySpeed + Math.min(22, runtime.elapsed * 0.4),
-    damage: kind === "boss" ? 18 : 8,
+    damage: kind === "boss" ? 18 : config.enemyDamage,
     attackCd: 0,
     slowTimer: 0,
     burnTimer: 0,
