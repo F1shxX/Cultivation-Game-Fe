@@ -2387,32 +2387,10 @@ function UtilityPanel({
 
   function renderPanelBody() {
     if (panel === "门规") {
-      const rules = [
-        "不盗不劫",
-        "不伤无辜",
-        "同门相护",
-        "道在自身",
-        "出门前记得熄炉火",
-      ];
       return (
         <section className="record-view record-rule-view">
           <div className="record-mainframe record-rule-board">
-            <img className="record-art" src={recordAssets.ruleBoardLarge} alt="" aria-hidden="true" />
-            <div className="record-copy">
-              <header className="scroll-panel-header record-heading">
-                <span>鹿石宗门规书卷</span>
-                <h3>入宗先看规矩</h3>
-                <small>书卷可在大厅随时翻看，内容不会变化，但会提醒你该注意什么。</small>
-              </header>
-              <ol className="rule-scroll-list">
-                {rules.map((rule, index) => (
-                  <li key={rule}>
-                    <strong>{String(index + 1).padStart(2, "0")}</strong>
-                    <span>{rule}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <img className="record-art" src={recordAssets.ruleBoardLarge} alt="鹿石宗门规" />
           </div>
         </section>
       );
