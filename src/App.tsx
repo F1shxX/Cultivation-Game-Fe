@@ -130,10 +130,12 @@ type DemoEventChoice = {
   label: string;
   logTitle: string;
   logText: string;
+  nextNodeId?: string;
 };
 
 type DemoEventNode = {
   id: string;
+  nextNodeId?: string;
   title: string;
   speaker: string;
   text: string;
@@ -1522,6 +1524,68 @@ function getActiveEvent(
   const definition = events[active.id];
   const node = definition.nodes[active.nodeIndex];
   return { active, definition, node };
+}
+
+function getOptimisticEventSave(
+  save: DemoSave,
+  action: DemoAction,
+  events: Record<DemoEventId, DemoEventDefinition>,
+): DemoSave | null {
+  const active = save.state.activeEvent;
+  if (!active) return null;
+
+  const definition = events[active.id];
+  const currentNode = definition?.nodes[active.nodeIndex];
+  if (!definition || !currentNode) return null;
+
+  let nextIndex: number;
+  let nextScene = save.state.scene ?? "plaza";
+
+  if (action.startsWith("event_choice:")) {
+    const choice = currentNode.choices?.find((item) => item.action === action);
+    if (!choice || currentNode.mode !== "choice") return null;
+    nextIndex = definition.nodes.findIndex((node) => node.id === choice.nextNodeId);
+  } else if (action === "advance_event") {
+    if (currentNode.mode === "choice" || currentNode.mode === "battle") return null;
+    nextIndex = currentNode.nextNodeId
+      ? definition.nodes.findIndex((node) => node.id === currentNode.nextNodeId)
+      : active.nodeIndex + 1;
+  } else if (action.startsWith("change_scene:")) {
+    const requestedScene = action.replace("change_scene:", "") as DemoScene;
+    const expectedScene = active.awaitingScene ?? currentNode.continueScene ?? null;
+    if (!expectedScene || expectedScene !== requestedScene) return null;
+    nextScene = requestedScene;
+    nextIndex = active.nodeIndex + 1;
+  } else {
+    return null;
+  }
+
+  if (nextIndex < 0 || nextIndex >= definition.nodes.length) {
+    return {
+      ...save,
+      state: {
+        ...save.state,
+        activeEvent: null,
+        location: "home",
+        scene: active.id === "intro_lushi" ? "plaza" : nextScene,
+      },
+    };
+  }
+
+  const nextNode = definition.nodes[nextIndex];
+  return {
+    ...save,
+    state: {
+      ...save.state,
+      scene: nextNode.scene ?? nextScene,
+      location: nextNode.mode === "battle" ? "battle" : "event",
+      activeEvent: {
+        ...active,
+        nodeIndex: nextIndex,
+        awaitingScene: nextNode.continueScene ?? null,
+      },
+    },
+  };
 }
 
 function getVisualStageTitle(visualStage: DemoEventVisualStage) {
@@ -5073,7 +5137,7 @@ function ActiveEventOverlay({
                     onAction(choice.action);
                   }}
                 >
-                  {busyAction === choice.action ? "处理中" : choice.label}
+                  {busyAction === choice.action ? "翻页中..." : choice.label}
                 </button>
               ))}
             </div>
@@ -5092,7 +5156,7 @@ function ActiveEventOverlay({
             </button>
           )}
         </div>
-        <span className="vn-continue-hint">{busy ? "处理中" : `......${continueText}`}</span>
+        <span className="vn-continue-hint">{busy ? "翻页中..." : `......${continueText}`}</span>
       </section>
     </>
   );
@@ -5191,6 +5255,7 @@ function HomeScene({
           className={`stage scene-${scene} accent-${config.accent} battle-stage event-stage visual-${activeEvent.node.visualStage}`}
           style={battleStyle}
         >
+          <div key={`curtain-${transitionSignature}`} className="scene-transition-curtain" />
           <div key={transitionSignature} className="stage-bg scene-background-enter">
             <EventStageObjects node={activeEvent.node} />
           </div>
@@ -5222,6 +5287,7 @@ function HomeScene({
           inBattle ? "battle-stage" : ""
         } ${visualStage ? `event-stage visual-${visualStage}` : ""}`}
       >
+        <div key={`curtain-${transitionSignature}`} className="scene-transition-curtain" />
         <div key={transitionSignature} className="stage-bg scene-background-enter">
           {activeEvent ? (
             <EventStageObjects node={activeEvent.node} />
@@ -5329,6 +5395,8 @@ function App() {
     () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
   );
   const entryCgFinishingRef = useRef(false);
+  const actionQueueRef = useRef(Promise.resolve());
+  const optimisticVersionRef = useRef(0);
 
   const ambientMusicEnabled = useMemo(() => {
     if (!musicEnabled) return false;
@@ -5386,33 +5454,55 @@ function App() {
   }
 
   async function perform(action: DemoAction, requestPayload?: DemoActionPayload) {
-    const beforeState = loadState.status === "ready" ? loadState.save.state : null;
-    setBusyAction(action);
-    try {
-      const responsePayload = await fetchJson<SaveResponse>("/demo/action", {
-        method: "POST",
-        body: JSON.stringify({ action, ...requestPayload }),
-      });
-      replaceSave(responsePayload.save);
-      const rewardPrompt = createRewardPrompt(
-        beforeState,
-        responsePayload.save.state,
-        feedbackActions.includes(action) ? "获得物品" : "获得奖励",
-      );
-      if (rewardPrompt) {
-        setSceneFeedback(null);
-        setSystemPrompt(rewardPrompt);
-      } else if (feedbackActions.includes(action)) {
-        setSceneFeedback(createSceneActionFeedback(beforeState, responsePayload.save.state));
+    const beforeSave = loadState.status === "ready" ? loadState.save : null;
+    const beforeState = beforeSave?.state ?? null;
+    const optimisticSave =
+      beforeSave && loadState.status === "ready"
+        ? getOptimisticEventSave(beforeSave, action, loadState.events)
+        : null;
+    const isOptimistic = Boolean(optimisticSave);
+    const requestVersion = isOptimistic ? ++optimisticVersionRef.current : optimisticVersionRef.current;
+
+    if (optimisticSave) replaceSave(optimisticSave);
+    setBusyAction(isOptimistic ? null : action);
+
+    const run = async () => {
+      try {
+        const responsePayload = await fetchJson<SaveResponse>("/demo/action", {
+          method: "POST",
+          body: JSON.stringify({ action, ...requestPayload }),
+        });
+        if (!isOptimistic || requestVersion === optimisticVersionRef.current) {
+          replaceSave(responsePayload.save);
+        }
+        const rewardPrompt = createRewardPrompt(
+          beforeState,
+          responsePayload.save.state,
+          feedbackActions.includes(action) ? "获得物品" : "获得奖励",
+        );
+        if (rewardPrompt) {
+          setSceneFeedback(null);
+          setSystemPrompt(rewardPrompt);
+        } else if (feedbackActions.includes(action)) {
+          setSceneFeedback(createSceneActionFeedback(beforeState, responsePayload.save.state));
+        }
+      } catch (error) {
+        if (beforeSave && (!isOptimistic || requestVersion === optimisticVersionRef.current)) {
+          replaceSave(beforeSave);
+        } else if (!beforeSave) {
+          setLoadState({
+            status: "error",
+            message: error instanceof Error ? error.message : "操作失败",
+          });
+        }
+      } finally {
+        if (!isOptimistic) setBusyAction(null);
       }
-    } catch (error) {
-      setLoadState({
-        status: "error",
-        message: error instanceof Error ? error.message : "操作失败",
-      });
-    } finally {
-      setBusyAction(null);
-    }
+    };
+
+    const request = actionQueueRef.current.then(run, run);
+    actionQueueRef.current = request.then(() => undefined, () => undefined);
+    await request;
   }
 
   async function saveExpansion(

@@ -436,6 +436,25 @@ button:focus-visible {
   animation: scene-background-reveal 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+.scene-transition-curtain {
+  position: absolute;
+  z-index: 90;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  animation: scene-transition-black 700ms ease both;
+}
+
+@keyframes scene-transition-black {
+  0%, 46% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes scene-background-reveal {
   from {
     opacity: 0.3;
@@ -2887,7 +2906,7 @@ button:focus-visible {
   align-self: end;
   max-height: none;
   overflow: hidden;
-  padding: 132px 82px 58px 78px;
+  padding: 104px 96px 52px;
   color: #fffdf4;
   font-family: "STKaiti", "KaiTi", "FangSong", serif;
   font-size: clamp(22px, 2.05vw, 32px);
@@ -2921,7 +2940,7 @@ button:focus-visible {
   right: auto;
   bottom: auto;
   width: min(560px, 46vw);
-  transform: translate(-50%, -42%);
+  transform: translate(-50%, -50%);
   pointer-events: auto;
 }
 
