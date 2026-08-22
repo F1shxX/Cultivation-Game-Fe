@@ -2867,9 +2867,8 @@ button:focus-visible {
   max-height: none;
   padding: 0;
   cursor: pointer;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.34)),
-    var(--dialogue-box) center / 100% 100% no-repeat;
+  background: var(--dialogue-box) center / 100% 100% no-repeat;
+  box-shadow: none;
 }
 
 .vn-dialogue-panel:focus-visible {
@@ -2882,16 +2881,15 @@ button:focus-visible {
 }
 
 .vn-dialogue-panel .event-story-main {
-  position: relative;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
-  min-height: 100%;
+  position: absolute;
+  inset: 0;
+  display: block;
 }
 
 .vn-dialogue-panel .event-story-speaker {
   position: absolute;
   left: 42px;
-  top: 104px;
+  top: 34px;
   z-index: 2;
   min-width: 184px;
   min-height: 44px;
@@ -2916,16 +2914,26 @@ button:focus-visible {
 }
 
 .vn-dialogue-panel .event-story-main p {
-  align-self: end;
+  position: absolute;
+  top: 106px;
+  right: 96px;
+  bottom: 54px;
+  left: 96px;
   max-height: none;
-  overflow: visible;
-  padding: 132px 96px 68px;
+  margin: 0;
+  overflow: auto;
+  padding: 0;
   color: #fffdf4;
   font-family: "STKaiti", "KaiTi", "FangSong", serif;
   font-size: clamp(20px, 1.9vw, 30px);
   font-weight: 900;
   line-height: 1.34;
   letter-spacing: 0;
+  scrollbar-width: none;
+}
+
+.vn-dialogue-panel .event-story-main p::-webkit-scrollbar {
+  display: none;
 }
 
 .vn-dialogue-panel .event-story-actions {

@@ -5238,7 +5238,7 @@ function HomeScene({
     "--visual-bg": activeEvent ? getVisualBackground(activeEvent.node.visualStage) : undefined,
     "--avatar-frame": `url("${assetPath("assets/tapflow/ui/avatar-frame.webp")}")`,
     "--scene-button": `url("${assetPath("assets/tapflow/ui/scene-button.webp")}")`,
-    "--dialogue-box": `url("${assetPath("assets/tapflow/ui/dialogue-box.webp")}")`,
+    "--dialogue-box": `url("${assetPath("assets/tapflow/ui/dialogue-box-clean.webp")}")`,
     "--nameplate": `url("${assetPath("assets/tapflow/ui/nameplate.webp")}")`,
     "--loadout-window": `url("${assetPath("assets/tapflow/loadout/wanhua-window.webp")}")`,
   } as CSSProperties;
