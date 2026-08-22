@@ -10,6 +10,18 @@
 
 * {
   box-sizing: border-box;
+  user-select: none;
+}
+
+*::selection {
+  color: inherit;
+  background: rgba(245, 215, 126, 0.22);
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
 }
 
 html,
