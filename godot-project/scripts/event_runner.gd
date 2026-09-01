@@ -84,9 +84,14 @@ func _run_event() -> void:
 		return
 	_nodes = _event.get("nodes", [])
 	var index := int(Game.active_event.get("node_index", 0))
-	while index < _nodes.size() and not Game.active_event.is_empty():
+	while index >= 0 and index < _nodes.size() and not Game.active_event.is_empty():
 		Game.active_event["node_index"] = index
-		index = await _run_node(index)
+		var next: int = await _run_node(index)
+		if next < 0:
+			# battle 节点已切入战斗场景：事件流程由 battle 场景接管
+			# （胜利后 battle_won() 推进 node_index 并切回本场景；此时绝不能再动 node_index / finish_event）
+			return
+		index = next
 	# 事件完成
 	Game.finish_event(event_id)
 	SceneManager.switch_scene("world")

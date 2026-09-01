@@ -254,8 +254,6 @@ func finish_event(event_id: String) -> void:
 func battle_won() -> void:
 	if active_event.is_empty():
 		return
-	var def := get_event(str(active_event.get("id", "")))
-	var nodes: Array = def.get("nodes", [])
 	active_event["node_index"] = int(active_event.get("node_index", 0)) + 1
 	state_changed.emit()
 
