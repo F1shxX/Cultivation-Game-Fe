@@ -419,7 +419,7 @@ export function CharacterCreation({
     <main className="creation-screen">
       <div className="creation-scroll-bg" />
       <header className="creation-header">
-        <div><strong>创建角色</strong><span>万化归途</span></div>
+        <div><strong>创建角色</strong><span>万化仙途</span></div>
         <p>踏仙途 · 择天命</p>
       </header>
       <nav className="creation-steps" aria-label="角色创建步骤">
