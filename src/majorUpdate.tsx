@@ -1,5 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 
+// 炼器坊两种炉法的初始模式（从场景按钮直达对应页签）
+export type ForgeMode = "craft" | "temper";
+
 export type PlayerProfile = {
   created: boolean;
   name: string;
@@ -124,7 +127,8 @@ export const defaultExpansion: ExpansionState = {
     fieldLevel: 1,
     formationLevel: 0,
     xiaoxianCare: false,
-    plots: Array.from({ length: 20 }, () => ({ herbId: null, years: 0, plantedAtMonth: 0 })),
+    // plantedAtMonth 不设默认值：0 会被当成"第0月种下"导致旧档年份暴涨
+    plots: Array.from({ length: 20 }, () => ({ herbId: null, years: 0 }) as GardenPlot),
   },
   herbStock: {
     juqi: 6,
@@ -363,7 +367,9 @@ export function CharacterCreation({
     0,
   );
   const attributeSpent = Object.values(attributes).reduce((total, value) => total + value - 5, 0);
-  const canContinue = step !== 0 || fullName.length >= 2;
+  // 姓与名都必须填写，避免出现无姓角色
+  const nameComplete = surname.trim().length >= 1 && givenName.trim().length >= 1;
+  const canContinue = step !== 0 || nameComplete;
   const currentPerks = perks.slice(perkPage * 6, perkPage * 6 + 6);
 
   function randomizeName() {
@@ -395,7 +401,7 @@ export function CharacterCreation({
   }
 
   function complete() {
-    if (!fullName || busy) return;
+    if (!nameComplete || busy) return;
     onComplete({
       created: true,
       name: fullName,
@@ -539,7 +545,7 @@ export function CharacterCreation({
       <footer className="creation-footer">
         <button type="button" className="secondary" onClick={step === 0 ? onBackToMenu : () => setStep((value) => value - 1)}>{step === 0 ? "返回标题" : "上一步"}</button>
         <span>{step === 0 && !canContinue ? "输入姓名后继续" : `${step + 1} / 6`}</span>
-        {step < 5 ? <button type="button" disabled={!canContinue} onClick={() => setStep((value) => value + 1)}>下一步</button> : <button type="button" disabled={busy || !fullName} onClick={complete}>{busy ? "正在刻入天道" : "踏入仙途"}</button>}
+        {step < 5 ? <button type="button" disabled={!canContinue} onClick={() => setStep((value) => value + 1)}>下一步</button> : <button type="button" disabled={busy || !nameComplete} onClick={complete}>{busy ? "正在刻入天道" : "踏入仙途"}</button>}
       </footer>
     </main>
   );
@@ -562,6 +568,7 @@ export function EntryCg({ onDone }: { onDone: () => void }) {
         src={asset("assets/onboarding/enter-lushi.mp4")}
         onPlay={() => setStarted(true)}
         onEnded={finish}
+        onError={finish}
       />
       <div className="entry-cg-title"><span>序章</span><strong>初入鹿石宗</strong><small>{started ? "命数自此改写" : "点击播放，见证入宗"}</small></div>
       <button type="button" onClick={finish}>跳过</button>
@@ -670,8 +677,16 @@ function QuestScreen({
       <div className="quest-layout">
         <aside className="quest-list-panel">
           <div className="system-tabs">
-            <button type="button" className={tab === "progress" ? "active" : ""} onClick={() => setTab("progress")}>进行中 <span>{29 - completed.size}</span></button>
-            <button type="button" className={tab === "done" ? "active" : ""} onClick={() => setTab("done")}>已完成 <span>{completed.size}</span></button>
+            <button type="button" className={tab === "progress" ? "active" : ""} onClick={() => {
+              setTab("progress");
+              const first = storyEvents.find((event) => !completed.has(event.id));
+              if (first) setSelectedId(first.id);
+            }}>进行中 <span>{29 - completed.size}</span></button>
+            <button type="button" className={tab === "done" ? "active" : ""} onClick={() => {
+              setTab("done");
+              const first = storyEvents.find((event) => completed.has(event.id));
+              if (first) setSelectedId(first.id);
+            }}>已完成 <span>{completed.size}</span></button>
           </div>
           <div className="quest-list">
             {visible.map((event) => {
@@ -752,7 +767,9 @@ function materializeGarden(expansion: ExpansionState, absoluteMonth: number) {
   const speed = gardenSpeed(expansion);
   return expansion.garden.plots.map((plot) => {
     if (!plot.herbId) return { ...plot, plantedAtMonth: absoluteMonth };
-    const elapsed = Math.max(0, absoluteMonth - (plot.plantedAtMonth ?? absoluteMonth));
+    // 缺失或为 0 的种植月份视为"刚种下"，防止旧档一次性结算出仙阶药材
+    const plantedAt = plot.plantedAtMonth ?? 0;
+    const elapsed = plantedAt > 0 ? Math.max(0, absoluteMonth - plantedAt) : 0;
     return { ...plot, years: plot.years + elapsed * speed, plantedAtMonth: absoluteMonth };
   });
 }
@@ -826,6 +843,7 @@ function GardenScreen({
   }
 
   async function toggleModifier(kind: "formation" | "care") {
+    if (busy) return;
     const nextGarden = {
       ...expansion.garden,
       plots,
@@ -1015,8 +1033,8 @@ const materials: MaterialDefinition[] = [
 const rankThresholds = { 黄: 10, 玄: 30, 地: 60, 天: 120, 仙: 250 } as const;
 const stageNames = ["法器", "法宝", "古宝", "通天灵宝", "玄天之宝"] as const;
 
-function ForgeScreen({ expansion, busy, onClose, onSave }: { expansion: ExpansionState; busy: boolean; onClose: () => void; onSave: SaveExpansion }) {
-  const [mode, setMode] = useState<"craft" | "temper">("craft");
+function ForgeScreen({ expansion, busy, onClose, onSave, initialMode = "craft" }: { expansion: ExpansionState; busy: boolean; onClose: () => void; onSave: SaveExpansion; initialMode?: ForgeMode }) {
+  const [mode, setMode] = useState<ForgeMode>(initialMode);
   const [category, setCategory] = useState<"weapon" | "armor">("weapon");
   const [form, setForm] = useState("剑");
   const [rank, setRank] = useState<"黄" | "玄">("黄");
@@ -1121,6 +1139,7 @@ export function MajorSystemScreen({
   onSave,
   onStartLegacyEvent,
   readOnly = false,
+  initialForgeMode = "craft",
 }: {
   screen: SystemScreen;
   expansion: ExpansionState;
@@ -1132,9 +1151,10 @@ export function MajorSystemScreen({
   onSave: SaveExpansion;
   onStartLegacyEvent: (eventId: 10 | 11) => void;
   readOnly?: boolean;
+  initialForgeMode?: ForgeMode;
 }) {
   if (screen === "quests") return <QuestScreen expansion={expansion} realm={realm} year={year} busy={busy} onClose={onClose} onSave={onSave} onStartLegacyEvent={onStartLegacyEvent} readOnly={readOnly} />;
   if (screen === "garden") return <GardenScreen expansion={expansion} year={year} month={month} busy={busy} onClose={onClose} onSave={onSave} />;
   if (screen === "alchemy") return <AlchemyScreen expansion={expansion} busy={busy} onClose={onClose} onSave={onSave} />;
-  return <ForgeScreen expansion={expansion} busy={busy} onClose={onClose} onSave={onSave} />;
+  return <ForgeScreen expansion={expansion} busy={busy} onClose={onClose} onSave={onSave} initialMode={initialForgeMode} />;
 }

@@ -7,6 +7,7 @@ import {
   getExpansion,
   type ExpansionActivity,
   type ExpansionState,
+  type ForgeMode,
   type PlayerProfile,
   type SystemScreen,
 } from "./majorUpdate";
@@ -742,7 +743,7 @@ const artSamples = [
     attack: "金色锋刃贯穿飞行",
     slots: "1个法术位：黄黄黄黄",
     note: "剑气锋锐，克制护甲，但缺乏持续续航。",
-    icon: assetPath("assets/arts/gold/huang-jinmang-jue.webp"),
+    icon: assetPath("assets/tapflow/arts/gold/huang-jinmang-jue.webp"),
   },
   {
     name: "破金真诀",
@@ -751,7 +752,7 @@ const artSamples = [
     attack: "强化金系穿透剑气",
     slots: "2个法术位：玄黄玄黄",
     note: "适合演示万化道躯切换金灵根后的基础成长。",
-    icon: assetPath("assets/arts/gold/xuan-pojin-zhenjue.webp"),
+    icon: assetPath("assets/tapflow/arts/gold/xuan-pojin-zhenjue.webp"),
   },
   {
     name: "万剑玄功",
@@ -760,7 +761,7 @@ const artSamples = [
     attack: "多段剑气与破甲压制",
     slots: "高阶法术位样例",
     note: "用于展示品阶提升后自动攻击与法术配置上限成长。",
-    icon: assetPath("assets/arts/gold/di-wanjian-xuangong.webp"),
+    icon: assetPath("assets/tapflow/arts/gold/di-wanjian-xuangong.webp"),
   },
   {
     name: "鸿蒙庚金斩仙典",
@@ -769,7 +770,7 @@ const artSamples = [
     attack: "庚金斩仙剑势",
     slots: "仙阶法术位样例",
     note: "多周目自创功法融合时可作为高阶对照目标。",
-    icon: assetPath("assets/arts/gold/xian-hongmeng-gengjin-zhanxian.webp"),
+    icon: assetPath("assets/tapflow/arts/gold/xian-hongmeng-gengjin-zhanxian.webp"),
   },
 ];
 
@@ -1521,8 +1522,11 @@ function getActiveEvent(
   const active = state.activeEvent;
   if (!active) return null;
 
+  // 防御：事件定义被后端改名/下线，或旧存档 nodeIndex 越界时不再白屏
   const definition = events[active.id];
-  const node = definition.nodes[active.nodeIndex];
+  if (!definition) return null;
+  const node = definition.nodes[active.nodeIndex] ?? definition.nodes[0];
+  if (!node) return null;
   return { active, definition, node };
 }
 
@@ -1842,7 +1846,7 @@ function TopHud({
   online: boolean;
   onOpenProfile: () => void;
   onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
-  onOpenSystem: (screen: SystemScreen) => void;
+  onOpenSystem: (screen: SystemScreen, forgeMode?: ForgeMode) => void;
 }) {
   const loadout = getLoadout(state);
   const method = methodCatalog[loadout.methodId];
@@ -1957,7 +1961,7 @@ function SceneActionPanel({
   busy: boolean;
   onAction: (action: DemoAction, payload?: DemoActionPayload) => void;
   onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
-  onOpenSystem: (screen: SystemScreen) => void;
+  onOpenSystem: (screen: SystemScreen, forgeMode?: ForgeMode) => void;
 }) {
   if (currentScene === "plaza") return null;
 
@@ -1969,9 +1973,9 @@ function SceneActionPanel({
     playSceneClick();
     onOpenPanel(panel, target);
   };
-  const openSystem = (screen: SystemScreen) => {
+  const openSystem = (screen: SystemScreen, forgeMode?: ForgeMode) => {
     playSceneClick();
-    onOpenSystem(screen);
+    onOpenSystem(screen, forgeMode);
   };
   const handnoteTarget = sceneHandnoteTargets[currentScene];
 
@@ -2001,8 +2005,8 @@ function SceneActionPanel({
         ];
       case "forge":
         return [
-          { label: "炼制装备", description: "选材定型，炼制成长装备", kind: "forge", onClick: () => openSystem("forge") },
-          { label: "淬炼法宝", description: "投入灵材，提升法宝阶段", kind: "forge", onClick: () => openSystem("forge") },
+          { label: "炼制装备", description: "选材定型，炼制成长装备", kind: "forge", onClick: () => openSystem("forge", "craft") },
+          { label: "淬炼法宝", description: "投入灵材，提升法宝阶段", kind: "forge", onClick: () => openSystem("forge", "temper") },
         ];
       case "alchemy_room":
         return [
@@ -2236,10 +2240,16 @@ function SystemPromptModal({
   prompt: SystemPrompt;
   onClose: () => void;
 }) {
+  // 用 ref 持有回调，避免父组件重渲染导致 2.8s 计时器被反复重置
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    const timer = window.setTimeout(onClose, 2800);
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => onCloseRef.current(), 2800);
     return () => window.clearTimeout(timer);
-  }, [onClose, prompt.id]);
+  }, [prompt.id]);
 
   return (
     <div className={`system-prompt-layer ${prompt.variant}`} role="status" aria-live="polite">
@@ -2306,7 +2316,7 @@ function UtilityPanel({
     .join(" / ");
   const completedText =
     state.completedEvents && state.completedEvents.length > 0
-      ? state.completedEvents.map((id) => events[id].title).join("、")
+      ? state.completedEvents.map((id) => events[id]?.title ?? id).join("、")
       : "暂无";
   const completedEventIds = new Set(state.completedEvents ?? []);
   const storyChapter = getStoryChapter(state.year);
@@ -2341,6 +2351,15 @@ function UtilityPanel({
   useEffect(() => {
     if (panel === "手记") setHandnoteTab(initialHandnoteTab);
   }, [initialHandnoteTab, panel]);
+
+  // 与场景交互模态保持一致：Esc 关闭面板
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
 
   function isHandnoteExpired(entry: HandnoteEntry) {
     return (
@@ -2389,14 +2408,18 @@ function UtilityPanel({
 
     const npcName =
       entry.npcId === "lu-zhenren" ? "鹿真人" : entry.npcId === "xiao-zhang" ? "小张" : "小娴";
-    await onSaveExpansion(nextExpansion, {
-      activity: {
-        title: `${npcName}手记领取`,
-        text: entry.reward
-          ? `${entry.title}奖励已入包。`
-          : `${entry.title}没有额外奖励，但值得再看一遍。`,
-      },
-    });
+    try {
+      await onSaveExpansion(nextExpansion, {
+        activity: {
+          title: `${npcName}手记领取`,
+          text: entry.reward
+            ? `${entry.title}奖励已入包。`
+            : `${entry.title}没有额外奖励，但值得再看一遍。`,
+        },
+      });
+    } catch {
+      // 保存失败时 saveExpansion 已给出中央提示，这里吞掉避免 unhandled rejection
+    }
   }
 
   const content: Record<Panel, string[]> = {
@@ -2756,7 +2779,8 @@ function UtilityPanel({
         })),
       ];
       const visibleBagItems = inventoryRows.filter((item) => item.category === bagCategory);
-      const selectedBagItem = inventoryRows.find((item) => item.id === selectedBagItemId) ?? inventoryRows[0];
+      // 选中项必须属于当前分类，切到空分类时不再显示其它分类物品的详情
+      const selectedBagItem = visibleBagItems.find((item) => item.id === selectedBagItemId) ?? visibleBagItems[0];
       const equipmentSlots = [
         { view: "武器" as EquipmentView, label: "武器×1", name: equipment.weapon },
         { view: "服饰" as EquipmentView, label: "服饰×1", name: equipment.armor },
@@ -2894,7 +2918,7 @@ function UtilityPanel({
                   <button
                     key={item.id}
                     type="button"
-                    className={`inventory-cell ${selectedBagItem.id === item.id ? "active" : ""}`}
+                    className={`inventory-cell ${selectedBagItem?.id === item.id ? "active" : ""}`}
                     onClick={() => {
                       playSceneClick();
                       setSelectedBagItemId(item.id);
@@ -2910,27 +2934,37 @@ function UtilityPanel({
               </div>
 
               <aside className="item-detail-panel">
-                <span>物品详情</span>
-                <div className="detail-icon">
-                  {selectedBagItem.icon ? (
-                    <img src={selectedBagItem.icon} alt="" aria-hidden="true" />
-                  ) : (
-                    <b>{selectedBagItem.name.slice(0, 1)}</b>
-                  )}
-                </div>
-                <h3>{selectedBagItem.name}</h3>
-                <strong>堆叠：{selectedBagItem.value}</strong>
-                <p>{selectedBagItem.description}</p>
-                <small>{bagNotice}</small>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playSceneClick();
-                    setBagNotice(`${selectedBagItem.name}：${selectedBagItem.useLabel}已记录到 demo 提示。`);
-                  }}
-                >
-                  {selectedBagItem.useLabel}
-                </button>
+                {selectedBagItem ? (
+                  <>
+                    <span>物品详情</span>
+                    <div className="detail-icon">
+                      {selectedBagItem.icon ? (
+                        <img src={selectedBagItem.icon} alt="" aria-hidden="true" />
+                      ) : (
+                        <b>{selectedBagItem.name.slice(0, 1)}</b>
+                      )}
+                    </div>
+                    <h3>{selectedBagItem.name}</h3>
+                    <strong>堆叠：{selectedBagItem.value}</strong>
+                    <p>{selectedBagItem.description}</p>
+                    <small>{bagNotice}</small>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSceneClick();
+                        setBagNotice(`${selectedBagItem.name}：${selectedBagItem.useLabel}已记录到 demo 提示。`);
+                      }}
+                    >
+                      {selectedBagItem.useLabel}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span>物品详情</span>
+                    <p className="empty-note">当前分类暂无物品。</p>
+                    <small>{bagNotice}</small>
+                  </>
+                )}
               </aside>
             </div>
           </section>
@@ -3515,9 +3549,15 @@ function UtilityPanel({
         </div>
         {panel === "设置" && (
           <footer>
-            <button onClick={onToggleMusic}>背景音乐：{musicEnabled ? "开启" : "关闭"}</button>
-            <button onClick={onReplayOpening}>重播开场</button>
-            <button onClick={onReset}>重置存档</button>
+            <button onClick={onToggleMusic} disabled={Boolean(busyAction)}>
+              背景音乐：{musicEnabled ? "开启" : "关闭"}
+            </button>
+            <button onClick={onReplayOpening} disabled={Boolean(busyAction)}>
+              重播开场
+            </button>
+            <button onClick={onReset} disabled={Boolean(busyAction)}>
+              重置存档
+            </button>
           </footer>
         )}
       </section>
@@ -4008,7 +4048,8 @@ function createCombatRuntime(config: CombatConfig, width: number, height: number
 
 function makeCombatView(runtime: CombatRuntime, config: CombatConfig): CombatView {
   const boss = runtime.enemies.find((enemy) => enemy.kind === "boss");
-  const bossHp = boss?.hp ?? (config.boss && runtime.status !== "won" ? config.bossHp : 0);
+  // BOSS 已被击杀（objectiveMet）或已胜利后不再回填满血，避免血条"满血复活"错觉
+  const bossHp = boss?.hp ?? (config.boss && !runtime.objectiveMet && runtime.status !== "won" ? config.bossHp : 0);
   const aliveEnemies = runtime.enemies.length;
   const objectiveProgress = runtime.objectiveMet
     ? `目标达成 · 清场剩余${aliveEnemies}`
@@ -4487,7 +4528,11 @@ function BulletHellCombat({
       const runtime = runtimeRef.current;
       if (!runtime) return;
       const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright", " "].includes(key)) {
+      // 仅战斗进行中拦截移动/技能键默认行为，结束后保留空格激活结算按钮的键盘可达性
+      if (
+        runtime.status === "running" &&
+        ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright", " "].includes(key)
+      ) {
         event.preventDefault();
       }
       runtime.keys.add(key);
@@ -4688,7 +4733,7 @@ function BulletHellCombat({
       if (defeated.length) {
         runtime.enemies = runtime.enemies.filter((enemy) => enemy.hp > 0);
         for (const enemy of defeated) {
-          runtime.kills += enemy.kind === "boss" ? 1 : 1;
+          runtime.kills += 1;
           runtime.spiritStones += enemy.kind === "boss" ? 18 : 2;
           pushCombatParticle(runtime, enemy.x, enemy.y, enemy.r + 24, "rgba(132, 230, 190, 0.62)", 0.42);
         }
@@ -5132,7 +5177,8 @@ function ActiveEventOverlay({
                 <button
                   key={choice.action}
                   disabled={busy}
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.stopPropagation();
                     playSceneClick();
                     onAction(choice.action);
                   }}
@@ -5147,7 +5193,9 @@ function ActiveEventOverlay({
             <button
               className="event-story-primary"
               disabled={busy}
-              onClick={() => {
+              onClick={(event) => {
+                // 阻止冒泡到 section 的 advancePrimary，避免一次点击推进两页
+                event.stopPropagation();
                 playSceneClick();
                 onAction(primaryAction);
               }}
@@ -5200,7 +5248,7 @@ function HomeScene({
   onSaveExpansion: (expansion: ExpansionState, options?: { elapsedMonths?: number; activity?: ExpansionActivity }) => Promise<void>;
   onReset: () => void;
   onOpenPanel: (panel: Panel, target?: ProfileTab | HandnoteTab) => void;
-  onOpenSystem: (screen: SystemScreen) => void;
+  onOpenSystem: (screen: SystemScreen, forgeMode?: ForgeMode) => void;
   onClosePanel: () => void;
   onCloseSceneFeedback: () => void;
   onCloseSystemPrompt: () => void;
@@ -5232,6 +5280,11 @@ function HomeScene({
   useEffect(() => {
     setNpcInteractionOpen(false);
   }, [scene]);
+
+  // 事件开始时清掉被抑制的场景反馈弹窗，避免事件结束后"迟到"弹出
+  useEffect(() => {
+    if (activeEvent && sceneFeedback) onCloseSceneFeedback();
+  }, [activeEvent, sceneFeedback, onCloseSceneFeedback]);
 
   const stageStyle = {
     "--scene-bg": `url("${assetPath(`assets/tapflow/scenes/${scene.replace("_", "-")}.webp`)}")`,
@@ -5386,14 +5439,19 @@ function App() {
   const [expansionBusy, setExpansionBusy] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [systemScreen, setSystemScreen] = useState<SystemScreen | null>(null);
+  const [forgeMode, setForgeMode] = useState<ForgeMode>("craft");
   const [flow, setFlow] = useState<GameFlow>("menu");
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("属性");
   const [handnoteInitialTab, setHandnoteInitialTab] = useState<HandnoteTab>("鹿真人");
   const [sceneFeedback, setSceneFeedback] = useState<SceneActionFeedback | null>(null);
   const [systemPrompt, setSystemPrompt] = useState<SystemPrompt | null>(null);
-  const [musicEnabled, setMusicEnabled] = useState(
-    () => localStorage.getItem("wanhua-ambient-music-muted") !== "1",
-  );
+  const [musicEnabled, setMusicEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("wanhua-ambient-music-muted") !== "1";
+    } catch {
+      return true; // Storage 被禁用时兜底默认开启
+    }
+  });
   const entryCgFinishingRef = useRef(false);
   const actionQueueRef = useRef(Promise.resolve());
   const optimisticVersionRef = useRef(0);
@@ -5527,9 +5585,14 @@ function App() {
         setSystemPrompt(rewardPrompt);
       }
     } catch (error) {
-      setLoadState({
-        status: "error",
-        message: error instanceof Error ? error.message : "扩展存档同步失败",
+      // 同步失败不再把整个游戏打成错误屏，保留当前界面并给出中央提示
+      const message = error instanceof Error ? error.message : "扩展存档同步失败";
+      setSystemPrompt({
+        id: Date.now(),
+        title: "保存失败",
+        text: message,
+        details: ["进度暂存于本地，稍后操作会再次尝试同步。"],
+        variant: "notice",
       });
       throw error;
     } finally {
@@ -5568,7 +5631,12 @@ function App() {
   async function finishCharacterCreation(profile: PlayerProfile) {
     if (loadState.status !== "ready") return;
     const expansion = getExpansion(loadState.save.state.expansion);
-    await saveExpansion({ ...expansion, profile });
+    try {
+      await saveExpansion({ ...expansion, profile });
+    } catch {
+      // 保存失败留在捏人界面，中央提示已由 saveExpansion 弹出，可重试
+      return;
+    }
     setFlow("cg");
   }
 
@@ -5584,11 +5652,13 @@ function App() {
   }
 
   function toggleAmbientMusic() {
-    setMusicEnabled((current) => {
-      const next = !current;
+    const next = !musicEnabled;
+    try {
       localStorage.setItem("wanhua-ambient-music-muted", next ? "0" : "1");
-      return next;
-    });
+    } catch {
+      // 隐私模式等场景写入失败可忽略
+    }
+    setMusicEnabled(next);
   }
 
   if (loadState.status === "loading") {
@@ -5621,6 +5691,7 @@ function App() {
         realm={state.cultivation.level}
         busy={expansionBusy || Boolean(busyAction)}
         readOnly={flow === "menu"}
+        initialForgeMode={forgeMode}
         onClose={() => setSystemScreen(null)}
         onSave={saveExpansion}
         onStartLegacyEvent={(eventId) => {
@@ -5678,8 +5749,9 @@ function App() {
         onSaveExpansion={saveExpansion}
         onReset={() => void reset()}
         onOpenPanel={openPanel}
-        onOpenSystem={(screen) => {
+        onOpenSystem={(screen, mode) => {
           setPanel(null);
+          if (mode) setForgeMode(mode);
           setSystemScreen(screen);
       }}
       onClosePanel={() => setPanel(null)}
