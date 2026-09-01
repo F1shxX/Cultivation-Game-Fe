@@ -65,7 +65,8 @@ func _setup_audio() -> void:
 
 func _input(_event: InputEvent) -> void:
 	# 对齐 web：BGM 在首次用户交互后才开始播放（浏览器自动播放限制的同款处理）
-	if _music_enabled and _music and not _music.playing:
+	# stream_paused 期间（如 CG 独占音频）不因输入重启
+	if _music_enabled and _music and not _music.playing and not _music.stream_paused:
 		_music.play()
 
 
@@ -77,6 +78,18 @@ func set_music_enabled(on: bool) -> void:
 		_music.play()
 	else:
 		_music.stop()
+
+
+## 临时暂停环境 BGM（保留播放位置），供 CG 等独占音频的界面使用
+func pause_music() -> void:
+	if _music:
+		_music.stream_paused = true
+
+
+## 恢复被 pause_music 暂停的环境 BGM
+func resume_music() -> void:
+	if _music and _music_enabled:
+		_music.stream_paused = false
 
 
 func is_music_enabled() -> bool:

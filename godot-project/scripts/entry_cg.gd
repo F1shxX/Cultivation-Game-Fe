@@ -21,6 +21,7 @@ func _ready() -> void:
 	add_child(bg)
 
 	_player = VideoStreamPlayer.new()
+	_player.expand = true  # 关键：不设则视频按原始分辨率绘制，只占屏幕一角，无法全屏
 	add_child(_player)
 	_fit_player()
 	get_viewport().size_changed.connect(_fit_player)
@@ -31,6 +32,9 @@ func _ready() -> void:
 		_player.stream = stream
 		_player.finished.connect(_on_finished)
 		_player.play()
+
+	# CG 播放期间独占音频：暂停环境 BGM，只留 CG 视频自带音轨
+	SceneManager.pause_music()
 
 	_build_title_card()
 	_build_skip_button()
@@ -133,5 +137,7 @@ func _on_finished() -> void:
 	_done = true
 	if _player and _player.is_playing():
 		_player.stop()
+	# 恢复环境 BGM
+	SceneManager.resume_music()
 	Game.start_event("intro_lushi")
 	SceneManager.switch_scene("event")
