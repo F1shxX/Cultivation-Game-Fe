@@ -300,10 +300,10 @@ func _build_hud() -> void:
 	_hud_objective.add_theme_color_override("font_color", Color("#f5d784"))
 	title_panel.add_child(_hud_objective)
 
-	# 中栏：三/四行条（combat-bars：气血/灵力/BOSS）
+	# 中栏：三/四行条（combat-bars：气血/灵力/BOSS；css padding 10 12 gap 8，行高 18+5+9=32）
 	var bars_panel := Panel.new()
 	bars_panel.position = Vector2(582, 18)
-	bars_panel.size = Vector2(560, 152 if _config["boss"] else 104)
+	bars_panel.size = Vector2(560, 132 if _config["boss"] else 92)
 	bars_panel.add_theme_stylebox_override("panel", _hud_panel_style())
 	bars_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(bars_panel)
@@ -316,9 +316,9 @@ func _build_hud() -> void:
 		_hud_boss = _add_bar_row(bars_panel, 2, str(_config["boss_name"]), Color("#ff6f5f"), Color("#ffb45e"))
 		_boss_fill = _hud_boss.get_meta("fill")
 
-	# 右栏：战绩（combat-readout）
+	# 右栏：战绩（combat-readout；css .combat-shell .combat-hud right 18 → 右边缘 1902）
 	var readout_panel := Panel.new()
-	readout_panel.position = Vector2(1720, 18)
+	readout_panel.position = Vector2(1722, 18)
 	readout_panel.size = Vector2(180, 60)
 	readout_panel.add_theme_stylebox_override("panel", _hud_panel_style())
 	readout_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -333,7 +333,8 @@ func _build_hud() -> void:
 
 
 func _add_bar_row(parent: Control, row: int, name: String, c1: Color, c2: Color) -> Label:
-	var y := 10 + row * 48
+	# css 行高：label 18 + gap 5 + bar 9 = 32，行间 gap 8 → 步长 40
+	var y := 10 + row * 40
 	var label := Label.new()
 	label.text = "%s 0/0" % name
 	label.position = Vector2(12, y)
@@ -343,7 +344,7 @@ func _add_bar_row(parent: Control, row: int, name: String, c1: Color, c2: Color)
 	parent.add_child(label)
 	# 底槽（rgba(255,255,255,0.11)，高 9 圆角）
 	var track := ColorRect.new()
-	track.position = Vector2(12, y + 22)
+	track.position = Vector2(12, y + 23)
 	track.size = Vector2(536, 9)
 	track.color = Color(1, 1, 1, 0.11)
 	parent.add_child(track)
@@ -366,9 +367,9 @@ func _add_bar_row(parent: Control, row: int, name: String, c1: Color, c2: Color)
 
 
 func _build_build_strip() -> void:
-	# combat-build-strip：right/bottom 72，5 格 27px 圆形图标 + 名字
+	# combat-build-strip：css left/right 18, bottom 72 → y = 1080-72-66 = 942，5 格 27px 圆形图标 + 名字
 	var strip := Panel.new()
-	strip.position = Vector2(18, 990)
+	strip.position = Vector2(18, 942)
 	strip.size = Vector2(1884, 66)
 	var sb := _hud_panel_style()
 	sb.set_content_margin_all(7)
@@ -419,10 +420,10 @@ func _build_build_strip() -> void:
 
 
 func _build_skillbar() -> void:
-	# combat-skillbar：bottom 18，五段（操作提示/自动/鼠标/技能/冷却条）
+	# combat-skillbar：css left/right 12, bottom 12，高 46（padding 10 + 行 26）→ y = 1080-12-46 = 1022
 	var bar := Panel.new()
-	bar.position = Vector2(18, 1076)
-	bar.size = Vector2(1884, 60)
+	bar.position = Vector2(12, 1022)
+	bar.size = Vector2(1896, 46)
 	var sb := _hud_panel_style()
 	sb.content_margin_left = 12
 	sb.content_margin_top = 10
@@ -440,7 +441,7 @@ func _build_skillbar() -> void:
 	for h in hints:
 		var l := Label.new()
 		l.text = h
-		l.position = Vector2(x, 20)
+		l.position = Vector2(x, 13)
 		l.size = Vector2(190, 20)
 		l.add_theme_font_size_override("font_size", 13)
 		l.add_theme_color_override("font_color", Color("#f1e1c2"))
@@ -448,14 +449,14 @@ func _build_skillbar() -> void:
 		x += 200
 	_skill_hint = Label.new()
 	_skill_hint.text = "空格 %s 可用" % _profile["skill_name"]
-	_skill_hint.position = Vector2(x, 20)
+	_skill_hint.position = Vector2(x, 13)
 	_skill_hint.size = Vector2(560, 20)
 	_skill_hint.add_theme_font_size_override("font_size", 13)
 	_skill_hint.add_theme_color_override("font_color", Color("#f1e1c2"))
 	bar.add_child(_skill_hint)
-	# 冷却条（蓝→金渐变，右段）
+	# 冷却条（蓝→金渐变，右段；容器内容宽 1896-24=1872 → track x = 12+1872-360 = 1524）
 	var track := ColorRect.new()
-	track.position = Vector2(1500, 26)
+	track.position = Vector2(1524, 18)
 	track.size = Vector2(360, 9)
 	track.color = Color(1, 1, 1, 0.11)
 	bar.add_child(track)
@@ -467,7 +468,7 @@ func _build_skillbar() -> void:
 	tex.fill_to = Vector2(1, 0)
 	_skill_fill = TextureRect.new()
 	_skill_fill.texture = tex
-	_skill_fill.position = Vector2(1500, 26)
+	_skill_fill.position = Vector2(1524, 18)
 	_skill_fill.size = Vector2(360, 9)
 	_skill_fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_fill.stretch_mode = TextureRect.STRETCH_SCALE
@@ -475,9 +476,9 @@ func _build_skillbar() -> void:
 
 
 func _build_modal() -> void:
-	# combat-modal：中央 430px 宽黑卡
+	# combat-modal：中央 430px 宽黑卡（css translate(-50%,-50%) 完全居中）
 	_modal = Panel.new()
-	_modal.position = Vector2(745, 470)
+	_modal.position = Vector2(745, 430)
 	_modal.size = Vector2(430, 220)
 	var sb := _hud_panel_style()
 	sb.set_content_margin_all(18)

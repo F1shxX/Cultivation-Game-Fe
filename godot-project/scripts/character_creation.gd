@@ -159,6 +159,14 @@ func _build_header() -> void:
 ## ---------- 步骤条（.creation-steps：6 列 48px，圆形序号 34px） ----------
 
 func _build_steps() -> void:
+	# 整条底线（css .creation-steps border-bottom 1px rgba(139,112,64,0.28)）
+	var rule := ColorRect.new()
+	rule.position = Vector2(STEPS_X, 188)
+	rule.size = Vector2(STEPS_W, 1)
+	rule.color = Color(0.545, 0.439, 0.157, 0.28)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(rule)
+
 	_steps_row = HBoxContainer.new()
 	_steps_row.position = Vector2(STEPS_X, 140)
 	_steps_row.size = Vector2(STEPS_W, 48)

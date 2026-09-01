@@ -302,11 +302,18 @@ func _build_scene_ui() -> void:
 	_toast.modulate.a = 0.0
 	add_child(_toast)
 
-	# 日志面板
+	# 日志面板（深底金边，与整体面板风格一致）
 	_log_panel = PanelContainer.new()
 	_log_panel.position = Vector2(420, 150)
 	_log_panel.size = Vector2(1080, 700)
 	_log_panel.visible = false
+	var log_sb := StyleBoxFlat.new()
+	log_sb.bg_color = Color(0.051, 0.047, 0.039, 0.92)
+	log_sb.border_color = Color(0.965, 0.871, 0.631, 0.3)
+	log_sb.set_border_width_all(1)
+	log_sb.set_corner_radius_all(8)
+	log_sb.set_content_margin_all(24)
+	_log_panel.add_theme_stylebox_override("panel", log_sb)
 	add_child(_log_panel)
 
 	_log_text = RichTextLabel.new()
