@@ -417,6 +417,7 @@ func show_reward(text: String, items: Array, button_label := "收下") -> bool:
 	_panel.visible = false
 	_brief.visible = false
 	_choices_root.visible = false
+	_reward_root.visible = true  # 关键：弹窗层默认隐藏，进入奖励模式必须显式打开
 
 	var win: Panel = _reward_root.get_meta("win")
 	var text_label: Label = _reward_root.get_meta("text")
@@ -439,6 +440,7 @@ func show_reward(text: String, items: Array, button_label := "收下") -> bool:
 		await get_tree().process_frame
 	_active = false
 	_root.visible = false
+	_reward_root.visible = false
 	_panel.visible = true
 	return _reward_result
 
