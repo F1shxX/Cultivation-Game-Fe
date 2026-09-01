@@ -28,7 +28,9 @@ var _music_enabled := true
 
 func _ready() -> void:
 	var layer := CanvasLayer.new()
-	layer.layer = 100
+	# mobile 渲染器下过高的 layer 编号不会被合成渲染（同 dialogue_box 的教训），
+	# 转场黑幕需在场景 UI（对话层 layer=1）之上，用 layer=10 即可
+	layer.layer = 10
 	add_child(layer)
 	_fade = ColorRect.new()
 	_fade.color = Color(0.04, 0.03, 0.02, 1.0)

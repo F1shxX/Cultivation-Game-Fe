@@ -357,11 +357,12 @@ func _add_bar_row(parent: Control, row: int, name: String, c1: Color, c2: Color)
 	tex.fill_to = Vector2(1, 0)
 	var fill := TextureRect.new()
 	fill.texture = tex
-	fill.position = Vector2(12, y + 22)
-	fill.size = Vector2(0, 9)
-	fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # GradientTexture2D 默认 64×64，会撑爆血条
+	fill.position = Vector2(12, y + 23)
+	fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	fill.stretch_mode = TextureRect.STRETCH_SCALE
 	parent.add_child(fill)
+	# size 必须在进树后设置：进树 layout 会把此前设置的 size 恢复成纹理默认尺寸(64×64)
+	fill.size = Vector2(0, 9)
 	label.set_meta("fill", fill)
 	return label
 
@@ -469,10 +470,10 @@ func _build_skillbar() -> void:
 	_skill_fill = TextureRect.new()
 	_skill_fill.texture = tex
 	_skill_fill.position = Vector2(1524, 18)
-	_skill_fill.size = Vector2(360, 9)
 	_skill_fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_fill.stretch_mode = TextureRect.STRETCH_SCALE
 	bar.add_child(_skill_fill)
+	_skill_fill.size = Vector2(360, 9)  # 进树后设置，避免被纹理默认尺寸覆盖
 
 
 func _build_modal() -> void:

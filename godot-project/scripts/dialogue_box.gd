@@ -272,10 +272,10 @@ func _build_reward() -> void:
 	var top_line := TextureRect.new()
 	top_line.texture = line_tex
 	top_line.position = Vector2(101, 0)  # 18% 内缩
-	top_line.size = Vector2(359, 2)
 	top_line.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	top_line.stretch_mode = TextureRect.STRETCH_SCALE
 	win.add_child(top_line)
+	top_line.size = Vector2(359, 2)  # 进树后设置，避免被纹理默认尺寸覆盖
 
 	var tag := Label.new()
 	tag.text = "系统提示"
