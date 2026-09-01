@@ -112,6 +112,7 @@ func _ready() -> void:
 	var bg := TextureRect.new()
 	bg.texture = load("res://assets/onboarding/character-scroll.jpg")
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	add_child(bg)
 
@@ -891,6 +892,7 @@ func _brush_button(text: String, secondary: bool) -> Button:
 	if ResourceLoader.exists(path):
 		tex.texture = load(path)
 	tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex.stretch_mode = TextureRect.STRETCH_SCALE
 	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(tex)

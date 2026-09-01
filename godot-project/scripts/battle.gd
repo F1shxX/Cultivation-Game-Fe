@@ -358,6 +358,7 @@ func _add_bar_row(parent: Control, row: int, name: String, c1: Color, c2: Color)
 	fill.texture = tex
 	fill.position = Vector2(12, y + 22)
 	fill.size = Vector2(0, 9)
+	fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # GradientTexture2D 默认 64×64，会撑爆血条
 	fill.stretch_mode = TextureRect.STRETCH_SCALE
 	parent.add_child(fill)
 	label.set_meta("fill", fill)
@@ -468,6 +469,7 @@ func _build_skillbar() -> void:
 	_skill_fill.texture = tex
 	_skill_fill.position = Vector2(1500, 26)
 	_skill_fill.size = Vector2(360, 9)
+	_skill_fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_fill.stretch_mode = TextureRect.STRETCH_SCALE
 	bar.add_child(_skill_fill)
 

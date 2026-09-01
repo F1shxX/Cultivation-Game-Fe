@@ -63,6 +63,7 @@ func _ready() -> void:
 	_background = TextureRect.new()
 	_background.texture = load(STAGE_BACKGROUNDS["intro_dormitory"])
 	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	add_child(_background)
 

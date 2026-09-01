@@ -144,6 +144,7 @@ func _build_panel() -> void:
 	var bg_tex := TextureRect.new()
 	bg_tex.texture = load("res://assets/tapflow/ui/dialogue-box.webp")
 	bg_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # 否则被纹理原始尺寸撑开，黑边跑出面板
 	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
 	bg_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(bg_tex)
@@ -160,6 +161,7 @@ func _build_panel() -> void:
 	_nameplate.texture = load("res://assets/tapflow/ui/nameplate.webp")
 	_nameplate.position = NAMEPLATE_POS
 	_nameplate.size = NAMEPLATE_MIN
+	_nameplate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_nameplate.stretch_mode = TextureRect.STRETCH_SCALE
 	_nameplate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(_nameplate)
@@ -267,6 +269,7 @@ func _build_reward() -> void:
 	top_line.texture = line_tex
 	top_line.position = Vector2(101, 0)  # 18% 内缩
 	top_line.size = Vector2(359, 2)
+	top_line.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	top_line.stretch_mode = TextureRect.STRETCH_SCALE
 	win.add_child(top_line)
 
