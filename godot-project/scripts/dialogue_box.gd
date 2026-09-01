@@ -21,13 +21,13 @@ const PORTRAITS := {
 }
 
 ## VN 面板几何（1920×1080 基准，对齐 css .vn-dialogue-panel：
-## left clamp(220,18vw,320)→346；right clamp(20,3vw,54)→54；bottom clamp(20,3vh,36)→32；
+## left clamp(220,18vw,320)→320；right clamp(20,3vw,54)→54；bottom clamp(20,3vh,36)→32；
 ## min-height clamp(340,38vh,420)→410）
-const PANEL_POS := Vector2(346, 638)
-const PANEL_SIZE := Vector2(1520, 410)
-## nameplate：面板内 (42,34)，最小 184×44，名字楷体 31px
+const PANEL_POS := Vector2(320, 638)
+const PANEL_SIZE := Vector2(1546, 410)
+## nameplate：面板内 (42,34)，最小 184×44，名字楷体 31px（css padding 8px 26px 9px）
 const NAMEPLATE_POS := Vector2(42, 34)
-const NAMEPLATE_MIN := Vector2(184, 46)
+const NAMEPLATE_MIN := Vector2(184, 44)
 ## 正文：面板内 inset（left/top 96/106，right/bottom 96/54），楷体 30px
 const TEXT_INSET := Rect2(96, 106, 96, 54)
 ## 「……继续剧情」：面板右下 (right 62, bottom 36)，楷体 28px
@@ -87,7 +87,7 @@ func _ready() -> void:
 func _build_brief() -> void:
 	_brief = Control.new()
 	_brief.position = Vector2(24, 22)
-	_brief.size = Vector2(240, 112)
+	_brief.size = Vector2(240, 104)
 	_brief.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_brief)
 
@@ -98,30 +98,33 @@ func _build_brief() -> void:
 	sb.border_color = Color(1, 0.937, 0.8, 0.14)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(8)
-	sb.set_content_margin_all(14)
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
 	bg.add_theme_stylebox_override("panel", sb)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_brief.add_child(bg)
 
 	_brief_category = Label.new()
-	_brief_category.position = Vector2(14, 10)
-	_brief_category.size = Vector2(212, 18)
+	_brief_category.position = Vector2(16, 12)
+	_brief_category.size = Vector2(208, 18)
 	_brief_category.add_theme_font_size_override("font_size", 12)
 	_brief_category.add_theme_color_override("font_color", Color(0.608, 0.839, 1.0))
 	_brief_category.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
 	_brief.add_child(_brief_category)
 
 	_brief_title = Label.new()
-	_brief_title.position = Vector2(14, 30)
-	_brief_title.size = Vector2(212, 32)
+	_brief_title.position = Vector2(16, 34)
+	_brief_title.size = Vector2(208, 32)
 	_brief_title.add_theme_font_size_override("font_size", 22)
 	_brief_title.add_theme_color_override("font_color", Color(1, 0.949, 0.773))
 	_brief_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 	_brief.add_child(_brief_title)
 
 	_brief_stage = Label.new()
-	_brief_stage.position = Vector2(14, 66)
-	_brief_stage.size = Vector2(212, 20)
+	_brief_stage.position = Vector2(16, 70)
+	_brief_stage.size = Vector2(208, 20)
 	_brief_stage.add_theme_font_size_override("font_size", 13)
 	_brief_stage.add_theme_color_override("font_color", Color(1, 0.91, 0.72, 0.82))
 	_brief.add_child(_brief_stage)
@@ -162,8 +165,8 @@ func _build_panel() -> void:
 	_panel.add_child(_nameplate)
 
 	_speaker_name = Label.new()
-	_speaker_name.position = NAMEPLATE_POS + Vector2(26, 6)
-	_speaker_name.size = NAMEPLATE_MIN - Vector2(52, 12)
+	_speaker_name.position = NAMEPLATE_POS + Vector2(26, 8)
+	_speaker_name.size = NAMEPLATE_MIN - Vector2(52, 17)
 	_speaker_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_speaker_name.add_theme_font_size_override("font_size", 31)
 	_speaker_name.add_theme_font_override("font", _kai)
@@ -402,7 +405,7 @@ func _fit_nameplate() -> void:
 	var w := maxf(NAMEPLATE_MIN.x, text_w + 52)
 	_name_bg.size = Vector2(w, NAMEPLATE_MIN.y)
 	_nameplate.size = Vector2(w, NAMEPLATE_MIN.y)
-	_speaker_name.size = Vector2(w - 52, NAMEPLATE_MIN.y - 12)
+	_speaker_name.size = Vector2(w - 52, NAMEPLATE_MIN.y - 17)
 
 
 ## 奖励结算弹窗（屏幕正中央）。点击按钮返回 true。

@@ -175,14 +175,27 @@ func _build_steps() -> void:
 		inner.add_theme_constant_override("separation", 8)
 		inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(inner)
+		# 序号圆框（css .creation-steps button span：34px 圆、1px #b7a17b 边）
+		var num_wrap := Panel.new()
+		num_wrap.name = "NumWrap"
+		num_wrap.custom_minimum_size = Vector2(34, 34)
+		num_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		num_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var num_sb := StyleBoxFlat.new()
+		num_sb.bg_color = Color(0, 0, 0, 0)
+		num_sb.border_color = Color("#b7a17b")
+		num_sb.set_border_width_all(1)
+		num_sb.set_corner_radius_all(17)
+		num_wrap.add_theme_stylebox_override("panel", num_sb)
+		inner.add_child(num_wrap)
 		var num := Label.new()
 		num.name = "Num"
 		num.text = STEP_NUMS[i]
-		num.custom_minimum_size = Vector2(34, 34)
+		num.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		num.add_theme_font_size_override("font_size", 15)
-		inner.add_child(num)
+		num_wrap.add_child(num)
 		var name_l := Label.new()
 		name_l.name = "StepName"
 		name_l.text = STEP_NAMES[i]
@@ -203,13 +216,18 @@ func _refresh_steps() -> void:
 	for i in _steps_row.get_child_count():
 		var b: Button = _steps_row.get_child(i)
 		var inner: HBoxContainer = b.get_child(0)
-		var num: Label = inner.get_child(0)
+		var num_wrap: Panel = inner.get_child(0)
+		var num: Label = num_wrap.get_child(0)
 		var name_l: Label = inner.get_child(1)
 		var active := i == _step
 		var done := i < _step
 		var sb: StyleBoxFlat = b.get_theme_stylebox("normal").duplicate()
 		sb.border_color = Color("#b78a31") if active else Color(0, 0, 0, 0)
 		b.add_theme_stylebox_override("normal", sb)
+		# 圆框边框色（css：active 时 #b88a2f）
+		var num_sb: StyleBoxFlat = num_wrap.get_theme_stylebox("panel").duplicate()
+		num_sb.border_color = Color("#b88a2f") if active else Color("#b7a17b")
+		num_wrap.add_theme_stylebox_override("panel", num_sb)
 		num.add_theme_color_override("font_color", Color("#a87318") if active else Color("#8b7d6d"))
 		name_l.add_theme_color_override("font_color",
 			Color("#35281c") if active else Color("#76603d") if done else Color("#8b7d6d"))
