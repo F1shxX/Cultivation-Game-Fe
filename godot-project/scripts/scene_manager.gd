@@ -89,8 +89,12 @@ func play_click() -> void:
 
 
 func switch_scene(key: String, use_fade := true) -> void:
-	if _busy or not SCENES.has(key):
+	if not SCENES.has(key):
 		return
+	# 若上一次切换尚未完成（如战斗结算切回事件后事件立刻完成又切回主城），
+	# 排队等待而不是静默拒绝——否则事件完成后会永远卡在空白场景
+	while _busy:
+		await get_tree().process_frame
 	_busy = true
 	play_click()
 	if use_fade:
