@@ -68,7 +68,10 @@ var _ignore_input_until := 0
 
 
 func _ready() -> void:
-	layer = 101
+	# 注意：不能用过高的 layer（如 101）——mobile 渲染器下高编号 CanvasLayer 的内容
+	# 会绘制到场景画布之下/不被渲染，表现为文字浮在背景上、底图黑框消失。
+	# layer=1 即在场景内容之上、SceneManager 转场黑幕(layer=100)之下。
+	layer = 1
 	_kai = FontFile.new()
 	_kai.load_dynamic_font("res://fonts/KaiTi.ttf")
 	_root = Control.new()
@@ -140,9 +143,10 @@ func _build_panel() -> void:
 	_panel.gui_input.connect(_on_panel_input)
 	_root.add_child(_panel)
 
-	# 框体背景：dialogue-box.webp 拉伸 100%×100%（css: center / 100% 100%，无内边距无边框）
+	# 框体背景：dialogue-box-clean.webp 拉伸 100%×100%（web --dialogue-box 用的就是 clean 版，
+	# 勿用 dialogue-box.webp——那是上部透明的墨迹横幅，会导致文字浮在背景上没有黑框）
 	var bg_tex := TextureRect.new()
-	bg_tex.texture = load("res://assets/tapflow/ui/dialogue-box.webp")
+	bg_tex.texture = load("res://assets/tapflow/ui/dialogue-box-clean.webp")
 	bg_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # 否则被纹理原始尺寸撑开，黑边跑出面板
 	bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
